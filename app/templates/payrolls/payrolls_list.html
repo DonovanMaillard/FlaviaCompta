@@ -7,15 +7,12 @@
 
   <h1>Détail des masses salariales</h1>
 
-  <div class="btn btn-group">
-    <a class="btn btn-secondary" href="{{ url_for('payrolls') }}"> <i class="fa fa-filter"></i> Tous </a>
-    {% for member in members %}
-      <a class="btn btn-secondary" href="{{ url_for('payrolls', id_member=member.id_member) }}"> <i class="fa fa-filter"></i> {{member.member_name}} </a>
-    {% endfor %}
+  <div>
+    <a class="btn btn-success btn-right" href="{{ url_for('addPayroll') }}"><i class="fa fa-plus"></i> Ajouter une masse salariale</a>
+    <br><br>
   </div>
 
-
-  <table class="table table-striped">
+  <table class="table table-striped" id="payrolls">
     <thead>
       <tr>
         <th>Salarié</th>
@@ -70,8 +67,27 @@
     </tbody>
   </table>
 
-  <a class="btn btn-success" href="{{ url_for('addPayroll') }}"><i class="fa fa-plus"></i> Ajouter une masse salariale</a>
 </div>
 </div>
+
+<script>
+ $(document).ready(function () {
+    $('#payrolls').DataTable(
+      {
+        "language": {
+          "paginate": {
+            "previous": "Précédent",
+            "next": "Suivant"
+          },
+          "lengthMenu": "Afficher _MENU_ lignes",
+          "search": "Recherche:",
+          "zeroRecords": "Aucune donnée à afficher",
+          "info": "Affichage des masses salariales _START_ à _END_ sur _TOTAL_.",
+          "infoFiltered":"(filtré sur un total de _MAX_)"
+        }
+      }
+    );
+});
+</script>
 
 {% endblock %}
