@@ -5,7 +5,7 @@
 <div class="container">
 	<h1> Liste des lignes budgétaires </h1>
 
-      <table class="table table-striped">
+      <table class="table table-striped" id="budgets">
          <thead>
             <tr>
                <th>Statut</th>
@@ -68,5 +68,24 @@
 
   <a class="btn btn-success" href="{{ url_for('addBudget') }}"><i class="fa fa-plus"></i> Ajouter un nouveau budget</a>
 </div>
+
+<script>
+ $(document).ready(function () {
+    $('#budgets').DataTable(
+      {
+        "language": {
+          "paginate": {
+            "previous": "Précédent",
+            "next": "Suivant"
+          },
+          "lengthMenu": "Afficher _MENU_ lignes",
+          "search": "Recherche:",
+          "zeroRecords": "Aucune donnée à afficher",
+          "info": "Affichage des lignes _START_ à _END_ sur _TOTAL_ lignes au total",
+        }
+      }
+    );
+});
+</script>
 
 {% endblock %}

@@ -154,14 +154,21 @@
          </tbody>
       </table>
 
-      <script>
+<script>
  $(document).ready(function () {
     $('#operations').DataTable(
       {
-        "oLanguage": {
-          "sLengthMenu": "Afficher _MENU_ lignes",
-        "sSearch": "Recherche:",
+        "language": {
+          "paginate": {
+            "previous": "Précédent",
+            "next": "Suivant"
+          },
+          "lengthMenu": "Afficher _MENU_ lignes",
+          "search": "Recherche:",
+          "zeroRecords": "Aucune donnée à afficher",
+          "info": "Affichage des lignes _START_ à _END_ sur _TOTAL_ lignes au total",
+        }
       }
-      });
+    );
 });
 </script>
