@@ -10,6 +10,16 @@
     <h1> Liste des comptes </h1>
   {% endif %}
 
+    <div class="row">
+      <div style="margin-bottom:50px;">
+        {% if Type == 'personnal' %}
+          <a class="btn btn-success btn-right " href="{{url_for('addAccount', type='personnal')}}"><i class="fa fa-plus"> </i> Ajouter un compte d'avance de frais personnels</a>
+        {% else %}
+          <a class="btn btn-success btn-right " href="{{url_for('addAccount')}}"><i class="fa fa-plus"></i> Ajouter un nouveau compte</a>
+        {% endif %}
+      </div>
+    </div>
+
     {% for Account in Accounts %}
 
       <div class="card">
@@ -76,12 +86,6 @@
     </div>
 
     {% endfor %}
-
-    {% if Type == 'personnal' %}
-      <a class="btn btn-success" href="{{url_for('addAccount', type='personnal')}}"><i class="fa fa-plus"> </i> Ajouter un compte d'avance de frais personnels</a>
-    {% else %}
-      <a class="btn btn-success" href="{{url_for('addAccount')}}"><i class="fa fa-plus"></i> Ajouter un nouveau compte</a>
-    {% endif %}
 </div>
 
 
