@@ -160,4 +160,5 @@ app/static/uploads/*
 flaviacompta.sublime-project
 flaviacompta.sublime-workspace
 
+.DS_Store
 */.DS_Store
