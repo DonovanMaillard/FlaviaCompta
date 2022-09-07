@@ -1,0 +1,64 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="container">
+      <h1> Décompter du temps salarié sur un budget </h1>
+
+
+      <form method = "post" enctype="multipart/form-data" novalidate>
+
+        <div class="row">
+         <div class="form-group col-md-4">
+            <label for = "id_budget">Ligne budgétaire - projet</label><br>
+            {{ form.id_budget(class="form-control required") }}
+            {% for error in form.id_budget.eùrrors %} 
+              <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div> 
+          <div class="form-group col-md-4">
+            <label for = "id_member">Salarié</label><br>
+              {{ form.id_member(class="form-control") }}
+              {% for error in form.id_member.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+              {% endfor %}
+          </div>
+          <div class="form-group col-md-4">
+            <label for = "fixed_cost">Cout forfaitaire (optionnel)</label><br>
+            {{ form.fixed_cost(class="form-control required") }}
+            {% for error in form.fixed_cost.errors %} 
+              <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div> 
+          <br><br>
+        </div>
+
+
+        <div class="row">
+           <div class="form-group col-md-4">
+            <label for = "date_min_period">Date de début de la période </label>
+            {{ form.date_min_period(class="form-control required") }}
+            {% for error in form.date_min_period.errors %} 
+              <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+          <div class="form-group col-md-4">
+            <label for = "date_max_period">Date de fin de la période</label><br>
+            {{ form.date_max_period(class="form-control") }}
+            {% for error in form.date_max_period.errors %} 
+              <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div> 
+          <div class="form-group col-md-4">
+            <label for = "nb_days_allocated">Nombre de jours ouvrés consacrés au projet</label><br>
+            {{ form.nb_days_allocated(class="form-control required") }}
+            {% for error in form.nb_days_allocated.errors %} 
+              <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+        </div>
+
+        <br><br>
+        <input class="btn btn-primary float-right" type = "submit" value = "Enregistrer" />
+      </form>
+</div>
+{% endblock %}

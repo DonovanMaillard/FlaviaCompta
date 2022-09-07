@@ -1,0 +1,37 @@
+# Script installation
+# Installer Postgresql (si absent du serveur), npm, wkhtmltopdf et virtualenv
+sudo apt-get install postgresql virtualenv npm python3 python3-pip python3-venv python3-virtualenv wkhtmltopdf
+
+# Télécharger Comptasso
+wget
+unzip
+mv Comptasso-1... comptasso
+
+# Créer l'environnement virtuel python dédié à comptasso
+cd /home/outilsflavia/comptasso
+python3 -m venv env
+cd
+
+# Créer l'environnement python
+source /home/outilsflavia/comptasso/env/bin/activate
+pip install wheel 
+pip install virtualenv psycopg2 uuid flask flask_sqlalchemy Flask-Login WTForms==2.3.3 Flask-WTF Flask-Bootstrap4 pdfkit
+deactivate
+
+# Créer la base de données 
+sudo su postgres
+psql
+CREATE DATABASE comptasso OWNER flaviaape;
+\q
+exit
+
+# Jouer dans l'ordre les scripts d'installation de la BDD puis des données de base 
+cd /home/outilsflavia/comptasso
+psql -h localhost -U flaviaape -d comptasso -f data/comptasso_db.sql  &> install_db.log
+psql -h localhost -U flaviaape -d comptasso -f data/comptasso_app_data.sql  &> install_db.log
+psql -h localhost -U flaviaape -d comptasso -f data/comptasso_app_data.sql  &> install_db.log
+
+
+# Si vous changez le port de l'application dans le fichier de configuration, penser à le changer 
+également dans le fichier .service de systemd et dans le fichier de configuration apache comptasso.conf
+

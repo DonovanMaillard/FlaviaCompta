@@ -1,0 +1,55 @@
+<div>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Action effectuées</th>
+        <th>Remarque</th>
+        <th>Justificatifs</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+         
+    <tbody>
+      {% for Action in Actions %}
+      <tr>
+        <td>{{Action.date_action}}</td>
+        <td>{{Action.type_action}}</td>
+        <td>{{Action.description_action}}</td>
+        <td>{% if Action.uploaded_file %}<a href="{{ url_for('static', filename=Action.uploaded_file) }}">voir ou télécharger le document</a> {% endif %}</td>
+        <td>
+          <div>
+            <div class="btn btn-group">
+              <a class="btn btn-warning" href="{{ url_for('updateAction', id_budget=Budget.id_budget, id_action_budget=Action.id_action_budget) }}"> <i class="fa fa-edit"></i> </a>
+              <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteActionModal{{Action.id_action_budget}}"> <i class="fa fa-trash"></i> </a>
+            </div>
+          </div>
+      </tr>
+
+      <!-- Delete Modal -->
+      <div class="modal fade" id="deleteActionModal{{Action.id_action_budget}}" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="deleteActionModalLabel">Supprimer l'action'</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <p> Souhaitez-vous vraiment supprimer <strong>"{{ Action.type_action }}" du {{Action.date_action}}</strong> des actions ?</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+              <a class="btn btn-danger" href="{{ url_for('deleteAction', id_budget=Budget.id_budget, id_action_budget=Action.id_action_budget) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- end modal -->
+
+      {% endfor %}
+    </tbody>
+  </table>
+  
+  <a class="btn btn-success" href="{{ url_for('addAction', id_budget=Budget.id_budget) }}"> <i class="fa fa-plus"></i> Ajouter une action </a>        
+
+</div>

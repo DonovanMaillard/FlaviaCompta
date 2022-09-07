@@ -1,0 +1,114 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="container">
+	<h1> {{ Funder.name }} </h1>
+  
+  <!-- Financeur -->
+
+    <div class="card">
+      <div class="card-header">
+        <h4>Informations sur le financeur
+          {% if Funder.active %} <span class="badge badge-right alert-success">Actif</span>
+          {% else %} <span class="badge badge-right alert-dark">Inactif</span>
+          {% endif %}
+        </h4>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-2">
+            <img src="{{ Funder.logo_url}}"></img>
+          </div>
+
+          <div class="col-md-5">
+            <p class="card-text"> <strong>Adresse postale :</strong></p>
+            <p class="card-text"> {{ Funder.address }}</p>
+            <p class="card-text"> {{ Funder.zip_code }} - {{ Funder.city }}</p>
+          </div>
+
+          <div class="col-md-5">
+            <p class="card-text"> <strong>Code :</strong> {{ Funder.code }}</p>
+            <p class="card-text"> <strong>Remarque :</strong> {{ Funder.comment }} </p>
+          </div>
+        </div>
+        <div class="btn-group">
+          <a class="btn btn-warning" href="{{ url_for('updateFunder', id_funder=Funder.id_funder) }}"> <i class="fa fa-edit"></i> Modifier</a>
+          <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"> <i class="fa fa-trash"></i> Supprimer </a>        
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Supprimer le financeur</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              <p> Souhaitez-vous vraiment supprimer <strong>"{{ Funder.name }}"</strong> des financeurs ?</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <a class="btn btn-danger" href="{{ url_for('deleteFunder', id_funder=Funder.id_funder) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- end modal -->
+
+    <!-- Budgets liés -->
+    {% if not Budgets %}
+      <div class="card">
+        <div class="card-header">
+          <h4> Aucune ligne budgétaire associée </h4>
+        </div>
+        <div class="card-body">
+          <div class="btn btn-group">
+            <a class="btn btn-info" href="{{ url_for('budgets') }}"> <i class="fa fa-list"></i> Aller aux budgets</a>
+          </div>
+        </div>
+      </div>
+    {% else %}
+
+        
+        <div class="card">
+          <div class="card-header">
+            <h4> Budgets associés </h4>
+          </div>
+
+          {% for Budget in Budgets %}
+          <div class="card-body">
+            <div class="card">
+              <div class="card-header">
+                <h5>{{ Budget.name }}
+                  {% if Budget.active %} <span class="badge badge-right alert-success">Actif</span>
+                  {% else %} <span class="badge badge-right alert-dark">Inactif</span>
+                  {% endif %}
+                </h5>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-4">
+                    <p class="card-text"> <strong>Dernière opération :</strong> {{ Budget.last_operation }}</p>
+                  </div>
+                  <div class="col-md-4">
+                    <p class="card-text"> <strong>Montant perçu :</strong> {{ Budget.received_amount }}€ /{{ Budget.budget_amount }}€</p>
+                  </div>
+                  <div class="col-md-4">
+                    <p class="card-text"> <strong>Total dépensé :</strong> {{ Budget.spent_amount }}€ /{{ Budget.budget_amount }}€</p>
+                  </div>
+                </div>
+                <div class="btn btn-group">
+                    <a class="btn btn-info" href="{{ url_for('detailBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-eye"></i> </a>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

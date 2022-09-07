@@ -1,0 +1,23 @@
+#import os
+
+# Connexion à la BDD
+SECRET_KEY = 'myamazingsecretkey'
+SQLALCHEMY_DATABASE_URI = "postgresql://<user>:<pass>@<host>/<db_name>"
+
+APP_PORT=5050
+
+DEBUG=True
+
+
+# uploads parameters
+#UPLOAD_FOLDER = '/Users/poleinvertebres/Desktop/ComptAsso/app/static/uploads'
+BASE_DIR = "/path/to/app/"
+
+
+#Todo = ALLOWED_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'zip', 'rar']
+
+# Pagination des résultats
+ROWS_PER_PAGE = 10
+
+# by default SMIC
+#HOUR_VOLUNTEERING_VALUATION = 10.48 

@@ -1,0 +1,52 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="container">
+    {% if Budget == None %}
+      <h1> Créer une nouvelle action pour "{{Budget.name}}"" </h1>
+    {% else %}
+      <h1> Modifier l'action du {{Action.date}} pour le budget "{{Budget.name}}" </h1>
+    {% endif %}
+
+      <form method = "post" enctype="multipart/form-data" novalidate>
+        <div class="row">
+          <div class="form-group col-md-4">
+            <label for = "date_action"><strong>Date de l'action *</strong></label><br>
+            {{ form.date_action(class="form-control") }}
+            {% for error in form.date_action.errors %} 
+              <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+          <div class="form-group col-md-4">
+            <label for = "id_budget_action_types"><strong>Nature de l'action *</strong></label><br>
+            {{ form.id_budget_action_types(class="form-control") }}
+            {% for error in form.id_budget_action_types.errors %} 
+              <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+          <div class="form-group col-md-4">
+            <label for = "uploaded_file">Justificatif (facultatif)</label><br>
+            {{ form.uploaded_file(class="form-control") }}
+            {% for error in form.uploaded_file.errors %} 
+              <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>  
+          <!-- Keep previous uploaded file checkbox -->
+          {% if Action.uploaded_file %}
+            <div class="form-group">
+              <label for = "keep_file">Conserver le <a href="{{ url_for('static', filename=Action.uploaded_file) }}"> document fourni précédemment</a></label>
+              {{ form.keep_file(class="form-check-input", checked=true) }}
+            </div>
+          {% endif %}
+          <br><br>
+        </div>
+        <div>
+          <label for = "description_action">Remarque</label><br>
+            {{ form.description_action(class="form-control") }}
+            <br><br>
+        </div>
+
+        <input class="btn btn-primary float-right" type = "submit" value = "Enregistrer" />
+      </form>
+</div>
+{% endblock %}

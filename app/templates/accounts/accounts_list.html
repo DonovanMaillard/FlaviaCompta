@@ -1,0 +1,88 @@
+{% extends 'main.html' %}
+
+
+{% block content %}
+<div class="container">
+	
+  {% if Type == 'personnal' %}
+    <h1> Notes de frais des personnels </h1>
+  {% else %}
+    <h1> Liste des comptes </h1>
+  {% endif %}
+
+    {% for Account in Accounts %}
+
+      <div class="card">
+      <div class="card-header">
+        <div class="col-md-10">
+          <h4> {{ Account.name }}</h4>
+        </div>
+        {% if Account.bank_url %}
+        <div class="col-md-2">
+          <a href="{{ Account.bank_url }}" target="_blank" title="Accéder au portail de connexion du compte"><i class="fa fa-external-link"></i>Site de la banque</a>
+        </div>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3">
+            <p class="card-text"> <strong>Dernière opération :</strong> {{ Account.last_operation or '-' }}</p>
+          </div>
+          <div class="col-md-3">
+            <p class="card-text"> <strong>Sommes engagées :</strong> {{ Account.account_commitments or '-' }}€</p>
+          </div>
+          <div class="col-md-3">
+            <p class="card-text"> <strong> {% if Account.is_personnal %} Crédit :{% else %} Solde :{% endif %}</strong> 
+                    {% if not Account.account_balance or Account.account_balance > 0 %}
+                      <strong>{{ Account.account_balance or '0' }}€ </strong>
+                    {% else %}
+                      <strong style="color:red;">{{ Account.account_balance }}€ </strong>
+                    {% endif %}
+            </p>
+            {% if Account.is_personnal and (not Account.account_balance or Account.account_balance==0)  %} 
+              <p>Aucun frais à rembourser </p>
+            {% elif Account.is_personnal and Account.account_balance>0 %}
+              <p style="color:red;">Attention, trop perçu à régulariser </p>
+            {% endif %}
+          </div>
+          <div class="col-md-3">
+            <div class="btn btn-group">
+              <a class="btn btn-info" href="{{ url_for('detailAccount', id_account=Account.id_account) }}"> <i class="fa fa-eye"></i> </a>
+              <a class="btn btn-warning" href="{{ url_for('updateAccount', id_account=Account.id_account) }}"> <i class="fa fa-edit"></i> </a>
+              <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{Account.id_account}}"> <i class="fa fa-trash"></i> </a>
+            </div>          
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div class="modal fade" id="deleteModal{{Account.id_account}}" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Supprimer le comptee</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              <p> Souhaitez-vous vraiment supprimer le compte <strong>"{{ Account.name }}"</strong> ?</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <a class="btn btn-danger" href="{{ url_for('deleteAccount', id_account=Account.id_account) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% endfor %}
+
+    {% if Type == 'personnal' %}
+      <a class="btn btn-success" href="{{url_for('addAccount', type='personnal')}}"><i class="fa fa-plus"> </i> Ajouter un compte d'avance de frais personnels</a>
+    {% else %}
+      <a class="btn btn-success" href="{{url_for('addAccount')}}"><i class="fa fa-plus"></i> Ajouter un nouveau compte</a>
+    {% endif %}
+</div>
+
+
+{% endblock %}

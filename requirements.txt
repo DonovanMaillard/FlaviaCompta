@@ -1,0 +1,8 @@
+flask
+flask_sqlalchemy
+psycopg2-binary
+Datables
+flask_login
+pdfkit 
+wtforms == 3.0.1
+Flask-WTF == 1.0.1

@@ -1,0 +1,72 @@
+{% extends 'main.html' %}
+
+
+{% block content %}
+<div class="container">
+	<h1> Liste des lignes budgétaires </h1>
+
+      <table class="table table-striped">
+         <thead>
+            <tr>
+               <th>Statut</th>
+               <th>Nom</th>
+               <th>Dépenses jusqu'au</th>
+               <th>Montant global</th>
+               <th>Dépenses effectuées</th>
+               <th>Engagements</th>
+               <th>Sommes perçues</th>
+               <th>Action</th>
+            </tr>
+         </thead>
+         
+         <tbody>
+            {% for Budget in Budgets %}
+               <tr>
+                  <td>
+                    {% if Budget.active %} <span class="badge table-badge alert-success">Actif</span>
+                    {% else %} <span class="badge table-badge alert-dark">Inactif</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ Budget.name }}</td>
+                  <td>{{ Budget.date_max_expenditure }}</td>
+                  <td>{{ Budget.budget_amount }}€ </td>
+                  <td>{{ Budget.spent_amount }}€ </td>
+                  <td>{{ Budget.committed_amount }}€</td>
+                  <td>{{ Budget.received_amount }}€</td>
+                  <td>
+                    <div>
+                        <div class="btn btn-group">
+                           <a class="btn btn-info" href="{{ url_for('detailBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-eye"></i> </a>
+                           <a class="btn btn-warning" href="{{ url_for('updateBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-edit"></i> </a>
+                           <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{Budget.id_budget}}"> <i class="fa fa-trash"></i> </a>
+                        </div>
+                    </div>
+               </tr>
+
+               <!-- Delete Modal -->
+                <div class="modal fade" id="deleteModal{{Budget.id_budget}}" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Supprimer la ligne budgétaire</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                          <p> Souhaitez-vous vraiment supprimer la ligne budgétaire <strong>"{{ Budget.name }}"</strong> ?</p>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <a class="btn btn-danger" href="{{ url_for('deleteBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            <!-- end modal -->
+            {% endfor %}
+         </tbody>
+      </table>
+
+  <a class="btn btn-success" href="{{ url_for('addBudget') }}"><i class="fa fa-plus"></i> Ajouter un nouveau budget</a>
+</div>
+
+{% endblock %}

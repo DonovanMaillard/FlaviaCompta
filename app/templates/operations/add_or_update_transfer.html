@@ -1,0 +1,85 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="container">
+    {% if Transfert == None %}
+      <h1> Saisir un nouveau {% if Type=='Refund'%}remboursement {% else %}transfert {% endif %}</h1>
+    {% else %}
+      <h1> Modifier le {% if Type=='Refund'%}remboursement {% else %}transfert {% endif %} </h1>
+    {% endif %}
+
+      <form method = "post" enctype="multipart/form-data" novalidate>
+        <div class="row">
+          <div class="form-group col-md-5">
+            <label for = "from_id_account"><strong>Depuis le compte *</strong></label>
+            {{ form.from_id_account(class="form-control") }}
+            {% for error in form.from_id_account.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+          <div class="form-group col-md-2 d-grid" style=" display:inline-block;">
+            <i class="fa fa-long-arrow-right transfer-arrow"></i>
+          </div>
+          <div class="form-group col-md-5">
+            <label for = "to_id_account"><strong>Vers le compte *</strong></label><br>
+            {{ form.to_id_account(class="form-control") }}
+            {% for error in form.to_id_account.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+        </div>
+
+        <br><br>
+
+        <div class="row">
+          <div class="form-group col-md-8">
+            <label for = "name"><strong>Libellé *</strong></label>
+            {{ form.name(class="form-control") }}
+            {% for error in form.name.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+          <div class="form-group col-md-4">
+            <label for = "amount"><strong>Montant (€) *</strong></label>
+            {{ form.amount(class="form-control") }}
+            <small class="text-muted">Le séparateur de décimale doit être un point</small>
+            {% for error in form.amount.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+          <div class="form-group col-md-12">
+            <label for = "detail_transfer">Détail du transfert</label><br>
+            {{ form.detail_transfer(class="form-control") }}
+            {% for error in form.detail_transfer.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+        </div>
+
+        <br><br>
+
+        <div class="row">
+          <div class="form-group col-md-4">
+            <label for = "effective_date"><strong>Date du transfert *</strong></label><br>
+            {{ form.effective_date(class="form-control") }}
+            {% for error in form.effective_date.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+          <div class="form-group col-md-4">
+            <label for = "id_payment_method">Moyen de paiement</label><br>
+            {{ form.id_payment_method(class="form-control") }}
+            {% for error in form.id_payment_method.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+        </div>
+
+        <br><br>
+        
+        <input class="btn btn-primary float-right" type = "submit" value = "Enregistrer" />
+      </form>
+      
+
+</div>
+{% endblock %}

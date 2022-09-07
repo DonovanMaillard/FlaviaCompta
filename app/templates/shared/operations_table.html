@@ -1,0 +1,167 @@
+<table class="table table-striped" id="operations">
+         <thead>
+            <tr>
+               <th>Date opération</th>
+               <th>Catégorie</th>
+               <th>Libellé</th>
+               <th>Compte bancaire</th>
+               <th>Ligne budgétaire</th>
+               <th>Montant</th>
+               <th>Action</th>
+            </tr>
+         </thead>
+         
+         <tbody>
+            {% for Operation in Operations %}
+               <tr>
+                  <td> {{ Operation.effective_date }} </td>
+                  <td> {{ Operation.type_operation }} <i class="fa fa-question-circle" title="{{ Operation.category }}"></i></td>
+                  <td> {{ Operation.name_operation }} 
+                      {% if Operation.uploaded_file != '' and Operation.uploaded_file is not none %}
+                        <a href=" {{ url_for('static', filename=Operation.uploaded_file) }}"> <i class="fa fa-file" title="Voir le justificatif" ></i> </a>
+                      {% elif Operation.type_operation == 'Dépense' and (Operation.uploaded_file != '' or Operation.uploaded_file is not none) %}
+                        <i class="fa fa-warning" style="color:red;" title="Aucun justificatif fourni pour cette dépense"></i>
+                      {% endif %} 
+                  </td>
+                  <td> {{ Operation.account_name }} </td>
+                  <td> {{ Operation.budget_name or '' }} </td>
+                  <td> 
+                  	{% if not Operation.amount or Operation.amount > 0 %}
+                      <p> {{ Operation.amount }}€ </p>
+                    {% else %}
+                      <p style="color:red;">{{ Operation.amount }}€ </p>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div>
+                        <div class="btn btn-group">
+                          <a class="btn btn-info" data-bs-toggle="modal" data-bs-target="#detailModal{{Operation.id_operation}}"> <i class="fa fa-eye"></i> </a>
+                          {% if Operation.type_operation == 'Transaction interne' or Operation.type_operation == 'Remboursement de frais' %}
+                            <a class="btn btn-warning" href="{{ url_for('updateTransfer', id_grp_operation=Operation.id_grp_operation) }}"> <i class="fa fa-edit"></i> </a>
+                          {% else %}
+                            <a class="btn btn-warning" href="{{ url_for('updateMovement', id_operation=Operation.id_operation) }}"> <i class="fa fa-edit"></i> </a>
+                          {% endif %}
+                          <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{Operation.id_operation}}"> <i class="fa fa-trash"></i> </a>
+                        </div>
+                    </div>
+               </tr>
+
+            
+            <!-- Detail Modal -->
+                <div class="modal fade" id="detailModal{{Operation.id_operation}}" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
+                  <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="detailModalLabel">Détail de l'opération</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        <div class="row">
+                          <div class="col-md-8"> 
+                            <strong>Date d'opération : </strong>{{ Operation.operation_date or '' }}
+                            <br>
+                            <strong>Date d'effet : </strong>{{ Operation.effective_date or '' }}
+                            <br>
+                            <strong>Type d'opération : </strong>{{ Operation.type_operation }}
+                            <br>
+                            <br>
+                          </div>
+                          <div class="col-md-4">
+                            <strong>Montant : </strong> 
+                                <h3 style="color:red;">{{ Operation.amount }}€ </h3>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-12">
+                            <strong>Libellé : </strong>{{ Operation.name_operation }} 
+                               <br>
+                            <strong>Détail : </strong>{{ Operation.detail_operation or ''}}
+                          </div>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-4"> 
+                            <strong>Compte : </strong>{{ Operation.account_name }}
+                            <br>
+                            <br>
+                          </div>
+                          <div class="col-md-4">
+                            <strong>Moyen de paiement : </strong> {{ Operation.payment_method or ''}}
+                            <br>
+                            <br>
+                          </div>
+                          <div class="col-md-4">
+                            <strong>Budget : </strong>{{ Operation.budget_name or '' }}
+                            <br>
+                            <br>
+                          </div>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-6">
+                            <strong>Catégorie fiscale : </strong>{{ Operation.category }}
+                          </div>
+                          <div class="col-md-6">
+                            <strong>Justificatif : </strong>
+                              {% if not Operation.uploaded_file %}
+                                Aucun
+                              {% else %}
+                                <a href=" {{ url_for('static', filename=Operation.uploaded_file) }}" target="_blank">voir ou télécharger le document</a>
+                              {% endif %}
+                            <br>
+                            <br>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                            <p style="color:grey;">Créé le : {{ Operation.meta_create_date or ''}}<br>
+                            Dernière modification le : {{ Operation.meta_update_date or ''}}</p>
+                        </div>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <!-- end modal -->
+
+
+            <!-- Delete Modal -->
+                <div class="modal fade" id="deleteModal{{Operation.id_operation}}" tabindex="0" aria-labelledby="ModalLabel" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="deleteModalLabel">Supprimer l'opération</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                          <p> Souhaitez-vous vraiment supprimer l'opération : <strong>"{{ Operation.name_operation }}" </strong> ?</p>
+                          {% if Operation.type_operation == 'Transaction interne' or Operation.type_operation == 'Remboursement de frais' %} 
+                          <p style="color:red"> Attention, la modification ou la suppression d'un transfert entre comptes ou d'un remboursement de frais affecte à la fois l'opération de débit sur le compte source, et l'opération de crédit appariée sur le compte cible. <br>
+                          Êtes-vous sûr de vouloir modifier les deux opérations de débit et de crédit liées au transfert ou au remboursement de frais <strong>"{{ Operation.name_operation }}" </strong> ? </p>
+                          {% endif %}
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        {% if Operation.type_operation == 'Transaction interne' or Operation.type_operation == 'Remboursement de frais' %}
+                          <a class="btn btn-danger" href="{{ url_for('deleteTransfer', id_grp_operation=Operation.id_grp_operation) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
+                        {% else %}
+                          <a class="btn btn-danger" href="{{ url_for('deleteMovement', id_operation=Operation.id_operation) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            <!-- end modal -->
+            {% endfor %}
+         </tbody>
+      </table>
+
+      <script>
+ $(document).ready(function () {
+    $('#operations').DataTable(
+      {
+        "oLanguage": {
+          "sLengthMenu": "Afficher _MENU_ lignes",
+        "sSearch": "Recherche:",
+      }
+      });
+});
+</script>

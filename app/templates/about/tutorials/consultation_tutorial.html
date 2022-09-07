@@ -1,0 +1,55 @@
+<h5>Consultation des données </h5>
+
+<p> La consultation des données repose sur un fonctionnement homogène pour toutes les informations stockées dans l'application : une liste des données restitue l'ensemble des "objets" sous une forme synthétiques, tandis qu'une fiche de détail renvoie l'information complète sur l'objet sélectionné. Ces listes et fiches de détail peuvent être, dans certains cas, enrichies par des informations calculées à la volée.  
+</p>
+
+<div class="tutorial-image row">
+	<div class="col-md-6">
+		<figure class="figure">
+				<img src="{{ url_for('static', filename='img/tutorials/operations_list.png') }}"></img>
+		  		<figcaption class="figure-caption">La liste des opérations affiche des informations simples et synthétiques, seule l'absence de justificatif des dépenses est calculée à la volée.</figcaption>
+		</figure>
+	</div>
+
+	<div class="col-md-6">
+		<figure class="figure">
+				<img src="{{ url_for('static', filename='img/tutorials/accounts_list.png') }}"></img>
+		  		<figcaption class="figure-caption">La liste des comptes en banque est enrichie avec des informations calculées en direct, telles que le solde et les sommes engagées.</figcaption>
+		</figure>
+	</div>
+</div>
+
+
+<hr/>
+<h5>Les fiches de détail "simples"</h5>
+<p>Pour les objets les plus simples tels que les opérations, les fiches de détail ne font que restituer l'ensemble des informations saisies par l'utilisateur dans le formulaire. Ces fiches apparaissent dans une fenêtre modale, sans que l'utilisateur ne quitte la liste des objets.</p>
+
+<div class="tutorial-image">
+	<figure class="figure">
+			<img src="{{ url_for('static', filename='img/tutorials/detail_operation.png') }}"></img>
+	  		<figcaption class="figure-caption">Les fiches de détail des opérations restituent l'ensemble des informations fournies lors de la saisie</figcaption>
+	</figure>
+</div>
+
+<hr/>
+<h5>Les fiches de détail enrichies</h5>
+<p>Pour les objets les plus complexes comme les comptes bancaires ou les lignes budgétaires, il peut être nécessaire de disposer de davantage d'informations pour faciliter l'analyse et le suivi de la comptabilité. Ces fiches de détail font alors l'objet d'une page complète, et sont enrichies d'un certain nombre d'informations calculées en direct (solde, part du budget utilisé ou engagé, pas du budget perçu et reste à percevoir etc)</p>
+<div class="tutorial-image row">
+	<div class="col-md-6">
+		<figure class="figure">
+  			<img src="{{ url_for('static', filename='img/tutorials/detail_account.png') }}"></img>
+  			<figcaption class="figure-caption">Les fiches de détail des comptes bancaires sont enrichies pour faciliter le suivi de la comptabilité</figcaption>
+		</figure>
+		<p>
+		</p>
+	</div>
+
+	<div class="col-md-6">
+		<figure class="figure">
+  			<img src="{{ url_for('static', filename='img/tutorials/detail_budget.png') }}"></img>
+  			<figcaption class="figure-caption">Les fiches de détail des lignes budgétaires sont enrichies pour un meilleur suivi des projets.</figcaption>
+		</figure>
+		<p>
+		</p>
+	</div>
+</div>

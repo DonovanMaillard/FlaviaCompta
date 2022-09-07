@@ -1,0 +1,165 @@
+<div>
+	<h4>Les différentes opérations comptables et l'organisation des données</h4>
+
+	<p>Cette application permet de gérer différentes opérations comptables pour répondre à un maximum de besoins et limiter les risques d'erreurs autant que possible :
+		<ul>
+			<li> <strong>Les dépenses : </strong> opérations de dépenses classique, entrainant un débit d'argent sur un compte de l'organisme </li>
+			<li> <strong>Les recettes : </strong> opération de recette classique, entrainant un crédit d'argent sur un compte de l'organisme</li>
+			<li> <strong>Les engagements : </strong> enregistrement d'une dépense à venir (devis validé) pour "réserver" la somme d'argent correspondante jusqu'à sa facturation effective </li>
+			<li> <strong>Les transferts entre comptes : </strong> opération interne - non mentionnée dans les résultats financiers - entrainant un déplacement de sommes d'argent entre différents comptes de l'organisme </li>
+			<li> <strong>Les remboursements de frais : </strong> opérations visant à réguler les avances de frais et les frais kilométriques engagés par les personnels salariés ou bénévoles </li>
+		</ul>
+	</p>
+	<br><br>
+
+	<p>Pour être pleinement efficace, le suivi de la comptabilité doit pouvoir se faire à différents échelons :
+		<ul>
+			<li> <strong>Au niveau des comptes : </strong> pour assurer une trésorerie suffisante pour les activités de la structures et en garantir la pérennité  </li>
+			<li> <strong>Au niveau des lignes budgétaires : </strong> pour assurer le suivi des subventions, études et autres "lignes budgétaires"</li>
+			<li> <strong>Au niveau de l'association : </strong> en disposant rapidement de bilans financiers annualisés à l'échelle de l'organisme </li>
+		</ul>
+		<br>
+		Afin répondre à ces besoins, l'application s'appuie sur différents "objets" (ou notions) complémentaires, définies ci-dessous :
+		<ul>
+			<li> <strong>Les comptes bancaires : </strong> représentent les comptes bancaires de l'association </li>
+			<li> <strong>Les financeurs : </strong> correspondent aux partenaires financiers qui apportent des financements à l'association. Ils doivent être créés en amont des lignes budgétaires associées.</li>
+			<li> <strong>Les lignes budgétaires : </strong> correspondent aux différentes "enveloppes" qui sont allouées à l'association : les différentes études, subventions, mécénats etc </li>
+			<li> <strong>Les actions des lignes budgétaires : </strong> correspondent à un historique des différentes actions administratives effectuées pour la gestion de ces budgets : émission de devis, demandes de subventions, demandes d'acomptes, facturation ou demande de solde etc </li>
+			<li> <strong>Les membres : </strong> correspondent aux membres (salariés et bénévoles) de l'association, susceptible notamment d'avoir des notes de frais, ou de valoriser du bénévolat </li>
+			<li> <strong>Les catégories fiscales : </strong> sont des catégories normées qui permettent d'identifier et de catégoriser les opérations financières de l'association. Leur utilisation permet la production de rapports/bilans financiers normés pour la gestion des subventions et les contrôles notamment. </li>
+			<li> <strong>Les moyens de paiements : </strong> sont les différents moyens utilisables pour opérer les recettes et dépenses, permettant de mieux identifier les paiements, prélèvements et autres versements effectués. </li>
+		</ul>
+		Chaque opération saisie peut ainsi être rattachée à un compte bancaire, à une catégorie fiscale, et le cas échéant à une ligne budgétaire, permettant de retrouver l'information et produire des bilans à tous les niveaux nécessaires.
+	</p>
+</div>
+
+<hr style="margin-top:80px"/>
+<div>
+	<h4>Navigation au sein de l'application et disponibilité de l'information</h4>
+
+	La navigation au sein de l'application repose sur :
+	<ul>
+		<li> <strong>La barre de navigation </strong> qui permet d'accéder à l'ensemble des pages et fonctionnalités de l'application </li>
+		<li> <strong>La page d'accueil </strong> qui offre de manière plus ergonomique un certain nombre de raccourcis vers les actions les plus fréquentes</li>
+		<li> <strong>Des redirections automatiques </strong> suite à la validation des formulaires, permettant de revenir sur la liste des données enregistrées </li>
+	</ul>
+	<br>
+	L'organisation globale de l'information repose sur une logique unique, appliquée à tous les objets cités ci-dessus :
+	<ul>
+		<li> <strong>Des listes des données disponibles </strong> : permettant respectivement de consulter les listes des comptes, des lignes budgétaires, des opérations, des engagements, des membres, des financeurs etc...</li>
+		<li> <strong>Des fiches de détail </strong> plus ou moins riches selon les objets, permettant visualiser l'information complète de l'objet sélectionné et éventuellement les actions, opérations et engagements rattachés</li>
+		<li> <strong>Des formulaires </strong> permettant de créer ou modifier un objet sélectionné. </li>
+	</ul>
+	<br>
+	<br>
+	Pour une utilisation plus simple, <strong>certaines informations sont dupliquées à plusieurs endroits de l'application</strong> avec un filtrage adéquat. C'est notamment le cas des opérations et des engagements, qui sont ainsi listés et filtrés automatiquement :
+	<ul>
+		<li> dans le menu "opérations", qui regroupe l'ensemble des opérations financières enregistrées, pour consulter par exemple les saisies récentes et télécharger l'ensemble des données enregistrées </li>
+		<li> dans les fiches de détail des comptes bancaires, permettant de lister toutes les opérations rattachées au compte consulté </li>
+		<li> dans les fiches de détail des lignes budgétaires, permettant de lister toutes les opérations rattachées à la subvention ou à l'étude consultée </li>
+	</ul>
+</div>
+
+
+<hr style="margin-top:80px"/>
+
+<div>
+	<h4>Actions possibles</h4>
+
+	<p> La comptabilité étant simple, il n'existe finalement que peu d'actions possibles dans cette application, systématiquement représentées de la même manière sur toutes les pages :</p>
+
+	<table class="table">
+      <thead>
+        <tr>
+          <th scope="col" style="text-align: center;">Bouton</th>
+          <th scope="col" style="text-align: center;">Action</th>
+        </tr>
+      </thead>
+
+      <tbody>
+      	<!-- Ajouter un objet-->
+        <tr>
+          <th scope="row" style="text-align: center;"><a class="btn btn-success" href="#"><i class="fa fa-plus"></i> Ajouter un objet</a></th>
+          <td>
+          	<strong>Ajouter un objet :</strong>
+          	<br>
+          	<p>
+          		Permet d'ajouter un "objet" aux données. Il peut s'agir d'un compte, d'un budget, d'un financeur, d'une dépense, d'une recette, d'un engagement etc.
+          	</p>
+          </td>
+        </tr>
+
+        <!-- Détail -->
+        <tr>
+          <th scope="row" style="text-align: center;"><a class="btn btn-info" title="Consulter le détail" href="#"> <i class="fa fa-eye"></i> </a></th>
+          <td>
+          	<strong>Consulter le détail :</strong>
+          	<br>
+          	<p>
+          		Permet de consulter le détail d'un objet : dépense, recette, engagement, compte bancaire, note de frais, ligne budgétaire etc.
+          	</p>
+          </td>
+        </tr>
+
+        <!-- Modification -->
+        <tr>
+          <th scope="row" style="text-align: center;"><a class="btn btn-warning" title="Modifier l'objet" href="#"> <i class="fa fa-edit"></i> </a></th>
+          <td>
+          	<strong>Modifier l'objet :</strong>
+          	<br>
+          	<p>
+          		Permet de modifier l'objet sélectionner : opération, compte, financeur, membre etc
+          	</p>
+          </td>
+        </tr>
+
+        <!-- Suppression -->
+        <tr>
+          <th scope="row" style="text-align: center;"><a class="btn btn-danger" title="Supprimer" href="#"> <i class="fa fa-trash"></i> </a></th>
+          <td>
+          	<strong>Supprimer l'objet :</strong>
+          	<br>
+          	<p>
+          		Permet de supprimer l'objet sélectionner : une confirmation est systématiquement requise pour la suppression d'un objet. Une fois supprimé, l'objet est définitivement effacé et ne peut être retrouvé.
+          	</p>
+          </td>
+        </tr>
+
+        <!-- Conversion -->
+        <tr>
+          <th scope="row" style="text-align: center;"><a class="btn btn-success" title="Convertir en dépense" href="#"> <i class="fa fa-exchange"></i> </a></th>
+          <td>
+          	<strong>Convertir un engagement en dépense :</strong>
+          	<br>
+          	<p>
+          		Cette action est propre aux engagements. Elle permet de convertir un engagement (devis validé) en dépense une fois la facturation effectuée. Les informations de la dépense sont ainsi pré-remplies en se basant sur les informations de l'engagement.
+          	</p>
+          </td>
+        </tr>
+
+        <!-- Enregistrer -->
+        <tr>
+          <th scope="row" style="text-align: center;"><input class="btn btn-primary" type = "#" value = "Enregistrer" /></th>
+          <td>
+          	<strong>Enregistrer la saisie :</strong>
+          	<br>
+          	<p>
+          		Permet d'enregistrer les informations du formulaire complété. Dans le cas où le formulaire comporte des erreurs, il est nécessaire de les corriger puis de soumettre à nouveau les informations en cliquant sur "enregistrer".
+          	</p>
+          </td>
+        </tr>
+
+        <!-- Exporter -->
+        <tr>
+          <th scope="row" style="text-align: center;"><a class="btn btn-success" href="#"> <i class="fa fa-download"></i> Exporter un objet </a></th>
+          <td>
+          	<strong>Exporter un objet :</strong>
+          	<br>
+          	<p>
+          		Permet d'exporter des données en les téléchargeant au format tableur (csv) ou pdf. 
+          	</p>
+          </td>
+        </tr>
+   	  </tbody>
+	</table>
+</div>

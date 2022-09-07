@@ -1,0 +1,109 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="container">
+    {% if Budget == None %}
+      <h1> Créer une nouvelle ligne budgétaire </h1>
+    {% else %}
+      <h1> Modifier le budget "{{Budget.name}}" </h1>
+    {% endif %}
+
+      <form method = "post" enctype="multipart/form-data" novalidate>
+        <h5>Informations générales sur la ligne budgétaire</h5>
+
+        <div class="row">
+         <div class="form-group col-md-8">
+            <label for = "name"><strong>Nom de la ligne budgétaire *</strong></label><br>
+            {{ form.name(class="form-control") }}
+            {% for error in form.name.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div> 
+          <div class="form-group col-md-4">
+              <label for = "reference">Référence de la ligne bidgétaire</label><br>
+                {{ form.reference(class="form-control") }}
+                {% for error in form.reference.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+              <br>
+          </div>
+        </div>
+
+
+        <div class="row">
+           <div class="form-group col-md-4">
+            <label for = "id_type_budget"><strong>Type de ligne budgétaire *</strong></label>
+            <br>
+            {{ form.id_type_budget(class="form-control") }}
+            {% for error in form.id_type_budget.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+          <div class="form-group col-md-4">
+            <label for = "id_funder"><strong>Financeur *</strong></label><br>
+            {{ form.id_funder(class="form-control") }}
+            {% for error in form.id_funder.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div> 
+          <div class="form-group col-md-4">
+            <label for = "budget_amount"><strong>Montant global du budget *</strong></label><br>
+            {{ form.budget_amount(class="form-control") }}
+            <small class="text-muted">Le séparateur de décimale doit être un point</small>
+            {% for error in form.budget_amount.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+          <div class="form-group col-md-4">
+            <label for = "date_return"><strong>Date d'échéance des bilans et rendus *</strong></label><br>
+            {{ form.date_return(class="form-control") }}
+            {% for error in form.date_return.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+          <div class="form-group col-md-4">
+            <label for = "date_max_expenditure"><strong>Date buttoire des dépenses *</strong></label><br>
+            {{ form.date_max_expenditure(class="form-control") }}
+            {% for error in form.date_max_expenditure.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div> 
+        </div>
+
+        <br><br>
+        <h5>Modalités de valorisation du temps de travail</h5>
+        <div class="row form-inline">
+          <div class="form-group col-md-4">
+            <label for = "payroll_limit"><strong>Plafond de la masse salariale éligible *</strong></label><br>
+            {{ form.payroll_limit(class="form-control") }}
+            <small class="text-muted">Le séparateur de décimale doit être un point</small>
+            {% for error in form.payroll_limit.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+          <div class="form-group col-md-4">
+            <label for = "indirect_charges"><strong>Charges indirectes (en %) *</strong></label><br>
+            {{ form.indirect_charges(class="form-control") }}
+            <small class="text-muted">Le séparateur de décimale doit être un point</small>
+            {% for error in form.indirect_charges.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div> 
+          <div class="form-group col-md-4">
+            {{ form.allowed_fixed_cost(class="form-check-input", checked=allowed) }}
+            <label for = "allowed_fixed_cost">Décompte du temps de travail au forfait autorisé</label>
+          </div>
+        </div>
+        <label for = "comment">Remarque</label><br>
+            {{ form.comment(class="form-control") }}
+            {% for error in form.comment.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+        <br>
+        <label for = "active">Actif</label>
+            {{ form.active(class="form-check-input", checked=active) }}
+        <br><br>
+        <input class="btn btn-primary float-right" type = "submit" value = "Enregistrer" />
+      </form>
+</div>
+{% endblock %}

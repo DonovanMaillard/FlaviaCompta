@@ -1,0 +1,24 @@
+{% extends 'main.html' %}
+
+
+{% block content %}
+
+<div class="container">
+	<h1> Liste des engagements en cours </h1>
+
+	<div class="block-info">
+        <p> Un engagement est une mise en réserve d'une somme 'engagée' pour une dépense à venir, suite à la signature d'un devis et en attendant le paiement effectif lors de facturation. L'engagement permet de mémoriser et comptabiliser les dépenses certaines à venir, et facilite l'anticipation au niveau de la trésorerie notamment. </p>
+        <p><strong>Attention, les engagements ne s'appliquent qu'aux dépenses, ne pas saisir de recettes.</strong></p>
+    </div>
+
+    <br><br>
+
+
+  <a class="btn btn-outline-danger btn-right" href="{{ url_for('addCommitment') }}"> <i class="fa fa-plus"></i> Ajouter un engagement </a>
+
+<!-- Table des engagements -->
+  {% include 'shared/commitments_table.html' %}
+
+</div>
+
+{% endblock %}

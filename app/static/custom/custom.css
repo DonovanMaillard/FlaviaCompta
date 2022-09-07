@@ -1,0 +1,173 @@
+/*Page structure & elements organization*/
+.btn-group {
+	float: right !important;
+}
+
+.btn-right {
+	float: right !important;
+}
+
+.btn-group .btn {
+	margin: 10px;
+}
+
+.card {
+	margin-bottom:30px;
+}
+
+.card-header {
+	display: flex;
+	align-items: center;
+}
+
+.sub-card {
+	margin: 10px;
+}
+
+img {
+	max-width: 100%;
+}
+
+.home-header {
+	text-align: center;
+	margin-bottom:80px;
+}
+
+.dropdown-item.inline-item{
+	display: inline-flex !important;
+	width: auto !important;
+}
+
+.content {
+	margin-bottom:50px;
+}
+
+/*NavBar*/
+
+.navbar {
+	margin-bottom: 50px;
+}
+
+.navbar .nav-item a {
+	color: darkgrey;
+	font-weight: normal;
+}
+
+.nav-item a:hover, .nav-item a:active {
+	color: green;
+}
+
+.nav-tabs .nav-link{
+	color: #000000;
+}
+
+
+.dropdown-menu {
+	border-color: lightgrey;
+	box-shadow: solid 3px darkgrey;
+}
+
+.dropdown-item:active {
+	background-color:#e9ecef;
+}
+
+#logo_structure {
+	max-height: 60px;
+}
+
+/* Esthetic*/
+h1 {
+	margin-bottom: 50px;
+}
+
+.badge-right {
+	right: 15px !important;
+	position: absolute;
+}
+
+.required {
+    border-left: solid 5px red;
+}
+
+.home-btn {
+	height: 150px;
+	padding-top: 60px;
+	margin-top:25px;
+}
+
+.level1 {
+	font-weight: bold;
+	background-color: grey !important;
+}
+
+.subcat {
+	text-indent: 20px;
+}
+
+.accordion-button {
+	background-color:lightgrey;
+	font-size:28px;
+	font-weight: bold;
+}
+
+.transfer-arrow {
+	margin:auto; 
+	font-size:40px !important;
+	color:var(--bs-body-color);
+}
+
+.block-info {
+	background-color:lightgrey;
+	border-radius: 10px;
+	padding:15px;
+}
+
+.tab-content {
+	padding-top: 30px !important;
+}
+
+.table {
+	padding-top: 50px !important;
+}
+
+.a-icon {
+	color: #ff7f00 !important;
+}
+
+.bank-link {
+	margin:100px !important;
+}
+
+.form-invalid-message {
+	color:red;
+}
+
+.tutorial-image {
+	text-align: center;
+}
+
+.tutorial-image img {
+	margin:auto;
+	width:80%;
+	max-width:600px !important;
+}
+
+.dynamic-content{
+	margin-bottom: 80px;
+}
+
+.footer-content {
+	color:grey;
+	text-align:center;
+	min-height:80px;
+	position: relative;
+}
+
+.footer-content span {
+	position: absolute;
+    bottom: 5px;
+}
+
+.footer-content a {
+	color:lightgrey;
+}

@@ -1,0 +1,26 @@
+[Unit]
+Description=ComptAsso
+After=network.target
+
+[Service]
+Type=simple
+User=outilsflavia
+Group=outilsflavia
+WorkingDirectory=/home/outilsflavia/comptasso/
+Environment=GUNICORN_PROC_NAME=comptasso
+Environment=GUNICORN_NUM_WORKERS=4
+Environment=GUNICORN_HOST=127.0.0.1
+Environment=GUNICORN_PORT=5050
+Environment=GUNICORN_TIMEOUT=30
+EnvironmentFile=-/home/outilsflavia/comptasso/environ
+ExecStart=/bin/bash -c 'cd /home/outilsflavia/comptasso && source env/bin/activate && python3 run.py'
+ExecReload=/bin/kill -s HUP $MAINPID
+TimeoutStartSec=10
+TimeoutStopSec=5
+PrivateTmp=true
+StandardOutput=append:/var/log/comptasso.log
+StandardError=inherit
+
+[Install]
+WantedBy=multi-user.target
+

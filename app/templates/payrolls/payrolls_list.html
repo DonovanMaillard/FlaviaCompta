@@ -1,0 +1,77 @@
+{% extends 'main.html' %}
+
+
+{% block content %}
+
+<div class="container">
+
+  <h1>Détail des masses salariales</h1>
+
+  <div class="btn btn-group">
+    <a class="btn btn-secondary" href="{{ url_for('payrolls') }}"> <i class="fa fa-filter"></i> Tous </a>
+    {% for member in members %}
+      <a class="btn btn-secondary" href="{{ url_for('payrolls', id_member=member.id_member) }}"> <i class="fa fa-filter"></i> {{member.member_name}} </a>
+    {% endfor %}
+  </div>
+
+
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Salarié</th>
+        <th>Période</th>
+        <th>Rémunération brute</th>
+        <th>Charges patronales</th>
+        <th>Montant global</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+         
+    <tbody>
+      {% for payroll in payrolls %}
+      <tr>
+        <td>{{payroll.member_name}}</td>
+        <td>du {{payroll.date_min_period}}<br>au {{payroll.date_max_period}}</td>
+        <td>{{payroll.gross_remuneration}}€ {% if payroll.gross_premium != 0.00 %}<br>prime : {{payroll.gross_premium}}€{% endif %}</td>
+        <td>{{payroll.employer_charge_amount}}</td>
+        <td>{{payroll.total_amount}} €</td>
+        <td>
+          <div>
+            <div class="btn btn-group">
+              <a class="btn btn-info" href="{{ url_for('detailPayroll', id_payroll=payroll.id_payroll)}}"> <i class="fa fa-eye"></i> </a>
+              <a class="btn btn-warning" href="{{ url_for('updatePayroll', id_payroll=payroll.id_payroll)}}"> <i class="fa fa-edit"></i> </a>
+              <a class="btn btn-success" href="#" title="Affecter une part à un projet"> <i class="fa fa-diagram-project"></i> </a>
+              <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{payroll.id_payroll}}"> <i class="fa fa-trash"></i> </a>
+            </div>
+          </div>
+      </tr>
+
+
+      <!-- Delete Modal -->
+        <div class="modal fade" id="deleteModal{{payroll.id_payroll}}" tabindex="0" aria-labelledby="ModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Supprimer la masse salariale</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                  <p> Souhaitez-vous vraiment supprimer la masse salariale du <strong>{{payroll.date_min_period}}</strong> au <strong>{{payroll.date_min_period}}</strong> pour <strong>{{ payroll.member_name }}</strong> ?</p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <a class="btn btn-danger" href="{{ url_for('deletePayroll', id_payroll=payroll.id_payroll) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      <!-- end modal -->
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <a class="btn btn-success" href="{{ url_for('addPayroll') }}"><i class="fa fa-plus"></i> Ajouter une masse salariale</a>
+</div>
+</div>
+
+{% endblock %}

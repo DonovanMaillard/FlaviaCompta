@@ -1,0 +1,150 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="container">
+    {% if Operation == None %}
+      <h1> Saisir une nouvelle {{type_operation}} </h1>
+    {% elif Convert %}
+      <h1> Convertir l'engagement en dépense</h1>
+    {% else %}
+      <h1> Modifier l'opération </h1>
+    {% endif %}
+
+
+      <form method = "post" enctype="multipart/form-data" novalidate>
+        <div class="row">
+          <div class="form-group col-md-4">
+            <label for = "id_account"><strong>Compte bancaire associé *</strong></label><br>
+            {{ form.id_account(class="form-control") }}
+            {% for error in form.id_account.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+
+          <div class="form-group col-md-4">
+            <label for = "operation_date">Date de facturation (optionnelle)</label><br>
+            {{ form.operation_date(class="form-control") }}
+            {% for error in form.operation_date.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+
+          <div class="form-group col-md-4">
+          <label for = "effective_date"><strong>Date d'effet *</strong></label><br>
+            {{ form.effective_date(class="form-control") }}
+            {% for error in form.effective_date.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+        </div>
+
+        <br><br>
+
+        <div>
+          <div class="row">
+            <div class="form-group col-md-8">
+              <label for = "name"><strong>Libellé *</strong></label>
+              {{ form.name(class="form-control") }}
+              {% for error in form.name.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+            </div>
+
+            <div class="form-group col-md-4">
+              <label for = "amount"><strong>Montant (€) *</strong></label>
+              {{ form.amount(class="form-control") }}
+              <small class="text-muted">Le séparateur de décimale doit être un point</small>
+              {% for error in form.amount.errors %} 
+                   <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+              {% endfor %}
+            </div>
+            <div class="form-group col-md-12">
+              <label for = "detail_operation">Détail de l'opération</label><br>
+              {{ form.detail_operation(class="form-control") }}
+              {% for error in form.detail_operation.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <br><br>
+
+        <div class="row">
+          <div class="form-group col-md-4">
+            <label for = "id_budget">Ligne budgétaire associée</label><br>
+            {{ form.id_budget(class="form-control") }}
+            <small class="text-muted">Obligatoire si action liée à une subvention</small>
+            {% for error in form.id_budget.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div> 
+
+          <div class="form-group col-md-4">
+            <label for = "id_payment_method">Moyen de paiement</label><br>
+            {{ form.id_payment_method(class="form-control") }}
+            {% for error in form.id_payment_method.errors %} 
+                   <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+
+          <div class="form-group col-md-4">
+            <label for = "id_category">
+              <strong>Catégorie fiscale *</strong>
+              <a class="a-icon" href="{{ url_for('categories') }}" target="_blank" title="Explications sur les catégories fiscales (nouvel onglet)">
+              <i class="fa fa-info-circle"></i>
+              </a>
+            </label><br>
+            {{ form.id_category(class="form-control") }}
+            {% for error in form.id_category.errors %} 
+                   <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+            <br><br>
+          </div>
+
+          <!-- Line2 -->
+          <div class="form-group col-md-6">
+            {% if type_operation=='Dépense' %}
+              <label for = "uploaded_file"><strong>Justificatif *</strong></label><br>
+              {{ form.uploaded_file(class="form-control") }}
+              <small class="text-muted">Obligatoire pour les dépenses</small>
+            {% else %}
+              <label for = "uploaded_file">Justificatif</label><br>
+              {{ form.uploaded_file(class="form-control") }}
+            {% endif %}
+
+            {% if Convert %}
+              <small>Lorsque vous convertissez un engagement en dépense effective, <strong> vous devez remplacer le justificatif précédemment fourni (devis validé) par la facture.</strong></small>
+            {% endif %}
+
+            {% for error in form.uploaded_file.errors %} 
+              <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+          <!-- Keep previous uploaded file checkbox -->
+          {% if Operation.uploaded_file and not Convert %}
+            <div class="form-group">
+              <label for = "keep_file">Conserver le <a href="{{ url_for('static', filename=Operation.uploaded_file) }}"> justificatif fourni précédemment</a></label>
+              {{ form.keep_file(class="form-check-input", checked=true) }}
+            </div>
+          {% endif %}
+        </div>
+
+        <br><br>
+
+        <input class="btn btn-primary float-right" type = "submit" value = "Enregistrer" />
+      </form>
+
+</div>
+
+<!-- Make budget field searchable with select2-->
+<script>
+$(document).ready(function() {
+    $('#id_budget').select2({  // init Select2 on form's name field
+        placeholder: "Sélectionnez une ligne budgétaire",
+        allowClear: true
+    });
+});
+</script>
+
+{% endblock %}

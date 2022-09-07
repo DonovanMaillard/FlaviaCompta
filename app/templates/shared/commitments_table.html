@@ -1,0 +1,140 @@
+<table class="table table-striped">
+         <thead>
+            <tr>
+               <th>Date d'engagement</th>
+               <th>Catégorie</th>
+               <th>Libellé</th>
+               <th>Compte bancaire</th>
+               <th>Ligne budgétaire</th>
+               <th>Montant</th>
+               <th>Action</th>
+            </tr>
+         </thead>
+         
+         <tbody>
+            {% for Commitment in Commitments %}
+               <tr>
+                  <td> {{ Commitment.operation_date }} </td>
+                  <td> {{ Commitment.type_operation }} <i class="fa fa-question-circle" title="{{ Commitment.category }}"></i></td>
+                  <td> {{ Commitment.name_operation }} 
+                      {% if Commitment.uploaded_file != '' and Commitment.uploaded_file is not none %}
+                        <a href=" {{ url_for('static', filename=Commitment.uploaded_file) }}"> <i class="fa fa-file" title="Voir le justificatif" ></i> </a>
+                      {% endif %} 
+                  </td>
+                  <td> {{ Commitment.account_name }} </td>
+                  <td> {{ Commitment.budget_name or '' }} </td>
+                  <td> 
+                  	{% if not Commitment.amount or Commitment.amount > 0 %}
+                      <p> {{ Commitment.amount }}€ </p>
+                    {% else %}
+                      <p style="color:red;">{{ Commitment.amount }}€ </p>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div>
+                        <div class="btn btn-group">
+                          <a class="btn btn-info" title="Consulter le détail" data-bs-toggle="modal" data-bs-target="#detailModal{{Commitment.id_operation}}"> <i class="fa fa-eye"></i> </a>
+                          <a class="btn btn-warning" title="Modifier l'engagement" href="{{ url_for('updateCommitment', id_operation=Commitment.id_operation) }}"> <i class="fa fa-edit"></i> </a>
+                          <a class="btn btn-success" title="Convertir en dépense" href="{{ url_for('convertCommitment', id_operation=Commitment.id_operation) }}"> <i class="fa fa-exchange"></i> </a>
+                          <a class="btn btn-danger" title="Supprimer" data-bs-toggle="modal" data-bs-target="#deleteModal{{Commitment.id_operation}}"> <i class="fa fa-trash"></i> </a>
+                        </div>
+                    </div>
+                  </td>
+               </tr>
+
+            
+            <!-- Detail Modal -->
+                <div class="modal fade" id="detailModal{{Commitment.id_operation}}" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
+                  <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="detailModalLabel">Détail de l'engagement</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        <div class="row">
+                          <div class="col-md-8"> 
+                            <strong>Date d'engagement : </strong>{{ Commitment.operation_date or '' }}
+                            <br>
+                            <strong>Date d'effet : </strong>{{ Commitment.effective_date or '' }}
+                            <br>
+                            <strong>Type d'opération : </strong>{{ Commitment.type_operation }}
+                            <br>
+                            <br>
+                          </div>
+                          <div class="col-md-4">
+                            <strong>Montant : </strong> 
+                                <h3 style="color:red;">{{ Commitment.amount }}€ </h3>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-12">
+                            <strong>Libellé : </strong>{{ Commitment.name_operation }} 
+                               <br>
+                            <strong>Détail : </strong>{{ Commitment.detail_operation or ''}}
+                          </div>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-4"> 
+                            <strong>Compte : </strong>{{ Commitment.account_name }}
+                            <br>
+                            <br>
+                          </div>
+                          <div class="col-md-4">
+                            <strong>Moyen de paiement : </strong> {{ Commitment.payment_method or ''}}
+                            <br>
+                            <br>
+                          </div>
+                          <div class="col-md-4">
+                            <strong>Budget : </strong>{{ Commitment.budget_name or '' }}
+                            <br>
+                            <br>
+                          </div>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-6">
+                            <strong>Catégorie fiscale : </strong>{{ Commitment.category }}
+                          </div>
+                          <div class="col-md-6">
+                            <strong>Justificatif : </strong>
+                              {% if not Commitment.uploaded_file %}
+                                Aucun
+                              {% else %}
+                                <a href=" {{ url_for('static', filename=Commitment.uploaded_file) }}" target="_blank">voir ou télécharger le document</a>
+                              {% endif %}
+                            <br>
+                            <br>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <!-- end modal -->
+
+
+            <!-- Delete Modal -->
+                <div class="modal fade" id="deleteModal{{Commitment.id_operation}}" tabindex="0" aria-labelledby="ModalLabel" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="deleteModalLabel">Supprimer l'engagement</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                          <p> Souhaitez-vous vraiment supprimer l'engagement : <strong>"{{ Commitment.name_operation }}"</strong> ?</p>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <a class="btn btn-danger" href="{{ url_for('deleteCommitment', id_operation=Commitment.id_operation) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            <!-- end modal -->
+            {% endfor %}
+         </tbody>
+      </table>

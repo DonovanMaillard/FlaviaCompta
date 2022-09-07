@@ -1,0 +1,140 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="container">
+	<h1> {{ Budget.name }} </h1>
+  
+  <!-- Budget -->
+
+    <div class="card">
+      <div class="card-header">
+        <h4>Informations sur le budget
+          {% if Budget.active %} <span class="badge badge-right alert-success">Actif</span>
+          {% else %} <span class="badge badge-right alert-dark">Inactif</span>
+          {% endif %}
+        </h4>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4"> 
+            <strong>Financeur : </strong>{{ Budget.funder }}
+            <br>
+            <strong>Type de budget : </strong>{{ Budget.type_budget}}
+            <br>
+            <br>
+            <strong>Description : </strong>{{ Budget.description }} 
+          </div>
+          <div class="col-md-4">
+            <strong>Montant du budget : </strong>{{ Budget.budget_amount }}€
+            <br>
+            <p>Masse salariale éligible : {{ Budget.payroll_limit}}€
+              <br> 
+              Charges indirectes max. : {{ Budget.indirect_charges_amount }}€ ({{ Budget.indirect_charges }}%)
+            </p>
+            <strong>Dernière action : </strong>{{ Budget.last_action_date }}
+            <br>
+          </div>
+          <div class="col-md-4">
+            <p><strong>Date d'échéance du rendu : </strong>{{ Budget.date_return }}
+              <br>
+              Dépenses éligibles jusqu'au : {{ Budget.date_max_expenditure}}
+            </p>
+            <strong>Dernière opération : </strong> {{ Budget.last_operation }}
+            <br>
+          </div>
+        </div>
+        <br><br>
+        <div class="row">
+          <div class="col-md-6">
+            <strong>Montant perçu : </strong>{{ Budget.received_amount }}€ / {{ Budget.budget_amount }}€<br>
+              <div class="progress" style="height: 30px;">
+                <div class="progress-bar" role="progressbar" style="width: {{ Budget.percent_received}}%;" aria-valuenow="{{ Budget.received_amount }}" aria-valuemin="0" aria-valuemax="{{ Budget.budget_amount }}">
+                </div>
+              </div>
+          </div>
+          <div class="col-md-6">
+            <strong>État des dépenses :</strong> {{ Budget.spent_amount }}€ dépensés - {{ Budget.committed_amount }}€ engagés
+              <div class="progress" style="height: 30px;">
+                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ Budget.percent_spent}}%;" aria-valuenow="{{ Budget.spent_amount }}" aria-valuemin="0" aria-valuemax="{{ Budget.budget_amount }}">
+                </div>
+                <div class="progress-bar bg-info" role="progressbar" style="width: {{ Budget.percent_committed}}%;" aria-valuenow="{{ Budget.committed_amount }}" aria-valuemin="0" aria-valuemax="{{ Budget.budget_amount }}">
+                </div>
+              </div>
+          </div>
+        </div>
+        <br><br>
+        <div class="btn-group">
+          <a class="btn btn-warning" href="{{ url_for('updateBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-edit"></i> Modifier</a>
+          <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"> <i class="fa fa-trash"></i> Supprimer </a>        
+        </div>
+    </div>
+  </div>
+   
+
+    <!-- Delete Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="deleteModalLabel">Supprimer la ligne budgétaire</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              <p> Souhaitez-vous vraiment supprimer <strong>"{{ Budget.name }}"</strong> des budgets ?</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <a class="btn btn-danger" href="{{ url_for('deleteBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- end modal -->
+
+
+<nav>
+  <div class="nav nav-tabs" id="nav-tab" role="tablist">
+    <button class="nav-link active" id="nav-operations-tab" data-bs-toggle="tab" data-bs-target="#nav-operations" type="button" role="tab" aria-controls="nav-operations" aria-selected="false">Opérations rattachées</button>
+    <button class="nav-link" id="nav-commitments-tab" data-bs-toggle="tab" data-bs-target="#nav-commitments" type="button" role="tab" aria-controls="nav-commitments" aria-selected="false">Engagements en cours</button>
+    <button class="nav-link" id="nav-action-tab" data-bs-toggle="tab" data-bs-target="#nav-actions" type="button"role="tab" aria-controls="nav-actions" aria-selected="true">Historique des actions</button>
+    <!-- <button class="nav-link" id="nav-results-tab" data-bs-toggle="tab" data-bs-target="#nav-result" type="button" role="tab" aria-controls="nav-result" aria-selected="false">Bilan</button> -->
+  </div>
+</nav>
+
+<!-- Contenu des tabs -->
+<div class="tab-content" id="nav-tabContent">
+  <!-- Tab Opérations -->
+  <div class="tab-pane fade show active" id="nav-operations" role="tabpanel" aria-labelledby="nav-profile-tab">
+    <!-- Table des opérations -->
+    {% include 'shared/operations_table.html' %}
+  </div>
+  <!-- Fin de la tab opérations-->
+
+  <!-- Tab engagements-->
+  <div class="tab-pane fade" id="nav-commitments" role="tabpanel" aria-labelledby="nav-operations-tab">
+    {% include 'shared/commitments_table.html' %}
+  </div>
+  <!-- Fin de la tab engagements-->
+
+  <!-- Tab actions -->
+  <div class="tab-pane fade" id="nav-actions" role="tabpanel" aria-labelledby="nav-home-tab">  
+    {% include 'budgets/details_actions.html' %}
+  </div>
+  <!-- Fin de la tab engagements-->
+
+  <!-- Tab résultats 
+  <div class="tab-pane fade" id="nav-result" role="tabpanel" aria-labelledby="nav-result-tab">
+    <a class="btn btn-success" href="http://localhost:5050/results/pdf">Télécharger le bilan au format PDF</a>
+  </div>
+   Tab actions -->
+
+</div>
+   
+</div>
+
+<script>
+$(document).ready(function(){
+  $('[data-toggle="tooltip"]').tooltip();
+});
+</script>
+{% endblock %}

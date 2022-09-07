@@ -1,0 +1,46 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="container">
+	<h1> Membres de l'association</h1>
+
+	<table class="table table-striped">
+         <thead>
+            <tr>
+               <th>Statut</th>
+               <th>Nom du membre</th>
+               <th>Salarié</th>
+               <th>Rôle</th>
+               <th>Modifier</th>
+            </tr>
+         </thead>
+         
+         <tbody>
+            {% for Member in Members %}
+               <tr>
+               	  <td>
+               	    {% if Member.active %} <span class="badge table-badge alert-success">Actif</span>
+                    {% else %} <span class="badge table-badge alert-dark">Inactif</span>
+                    {% endif %}
+                  <td>{{ Member.member_name }}</td>
+                  <td>
+                  	{% if Member.is_employed %} <i class="fa fa-circle-check" style="color:green;"></i>
+                    {% else %} <i class="fa fa-circle-xmark" style="color:red;"></i>
+                    {% endif %}
+                  </td>
+                  <td>{{ Member.member_role }}</td>
+                  <td>
+                  	<div>
+                        <div class="btn btn-group">
+                           <a class="btn btn-warning" href="{{ url_for('updateMember', id_member=Member.id_member) }}"> <i class="fa fa-edit"></i> </a>
+                        </div>
+                  	</div>
+               </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+<a class="btn btn-success" href="{{ url_for('addMember') }}"><i class="fa fa-plus"></i> Enregistrer un nouveau membre</a>
+
+</div>
+{% endblock %}

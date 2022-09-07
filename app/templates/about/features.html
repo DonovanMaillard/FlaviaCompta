@@ -1,0 +1,235 @@
+{% extends 'main.html' %}
+
+
+{% block content %}
+
+<div class="container">
+  <h1> Fonctionnalités et état des développements </h1>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Statut</th>
+          <th scope="col">Fonctionnalité</th>
+          <th scope="col">Détail</th>
+          <th scope="col">Version estimée</th>
+        </tr>
+      </thead>
+
+      <!-- États possibles 
+        <span class="badge alert-success">Fonctionnel</span>
+        <span class="badge alert-warning">En cours de développement</span>
+        <span class="badge alert-danger">A développer</span>
+        <span class="badge alert-secondary">En réflexion</span>
+      -->
+
+      <tbody>
+        <tr>
+          <th scope="row"><span class="badge alert-success">Fonctionnel</span></th>
+          <td><strong>Comptes</strong></td>
+          <td>Créer, modifier, supprimer et consulter le détail des comptes bancaires</td>
+          <td>0.1.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-success">Fonctionnel</span></th>
+          <td><strong>Financeurs</strong></td>
+          <td>Créer, modifier, supprimer et consulter le détail des financeurs</td>
+          <td>0.1.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-success">Fonctionnel</span></th>
+          <td><strong>Membres</strong></td>
+          <td>Créer, modifier, désactiver des membres</td>
+          <td>0.1.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-success">Fonctionnel</span></th>
+          <td><strong>Budgets</strong></td>
+          <td>
+            <ul>
+              <li>Créer, modifier, supprimer et consulter le détail d'une ligne budgétaire</li>
+              <li>Ajouter, modifier ou supprimer des actions sur les lignes budgétaires (demandes, acomptes, solde...)</li>
+            </ul></td>
+          <td>0.1.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-success">Fonctionnel</span></th>
+          <td><strong>Dépenses</strong></td>
+          <td>
+            <ul>
+              <li>Créer, modifier, supprimer et consulter le détail d'une dépense.</li>
+              <li>Les dépenses sont obligatoirement associées à un compte bancaire de l'association ou à une note de frais d'un personnel, dont le solde est caculé en conséquence.</li>
+              <li>Les dépenses sont possiblement associées à une ligne budgétaire, dont les budgets restants sont mis à jour en conséquence.</li>
+              <li>Une alerte est faite à l'utilisateur si une dépense est enregistrée sans justificatif associé</li>
+            </ul>
+          </td>
+          <td>0.1.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-success">Fonctionnel</span></th>
+          <td><strong>Recettes</strong></td>
+          <td>
+            <ul>
+              <li>Créer, modifier, supprimer et consulter le détail d'une recette.</li>
+              <li>Les recettes sont obligatoirement associées à un compte bancaire de l'association ou à une note de frais d'un personnel, dont le solde est mis à jour en conséquence.</li>
+              <li>Les recettes sont possiblement associées à une ligne budgétaire, dont les budgets restants et sommes restantes à percevoir sont mis à jour en conséquence.</li>
+            </ul>
+          </td>
+          <td>0.1.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-success">Fonctionnel</span></th>
+          <td><strong>Engagements</strong></td>
+          <td>Créer, modifier, supprimer et consulter le détail des engagements financiers (mise en réserve de sommes à la signature d'un devis).</td>
+          <td>0.1.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-success">Fonctionnel</span></th>
+          <td><strong>Conversion des engagements en dépenses</strong></td>
+          <td>Les engagements peuvent être convertis automatiquement en dépenses lors de la facturation, les informations de la dépense sont alors pré-remplies à partir des montants et libellés engagés intialement.</td>
+          <td>0.1.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-success">Fonctionnel</span></th>
+          <td><strong>Catégories fiscales</strong></td>
+          <td>Toutes les dépenses, recettes, engagements etc doivent être associées à une catégorie fiscale pour permettre la production automatique des rapports financiers.</td>
+          <td>0.1.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-success">Fonctionnel</span></th>
+          <td><strong>Téléchargement des opérations</strong></td>
+          <td>Possibilité de télécharger au format tableur l'historique de toutes les opérations enregistrées dans le logiciel (sauvegarde manuelle)</td>
+          <td>0.1.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-success">Fonctionnel</span></th>
+          <td><strong>Transferts entre comptes</strong></td>
+          <td>Possibilité d'enregistrer des transferts d'argent entre deux comptes de l'association. Cette action enregistre automatiquement la dépense sur le compte débité, ET la recette équivalent sur le compte créditée.</td>
+          <td>0.1.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-success">Fonctionnel</span></th>
+          <td><strong>Remboursements de frais</strong></td>
+          <td>Possibilité d'enregistrer un remboursement de frais depuis un compte de l'association vers une note de frais d'un personnel. Cette action enregistre automatiquement la dépense sur le compte débité, ET la recette équivalente sur la note de frais créditée.</td>
+          <td>0.1.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-success">Fonctionnel</span></th>
+          <td><strong>Gestion des justificatifs</strong></td>
+          <td>Importer, supprimer et consulter des justificatifs pour les opérations (dépenses, recettes), engagements (devis validés), comptes en banque (RIB) et actions effectuées sur les budgets (demandes, courriers etc). Lors de la modification, les justificatifs versés précédemment sont conservés par défaut.</td>
+          <td>0.1.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-success">Fonctionnel</span></th>
+          <td><strong>Améliorer les formulaires de saisie</strong></td>
+          <td>
+            <ul>
+              <li>Mieux identifier les champs obligatoires</li>
+              <li>Clarifier ou mettre en place les messages d'erreur sur les champs de formulaires invalides</li>
+              <li>mettre en place une alerte pour les saisies de dépenses sans justificatifs</li>
+            </ul>
+           </td>
+          <td>0.1.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-success">Fonctionnel</span></th>
+          <td><strong>Intégrité des données</strong></td>
+          <td>Améliorer l'intégrité et la complétude des données : 
+            <ul>
+              <li>Vérification des clés primaires dans la BDD</li>
+              <li>Mise en place des contraintes de clé étrangères et des cascades</li>
+              <li>Contrôle des actions de suppression possibles et cascades</li>
+              <li>Mise en place des meta_create_date et meta_update_date sur les tables concernées</li>
+            </ul>
+          </td>
+          <td>0.1.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-success">Fonctionnel</span></th>
+          <td><strong>Lier les actions appariées</strong></td>
+          <td>Permettre de modifier et supprimer les actions "doubles" enregistrant à la fois un débit et un crédit, en liant et en appliquant les modifications/suppressions aux deux opérations produites.</td>
+          <td>0.2.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-success">Fonctionnel</span></th>
+          <td><strong>Mise en place d'une authentification</strong></td>
+          <td>Mettre en place une authentification pour restreindre l'accès à l'application et à certaines actions.</td>
+          <td>0.2.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-warning">En cours de développement</span></th>
+          <td><strong>Terminer la documentation utilisateurs</strong></td>
+          <td>Terminer les tutoriels.
+          </td>
+          <td>0.3.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-warning">En cours de développement</span></th>
+          <td><strong>Valorisation du temps de travail</strong></td>
+          <td>Permettre de valoriser le bénévolat et d'attribuer un temps de travail salarié à différents projets pour en assurer le financement au réel dans le cadre de subventions.</td>
+          <td>0.3.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-warning">En cours de développement</span></th>
+          <td><strong>Notes de frais des personnels</strong></td>
+          <td>Possibilité pour les personnels de disposer d'une note de frais, pour y enregistrer des dépenses, des avances de frais, et des remboursements. Mise en place d'alertes pour identifier les remboursements à effectuer et/ou les trop perçus versés.</td>
+          <td>0.3.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-warning">En cours de développement</span></th>
+          <td><strong>Améliorer la gestion des membres</strong></td>
+          <td>Générer automatiquement une note de frais à la création des membres et permettre la gestion des adhésions.</td>
+          <td>0.3.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-danger">A développer</span></th>
+          <td><strong>Améliorer la gestion des remboursements</strong></td>
+          <td>
+              <ul>
+                  <li>Mettre en correspondance un remboursement et les différentes avances de frais remboursées</li>
+                  <li>Taguer et "bloquer" les avances de frais ayant fait l'objet d'un remboursement</li>
+              </ul>
+           </td>
+          <td>0.3.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-danger">A développer</span></th>
+          <td><strong>Gestion des frais kilométriques</strong></td>
+          <td>
+              <ul>
+                  <li>BDD : Permettre la prise en charge d'un champs additionnel jsonb sur la table t_operations pour stocker le détail des frais kilomètriques dans une opération de dépense</li>
+                  <li>Créer une dépense à partir d'un formulaire de frais kilométriques à mettre en place</li>
+              </ul>
+           </td>
+          <td>0.3.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-warning">En cours de développement</span></th>
+          <td><strong>Rapports financiers automatiques</strong></td>
+          <td>Produire des rapports financiers automatiquement par subvention/exercices annuels, avec export PDF.</td>
+          <td>1.0.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-danger">A développer</span></th>
+          <td><strong>Exporter une archive des justificatifs liés à un budget</strong></td>
+          <td>Permettre d'exporter en format ZIP les justificatifs rattachés à une ligne budgétaire.</td>
+          <td>1.0.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-danger">A développer</span></th>
+          <td><strong>Permettre le pointage des opérations</strong></td>
+          <td>Permettre de "pointer" les opérations, uniquement pour le trésorier.</td>
+          <td>1.0.0</td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="badge alert-danger">A développer</span></th>
+          <td><strong>Filtrer/Rechercher les opérations</strong></td>
+          <td>Permettre de filtrer ou rechercher des opérations par année, compte, etc</td>
+          <td>1.1.0</td>
+        </tr>
+      </tbody>
+    </table>
+</div>
+
+
+{% endblock %}

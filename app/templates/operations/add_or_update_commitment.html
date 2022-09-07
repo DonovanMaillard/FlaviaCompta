@@ -1,0 +1,121 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="container">
+    
+      {% if Operation == None %}
+      <h1> Saisir un nouvel engagement </h1>
+    {% else %}
+      <h1> Modifier l'engagement {{ Operation.name }} </h1>
+    {% endif %}
+      
+      <div class="block-info">
+        <p> Un engagement est une mise en réserve d'une somme 'engagée' pour une dépense à venir, suite à la signature d'un devis et en attendant le paiement effectif lors de facturation. L'engagement permet de mémoriser et comptabiliser les dépenses certaines à venir, et facilite l'anticipation au niveau de la trésorerie notamment. </p>
+        <p><strong>Attention, les engagements ne s'appliquent qu'aux dépenses, ne pas saisir de recettes.</strong></p>
+    </div>
+
+    <br><br>
+
+
+      <form method = "post" enctype="multipart/form-data" novalidate>
+        <div class="row">
+            <div class="form-group col-md-8">
+              <label for = "name"><strong>Libellé *</strong></label>
+              {{ form.name(class="form-control") }}
+              {% for error in form.name.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+              {% endfor %}
+            </div>
+
+            <div class="form-group col-md-4">
+              <label for = "amount"><strong>Montant (€)</strong></label>
+              {{ form.amount(class="form-control") }}
+              <small class="text-muted">Le séparateur de décimale doit être un point</small>
+              {% for error in form.amount.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+              {% endfor %}
+            </div>
+
+            <div class="form-group col-md-12">
+              <label for = "detail_operation">Détail de l'opération</label><br>
+              {{ form.detail_operation(class="form-control") }}
+              {% for error in form.detail_operation.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+              {% endfor %}
+            </div>
+        </div>
+
+        <br><br>
+
+        <div class="row">
+          <div class="form-group col-md-4">
+            <label for = "operation_date"><strong>Date d'engagement *</strong></label><br>
+            {{ form.operation_date(class="form-control") }}
+            {% for error in form.operation_date.errors %} 
+              <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+
+          <div class="form-group col-md-4">
+            <label for = "id_account"><strong>Compte bancaire associé *</strong></label><br>
+            {{ form.id_account(class="form-control") }}
+            {% for error in form.id_account.errors %} 
+              <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+
+          <div class="form-group col-md-4">
+            <label for = "id_budget">Ligne budgétaire associée</label><br>
+            {{ form.id_budget(class="form-control") }}
+            {% for error in form.id_budget.errors %} 
+              <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+
+          <div class="form-group col-md-4">
+            <label for = "id_category"><strong>Catégorie fiscale *</strong></label><br>
+            {{ form.id_category(class="form-control") }}
+            {% for error in form.id_category.errors %} 
+              <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+        </div>
+
+        <br><br>
+
+        <div class="row">
+          <div class="form-group col-md-6">
+            <label for = "uploaded_file">Justificatif (devis validé)</label><br>
+              {{ form.uploaded_file(class="form-control") }}
+              {% for error in form.uploaded_file.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+              {% endfor %}
+          </div>
+
+          {% if Operation.uploaded_file %}
+          <div class="form-group">
+            <label for = "keep_file">Conserver le <a href="{{ url_for('static', filename=Operation.uploaded_file) }}"> justificatif fourni précédemment</a></label>
+            {{ form.keep_file(class="form-check-input", checked=true) }}
+          </div>
+          {% endif %}
+        </div>
+        
+        <br><br>
+        <input class="btn btn-primary float-right" type = "submit" value = "Enregistrer" />
+      </form>
+      
+
+</div>
+
+<!-- Make budget field searchable with select2-->
+<script>
+$(document).ready(function() {
+    $('#id_budget').select2({  // init Select2 on form's name field
+        placeholder: "Sélectionnez une ligne budgétaire",
+        allowClear: true
+    });
+});
+</script>
+
+
+{% endblock %}

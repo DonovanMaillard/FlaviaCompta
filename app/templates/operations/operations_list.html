@@ -1,0 +1,24 @@
+{% extends 'main.html' %}
+
+
+{% block content %}
+
+<div class="container">
+	<h1> Liste des opérations enregistrées </h1>
+
+  <a class="btn btn-outline-danger btn-right" href="{{ url_for('addMovement', type_operation='Dépense') }}"> <i class="fa fa-plus"></i> Ajouter une dépense </a>
+  <a class="btn btn-outline-success btn-right" href="{{ url_for('addMovement', type_operation='Recette') }}"> <i class="fa fa-plus"></i> Ajouter une recette </a>
+
+  <!-- Table des opérations -->
+  {% include 'shared/operations_table.html' %}
+
+<a class="btn btn-success btn-right" href="{{ url_for('operationsCSV') }}"> <i class="fa fa-download"></i> Exporter toutes les opérations en csv </a>
+
+</div>
+
+<script>
+$(document).ready(function(){
+  $('[data-toggle="tooltip"]').tooltip();
+});
+</script>
+{% endblock %}

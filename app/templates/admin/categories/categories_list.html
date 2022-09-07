@@ -1,0 +1,158 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="container">
+<h1> Catégories fiscales</h1>
+
+<p> Les catégories fiscales sont des catégories normées permettant aux structures de classer leurs différentes opérations comptables. Celles-ci doivent être renseignées obligatoirement lors de la saisie des opérations, permettant ainsi d'automatiser la production des résultats financiers. 
+	<br><br>
+Chaque type de dépense (recette, charge, bénévolat...) dispose de ses catégories fiscales dédiées. Pour une meilleure lisibilité, seules certaines catégories existantes ont été conservées pour la saisie : s'il est nécessaire de rendre de nouvelles catégories disponibles à la saisie, veuillez contacter l'administrateur.
+</p>
+
+<div class="accordion accordion-flush" id="accordionFlushExample">
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="flush-headingOne">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
+		Dépenses et engagements
+      </button>
+    </h2>
+    <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+      <div class="accordion-body">
+      	<p>Les catégories principales (en gris foncé) sont utilisées pour les regroupements dans les bilans financiers des exercices de l'association (années civiles) et des subventions. Les sous-catégories (en blanc) permettent de classer plus précisément les dépenses. 
+      		<br> Seules les catégories comportant l'icone <i class="fa fa-edit"></i> sont disponibles à la saisie.
+        <br/>
+        </p>
+
+			<table class="table">
+	        	<thead>
+	            	<tr>
+	            		<th></th>
+	               		<th>Code</th>
+	               		<th>Libellé</th>
+	               		<th>Exemples</th>
+	            	</tr>
+	         	</thead>
+	         	<tbody>
+	           		{% for Depense in Depenses %}
+	               		<tr>
+	               			<td class="{% if Depense.level == 1 %} level1 {% else %} subcat {% endif %}"> {% if Depense.seizable %} <i class="fa fa-edit"></i> {% endif %} </td>
+	                  		<td class="{% if Depense.level == 1 %} level1 {% else %} subcat {% endif %}"> {{ Depense.cd_category }} </td>
+	                  		<td class="{% if Depense.level == 1 %} level1 {% else %} subcat {% endif %}"> {{ Depense.label }} </td>
+	                  		<td class="{% if Depense.level == 1 %} level1 {% else %} subcat {% endif %}"> {{ Depense.detail }} </td>
+	               		</tr>
+	            	{% endfor %}
+	        	</tbody>
+	    	</table>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="flush-headingTwo">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo" aria-expanded="false" aria-controls="flush-collapseTwo">
+        Recettes
+      </button>
+    </h2>
+    <div id="flush-collapseTwo" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo" data-bs-parent="#accordionFlushExample">
+      <div class="accordion-body">
+      		<p>Les catégories principales (en gris foncé) sont utilisées pour les regroupements dans les bilans financiers des exercices de l'association (années civiles) et des subventions. Les sous-catégories (en blanc) permettent de classer plus précisément les recettes. 
+      			<br>Seules les catégories comportant l'icone <i class="fa fa-edit"></i> sont disponibles à la saisie.
+        	</p>
+			<table class="table">
+	        	<thead>
+	            	<tr>
+	            		<th></th>
+	               		<th>Code</th>
+	               		<th>Libellé</th>
+	               		<th>Exemples</th>
+	            	</tr>
+	         	</thead>
+	         	<tbody>
+	           		{% for Recette in Recettes %}
+	               		<tr>
+	               			<td class="{% if Recette.level == 1 %} level1 {% else %} subcat {% endif %}"> {% if Recette.seizable %} <i class="fa fa-edit"></i> {% endif %} </td>
+	                  		<td class="{% if Recette.level == 1 %} level1 {% else %} subcat {% endif %}"> {{ Recette.cd_category }} </td>
+	                  		<td class="{% if Recette.level == 1 %} level1 {% else %} subcat {% endif %}"> {{ Recette.label }} </td>
+	                  		<td class="{% if Recette.level == 1 %} level1 {% else %} subcat {% endif %}"> {{ Recette.detail }} </td>
+	               		</tr>
+	            	{% endfor %}
+	        	</tbody>
+	    	</table>
+      </div>
+    </div>
+  </div>
+  
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="flush-headingThree">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseThree" aria-expanded="false" aria-controls="flush-collapseThree">
+        Valorisation du bénévolat
+      </button>
+    </h2>
+    <div id="flush-collapseThree" class="accordion-collapse collapse" aria-labelledby="flush-headingThree" data-bs-parent="#accordionFlushExample">
+      <div class="accordion-body">
+      		<p>Dans les bilans, le bénévolat est systématiquement compté dans les recettes (87 et 87x) et dans les dépenses (86 et 86x) pour rester à l'équilibre. Les sous-catégories sont donc appariées et doivent se compenser. 
+      		<br/>
+      		Lors de la saisie du bénévolat et des dons en nature, seule la valorisation est saisie (recette : catégories 87x). Les charges équivalentes sont générées automatiquement.
+        	</p>
+			<table class="table">
+	        	<thead>
+	            	<tr>
+	               		<th>Code</th>
+	               		<th>Libellé</th>
+	               		<th>Exemples</th>
+	            	</tr>
+	         	</thead>
+	         	<tbody>
+	           		{% for Benevolat in Benevolats %}
+	               		<tr>
+	                  		<td class="{% if Benevolat.level == 1 %} level1 {% else %} subcat {% endif %}"> {{ Benevolat.cd_category }} </td>
+	                  		<td class="{% if Benevolat.level == 1 %} level1 {% else %} subcat {% endif %}"> {{ Benevolat.label }} </td>
+	                  		<td class="{% if Benevolat.level == 1 %} level1 {% else %} subcat {% endif %}"> {{ Benevolat.detail }} </td>
+	               		</tr>
+	            	{% endfor %}
+	        	</tbody>
+	    	</table>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="flush-headingFour">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseFour" aria-expanded="false" aria-controls="flush-collapseFour">
+        Transferts internes entre comptes
+      </button>
+    </h2>
+    <div id="flush-collapseFour" class="accordion-collapse collapse" aria-labelledby="flush-headingFour" data-bs-parent="#accordionFlushExample">
+      <div class="accordion-body">
+      		<p>Ces transferts internes n'apparaissent pas dans les bilans et ne servent qu'à la gestion interne des comptes. Aucune catégorie fiscale n'existe officiellement, des catégories "sur-mesure" ont été créées pour une meilleure organisation.
+        	</p>
+			<table class="table">
+	        	<thead>
+	            	<tr>
+	            		<th></th>
+	               		<th>Code</th>
+	               		<th>Libellé</th>
+	               		<th>Exemples</th>
+	            	</tr>
+	         	</thead>
+	         	<tbody>
+	           		{% for Transfert in Transferts %}
+	               		<tr>
+	               			<td class="{% if Transfert.level == 1 %} level1 {% else %} subcat {% endif %}"> {% if Transfert.seizable %} <i class="fa fa-edit"></i> {% endif %} </td>
+	                  		<td class="{% if Transfert.level == 1 %} level1 {% else %} subcat {% endif %}"> {{ Transfert.cd_category }} </td>
+	                  		<td class="{% if Transfert.level == 1 %} level1 {% else %} subcat {% endif %}"> {{ Transfert.label }} </td>
+	                  		<td class="{% if Transfert.level == 1 %} level1 {% else %} subcat {% endif %}"> {{ Transfert.detail }} </td>
+	               		</tr>
+	            	{% endfor %}
+	        	</tbody>
+	    	</table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+</div>
+
+</div>
+{% endblock %}

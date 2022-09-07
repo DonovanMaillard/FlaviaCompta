@@ -1,0 +1,70 @@
+<div>
+	<p>
+		L'application permet de bancariser un ensemble de données liées à la comptabilité de l'association : comptes bancaires, financeurs, dépenses et recettes, subventions...
+	</p>
+	<p>
+		Afin d'enregistrer de nouvelles données, l'utilisateur peut accéder à un certain nombre de formulaires, tous construits de manière homogène. 
+	</p>
+</div>
+
+<div class="tutorial-image">
+	<figure class="figure">
+		<img src="{{ url_for('static', filename='img/tutorials/create_operation.png') }}"></img>
+  		<figcaption class="figure-caption">L'utilisateur peut accéder à la saisie de nouvelles dépenses et recettes depuis la page d'accueil de l'application, ou depuis la barre de navigation dans l'onglet "Opérations" par exemple.</figcaption>
+		</figure>
+</div>
+
+
+<div>
+	<p>
+		Dans chacun des formulaires, les informations obligatoires sont mentionnées en gras et suivies d'une étoile *. Les montants peuvent toujours être saisis en positif (pour les dépenses comme pour les recettes) : c'est le logiciel qui se charge de comptabiliser en négatif les dépenses. <strong> Le séparateur de décimal à utiliser pour les centimes est obligatoirement le point</strong>, les virgules ne sont pas acceptées.
+	</p>
+</div>
+
+<div class="tutorial-image row">
+	<div class="col-md-6">
+		<figure class="figure">
+  			<img src="{{ url_for('static', filename='img/tutorials/operations_form.png') }}"></img>
+  			<figcaption class="figure-caption">Les champs obligatoires sont nommés en gras et marqués d'une *.</figcaption>
+		</figure>
+	</div>
+
+	<div class="col-md-6">
+		<figure class="figure">
+  			<img src="{{ url_for('static', filename='img/tutorials/operations_form_errors.png') }}"></img>
+  			<figcaption class="figure-caption">Les éventuelles erreurs de saisies sont rapportées en rouge sous chaque champs invalides.</figcaption>
+		</figure>
+	</div>
+</div>
+
+<div>
+	<p>
+		Lorsque des erreurs de saisies sont commises ou lorsque la saisie est invalide (champs obligatoires manquants, formats de données invalides, chaine de caractères trop longue etc), le détail des informations à corriger est mentionné en rouge sur le formulaire suite à sa soumission par l'utilisateur.
+	</p>
+</div>
+
+<div class="tutorial-image">
+	<figure class="figure">
+		<img src="{{ url_for('static', filename='img/tutorials/operations_list.png') }}"></img>
+  		<figcaption class="figure-caption">Une fois la saisie d'une recette ou d'une dépense terminée, l'utilisateur est redirigé vers la liste des dernières opérations.</figcaption>
+	</figure>
+</div>
+
+<div>
+	<p>
+		Une fois la saisie terminée si le formulaire est valide, l'opération est enregistrée et l'utilisateur est redirigé vers la liste des données enregistrées.
+	</p>
+	<p>
+		Depuis cette liste de données (il peut s'agir de comptes, de lignes budgétaires, de dépenses, d'engagements etc.), il est également possible d'enregistrer de nouvelles données en cliquant sur le bouton dédié, permettant notamment d'enchainer les saisies.
+	</p>
+</div>
+
+<div class="alert alert-success" role="alert">
+  <h3>Bonnes pratiques</h3>
+  <ul>
+  	<li><strong>Catégories fiscales :</strong> Les catégories fiscales sont obligatoires et doivent être renseignées de manière rigoureuse pour toutes les opérations. Cette condition est essentielle pour que l'application puisse produire des bilans de manière fiable et automatisée.</li>
+  	<li><strong>Justificatifs :</strong> Les justificatifs sont obligatoires pour les dépenses, pensez à bien les renseigner ! Lors de la modification d'une opération, le justificatif fourni précédemment est conservé par défaut.</li>
+  	<li><strong>Champs optionnels :</strong> Les champs optionnels des différents formulaires ne sont pas inutiles pour autant ! Afin de faciliter les contrôles et le suivi de la comptabilité, il est préférable de renseigner le maximum de champs lors de la saisie des opérations.</li>
+  <ul>
+
+</div>

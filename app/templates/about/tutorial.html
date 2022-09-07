@@ -1,0 +1,58 @@
+{% extends 'main.html' %}
+
+
+{% block content %}
+
+<div class="container">
+  <h1> Guide d'utilisation et bonnes pratiques </h1>
+
+
+  <div class="d-flex align-items-start">
+    <div class="nav flex-column nav-pills me-3 sticky-top" id="v-pills-tab" role="tablist" aria-orientation="vertical" style="width:25%">
+      <button class="nav-link active" id="v-pills-general-tab" data-bs-toggle="pill" data-bs-target="#v-pills-general" type="button" role="tab" aria-controls="v-pills-general" aria-selected="true">
+        Généralités
+      </button>
+
+      <button class="nav-link" id="v-pills-Consultations-tab" data-bs-toggle="pill" data-bs-target="#v-pills-Consultations" type="button" role="tab" aria-controls="v-pills-Consultations" aria-selected="false">
+        Consulter les données
+      </button>
+
+      <button class="nav-link" id="v-pills-operations-tab" data-bs-toggle="pill" data-bs-target="#v-pills-operations" type="button" role="tab" aria-controls="v-pills-operations" aria-selected="false">
+        Saisir des données
+      </button>
+
+      <button class="nav-link" id="v-pills-commitments-tab" data-bs-toggle="pill" data-bs-target="#v-pills-commitments" type="button" role="tab" aria-controls="v-pills-commitments" aria-selected="false">
+        Les engagements
+      </button>
+
+      <button class="nav-link" id="v-pills-budgets-tab" data-bs-toggle="pill" data-bs-target="#v-pills-budgets" type="button" role="tab" aria-controls="v-pills-budgets" aria-selected="false">
+        La valorisation du temps de travail
+      </button>
+    </div>
+
+    <div class="tab-content" id="v-pills-tabContent" style="width:75%">
+      <div class="tab-pane fade show active" id="v-pills-general" role="tabpanel" aria-labelledby="v-pills-general-tab">
+        {% include 'about/tutorials/general_tutorial.html' %}
+      </div>
+
+      <div class="tab-pane fade" id="v-pills-Consultations" role="tabpanel" aria-labelledby="v-pills-Consultations-tab">
+        {% include 'about/tutorials/consultation_tutorial.html' %}
+      </div>
+
+      <div class="tab-pane fade" id="v-pills-operations" role="tabpanel" aria-labelledby="v-pills-operations-tab">
+        {% include 'about/tutorials/operations_tutorial.html' %}
+      </div>
+
+      <div class="tab-pane fade" id="v-pills-commitments" role="tabpanel" aria-labelledby="v-pills-commitments-tab">
+        {% include 'about/tutorials/commitments_tutorial.html' %}
+      </div>
+
+      <div class="tab-pane fade" id="v-pills-budgets" role="tabpanel" aria-labelledby="v-pills-budgets-tab">
+        {% include 'about/tutorials/budgets_tutorial.html' %}
+      </div>
+    </div>
+  </div>
+ 
+</div>
+
+{% endblock %}

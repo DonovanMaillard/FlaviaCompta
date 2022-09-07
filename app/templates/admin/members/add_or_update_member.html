@@ -1,0 +1,70 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="container">
+    {% if Member %}
+    <h1> Modifier "{{Member.member_name}}" </h1>
+    {% else %}
+    <h1> Ajouter un nouveau membre </h1>
+    {% endif %}
+
+      <form method = "post" novalidate>
+        <div class="row">
+
+          <div class="form-group col-md-8">
+            <label for = "member_name"><strong>Nom du membre *</strong></label><br>
+                {{ form.member_name(class="form-control") }}
+                {% for error in form.member_name.errors %} 
+                   <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+            <br>
+          </div>
+
+          <div class="form-group col-md-4">
+            <label for = "code">Rôle du membre dans l'association</label><br>
+                {{ form.member_role(class="form-control") }}
+                {% for error in form.member_role.errors %} 
+                   <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+            <br><br>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="form-group col-md-4">
+            <label for = "is_employed"><strong>Est salarié *</strong></label><br>
+                {{ form.is_employed(class="form-check-input", checked=is_employed) }}
+                {% for error in form.is_employed.errors %} 
+                   <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+            <br>
+          </div>
+
+          <div class="form-group col-md-8">
+            <label for = "active"><strong>Actif *</strong></label><br>
+                {{ form.active(class="form-check-input", checked=active) }}
+                {% for error in form.active.errors %} 
+                   <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+            <br><br>
+          </div>
+        </div>
+
+        <!-- todo auto generate personnal account
+        <div class="form-group">
+         <label for = "generate_personnal_account">Créer automatiquement une note de frais</label><br>
+            {{ form.generate_personnal_account(class="form-check-input") }}
+            {% for error in form.generate_personnal_account.errors %} 
+                   <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+         <br>
+        </div>
+      -->
+
+        <div  class="btn btn-group">
+            <a class="btn btn-danger" href="{{ url_for('members') }}"> Annuler </a>
+            <input class="btn btn-primary float-right" type = "submit" value = "Enregistrer" />
+        </div>
+      </form>
+</div>
+{% endblock %}
