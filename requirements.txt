@@ -1,7 +1,7 @@
 flask
 flask_sqlalchemy
 psycopg2-binary
-Datables
+datatables == 0.4.9
 flask_login
 pdfkit 
 wtforms == 3.0.1
