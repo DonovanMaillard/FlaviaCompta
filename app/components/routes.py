@@ -240,7 +240,7 @@ def deleteAccount(id_account):
 @app.route('/budgets')
 @login_required
 def budgets():
-    return render_template('budgets/budgets_list.html', Budgets = vBudgets.query.all())
+    return render_template('budgets/budgets_list.html', Budgets = vBudgets.query.all(), Activities=vSyntheseActivities.query.all())
 
 # Details budget & list actions
 @app.route('/budgets/detail/<id_budget>', methods=['GET', 'POST'])
@@ -264,12 +264,16 @@ def addBudget():
     # Type budget
     TypesBudget = dictBudgetTypes.query.all()
     form.id_type_budget.choices = [('', '-- Sélectionnez un type --')] + [(TypeBudget.id_type_budget, TypeBudget.label) for TypeBudget in TypesBudget]
+    # Activité
+    Activities = tActivities.query.filter_by(active=True).all()
+    form.id_activity.choices = [('', '-- Sélectionnez une activité --')] + [(Activity.id_activity, Activity.label) for Activity in Activities]
     if request.method == 'POST' and form.validate() :
         Budget = tBudgets(
             request.form['name'], 
             request.form['reference'], 
             getChoiceOrNone(request.form['id_funder']), 
             getChoiceOrNone(request.form['id_type_budget']), 
+            getChoiceOrNone(request.form['id_activity']),
             request.form['date_max_expenditure'], 
             request.form['date_return'], 
             getDecimal(request.form['budget_amount']), 
@@ -299,11 +303,16 @@ def updateBudget(id_budget):
     TypesBudget = dictBudgetTypes.query.all()
     form.id_type_budget.choices = [('', '-- Sélectionnez un type --')] + [(TypeBudget.id_type_budget, TypeBudget.label) for TypeBudget in TypesBudget]
     form.id_type_budget.default = Budget.id_type_budget
+    # Activité
+    Activities = tActivities.query.filter_by(active=True).all()
+    form.id_activity.choices = [('', '-- Sélectionnez une activité --')] + [(Activity.id_activity, Activity.label) for Activity in Activities]
+    form.id_activity.default = Budget.id_activity
     if request.method == 'POST' and form.validate():
         Budget.name = request.form['name'], 
         Budget.reference = request.form['reference'], 
         Budget.id_funder = getChoiceOrNone(request.form['id_funder']), 
-        Budget.id_type_budget = getChoiceOrNone(request.form['id_type_budget']), 
+        Budget.id_type_budget = getChoiceOrNone(request.form['id_type_budget']),
+        Budget.id_activity = getChoiceOrNone(request.form['id_activity']), 
         Budget.date_max_expenditure = request.form['date_max_expenditure'], 
         Budget.date_return = request.form['date_return'], 
         Budget.budget_amount = getDecimal(request.form['budget_amount']), 

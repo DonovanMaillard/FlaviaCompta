@@ -161,6 +161,13 @@ CREATE TABLE comptasso.login_history (
 	login_time timestamp without time zone NOT NULL DEFAULT now()
 );
 
+CREATE TABLE comptasso.t_activities (
+	id_activity serial primary key,
+	label varchar(255) NOT NULL,
+	description text,
+	active boolean
+);
+
 --
 -- CORRESPONDANCES
 CREATE TABLE comptasso.cor_action_budget (
@@ -347,41 +354,39 @@ CREATE OR REPLACE VIEW comptasso.v_accounts AS (
 ); 
 
 
-CREATE OR REPLACE VIEW comptasso.v_budgets AS (
- SELECT b.id_budget,
+CREATE OR REPLACE VIEW comptasso.v_budgets
+AS SELECT b.id_budget,
     b.name,
     b.reference,
-    f.id_funder AS id_funder,
+    f.id_funder,
     f.name AS funder,
     bt.label AS type_budget,
-    COALESCE (b.date_max_expenditure::text, '-') AS date_max_expenditure,
-    COALESCE (b.date_return::text, '-') AS date_return,
-    COALESCE (b.budget_amount, 0)::numeric(8,2) AS budget_amount,
-    COALESCE (b.payroll_limit, 0)::numeric(8,2) AS payroll_limit,
-    COALESCE (b.indirect_charges, 0)::numeric(8,2) AS indirect_charges,
-    COALESCE ((b.indirect_charges/100)*b.payroll_limit, 0)::numeric(8,2) AS indirect_charges_amount,
+    a.label AS activity,
+    COALESCE(b.date_max_expenditure::text, '-'::text) AS date_max_expenditure,
+    COALESCE(b.date_return::text, '-'::text) AS date_return,
+    COALESCE(b.budget_amount, 0::numeric)::numeric(8,2) AS budget_amount,
+    COALESCE(b.payroll_limit, 0::numeric)::numeric(8,2) AS payroll_limit,
+    COALESCE(b.indirect_charges, 0::numeric)::numeric(8,2) AS indirect_charges,
+    COALESCE(b.indirect_charges / 100::numeric * b.payroll_limit, 0::numeric)::numeric(8,2) AS indirect_charges_amount,
     b.comment,
     b.active,
-    comptasso.get_sum_movement(b.id_budget, 'Recette') AS received_amount,
-    ((comptasso.get_sum_movement(b.id_budget, 'Recette')/b.budget_amount)*100)::numeric(8,2) AS percent_received,
-    comptasso.get_sum_movement(b.id_budget, 'Dépense') AS spent_amount,
-    ((comptasso.get_sum_movement(b.id_budget, 'Dépense')/b.budget_amount)*100)::numeric(8,2) AS percent_spent,
-    comptasso.get_sum_movement(b.id_budget, 'Engagement') AS committed_amount, 
-    ((comptasso.get_sum_movement(b.id_budget, 'Engagement')/b.budget_amount)*100)::numeric(8,2) AS percent_committed,   
-    b.budget_amount - (comptasso.get_sum_movement(b.id_budget, 'Dépense') + comptasso.get_sum_movement(b.id_budget, 'Engagement')) AS available_amount,
-    COALESCE (max(op.effective_date)::TEXT,'-') AS last_operation,
-    COALESCE (max(cab.date_action)::TEXT, '-') AS last_action_date
+    comptasso.get_sum_movement(b.id_budget, 'Recette'::text) AS received_amount,
+    (comptasso.get_sum_movement(b.id_budget, 'Recette'::text) / b.budget_amount * 100::numeric)::numeric(8,2) AS percent_received,
+    comptasso.get_sum_movement(b.id_budget, 'Dépense'::text) AS spent_amount,
+    (comptasso.get_sum_movement(b.id_budget, 'Dépense'::text) / b.budget_amount * 100::numeric)::numeric(8,2) AS percent_spent,
+    comptasso.get_sum_movement(b.id_budget, 'Engagement'::text) AS committed_amount,
+    (comptasso.get_sum_movement(b.id_budget, 'Engagement'::text) / b.budget_amount * 100::numeric)::numeric(8,2) AS percent_committed,
+    b.budget_amount - (comptasso.get_sum_movement(b.id_budget, 'Dépense'::text) + comptasso.get_sum_movement(b.id_budget, 'Engagement'::text)) AS available_amount,
+    COALESCE(max(op.effective_date)::text, '-'::text) AS last_operation,
+    COALESCE(max(cab.date_action)::text, '-'::text) AS last_action_date
    FROM comptasso.t_budgets b
+   	 LEFT JOIN comptasso.t_activities a ON b.id_activity = a.id_activity
      LEFT JOIN comptasso.dict_budget_types bt ON b.id_type_budget = bt.id_type_budget
      LEFT JOIN comptasso.t_funders f ON f.id_funder = b.id_funder
      LEFT JOIN comptasso.t_operations op ON op.id_budget = b.id_budget
      LEFT JOIN comptasso.cor_action_budget cab ON cab.id_budget = b.id_budget
-  GROUP BY b.id_budget, b.name, b.reference, f.id_funder, f.name, bt.label, b.date_max_expenditure, 
-  b.date_return, b.budget_amount, b.payroll_limit, b.indirect_charges, b.comment, b.active, 
-  received_amount, percent_received, spent_amount, percent_spent, committed_amount, percent_committed, available_amount
-  )
-  ORDER BY active, name
-;
+  GROUP BY b.id_budget, b.name, b.reference, f.id_funder, f.name, bt.label, a.label, b.date_max_expenditure, b.date_return, b.budget_amount, b.payroll_limit, b.indirect_charges, b.comment, b.active, (comptasso.get_sum_movement(b.id_budget, 'Recette'::text)), ((comptasso.get_sum_movement(b.id_budget, 'Recette'::text) / b.budget_amount * 100::numeric)::numeric(8,2)), (comptasso.get_sum_movement(b.id_budget, 'Dépense'::text)), ((comptasso.get_sum_movement(b.id_budget, 'Dépense'::text) / b.budget_amount * 100::numeric)::numeric(8,2)), (comptasso.get_sum_movement(b.id_budget, 'Engagement'::text)), ((comptasso.get_sum_movement(b.id_budget, 'Engagement'::text) / b.budget_amount * 100::numeric)::numeric(8,2)), (b.budget_amount - (comptasso.get_sum_movement(b.id_budget, 'Dépense'::text) + comptasso.get_sum_movement(b.id_budget, 'Engagement'::text)))
+  ORDER BY b.active DESC, b.name;
 
 
 CREATE OR REPLACE VIEW comptasso.v_actions AS (
@@ -465,7 +470,28 @@ CREATE OR REPLACE VIEW comptasso.v_decode_payroll_budgets AS (
 	GROUP BY cpb.id_payroll_budget, b.id_budget, cpb.id_member, m.member_name, m.member_role, cpb.nb_days_allocated, cpb.fixed_cost
 );
 
-
+CREATE VIEW comptasso.v_synthese_activities AS (
+SELECT 
+	a.id_activity,
+	a.label,
+	a.description,
+	a.active,
+	sum(COALESCE(b.budget_amount, 0::numeric)::numeric(8,2) - comptasso.get_sum_movement(b.id_budget, 'Recette'::text)) AS to_receive, -- to receive amount
+	sum(COALESCE(b.budget_amount, 0::numeric)::numeric(8,2)) AS global_amount, -- total amounts
+	b1.count AS active_budgets,
+	b2.count AS inactive_budgets,
+FROM comptasso.t_activities a
+LEFT JOIN comptasso.t_budgets b ON b.id_activity=a.id_activity
+LEFT JOIN LATERAL ( SELECT count(*)
+            FROM comptasso.t_budgets
+            WHERE active
+            GROUP BY id_activity) b1 ON b1.id_activity=a.id_activity
+LEFT JOIN LATERAL ( SELECT count(*)
+            FROM comptasso.t_budgets
+            WHERE NOT active
+            GROUP BY id_activity) b2 ON b1.id_activity=a.id_activity
+GROUP BY a.id_activity, a.label, a.description, a.active
+);
 
 -----------------------------------
 --- CONTRAINTES ET FOREIGN KEYS ---
@@ -508,6 +534,10 @@ ALTER TABLE comptasso.t_operations
 ADD CONSTRAINT fk_t_operations_id_category FOREIGN KEY (id_category) 
 REFERENCES comptasso.dict_categories(id_category) ON UPDATE CASCADE;
 
+ALTER TABLE comptasso.t_budgets
+ADD CONSTRAINT fk_t_budgets_id_activity FOREIGN KEY (id_activity) 
+REFERENCES comptasso.t_activities(id_activity) ON UPDATE CASCADE;
+
 -- cor_action_budget
 ALTER TABLE comptasso.cor_action_budget
 ADD CONSTRAINT fk_cor_action_budget_id_action_type FOREIGN KEY (id_budget_action_types) 
@@ -543,3 +573,5 @@ ADD CONSTRAINT unique_t_users_login UNIQUE (login);
 ALTER TABLE comptasso.login_history
 ADD CONSTRAINT fk_login_history_id_user FOREIGN KEY (id_user) 
 REFERENCES comptasso.t_users(id_user) ON UPDATE CASCADE;
+
+

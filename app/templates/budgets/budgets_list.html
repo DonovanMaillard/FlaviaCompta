@@ -3,6 +3,29 @@
 
 {% block content %}
 <div class="container">
+
+  <div class="row" id="synthese-activities" style="margin-bottom:80px">
+  <h1> Synthèse par activité </h1>
+    {% for Activity in Activities %}
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <strong>{{Activity.label}}</strong>
+        </div>
+        <div class="card-body">
+           {{ Activity.active_budgets or '0' }} financements actifs
+          <br>
+          <small style="color:grey">{{ Activity.inactive_budgets or '0' }} financements inactifs</small>
+          <hr>
+          <strong>Montant à percevoir : {{ Activity.to_receive or '0' }} € </strong>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+
+  <div id="budgets-detail">
 	<h1> Liste des lignes budgétaires </h1>
 
   <a class="btn btn-success btn-right " href="{{ url_for('addBudget') }}"><i class="fa fa-plus"></i> Ajouter un nouveau budget</a>
@@ -68,7 +91,7 @@
             {% endfor %}
          </tbody>
       </table>
-
+  </div>
 </div>
 
 <script>
@@ -83,7 +106,8 @@
           "lengthMenu": "Afficher _MENU_ lignes",
           "search": "Recherche:",
           "zeroRecords": "Aucune donnée à afficher",
-          "info": "Affichage des lignes budgétaires _START_ à _END_ sur un total de _TOTAL_.",
+          "info": "Affichage des lignes budgétaires _START_ à _END_ sur _TOTAL_.",
+          "infoFiltered":"(filtré sur un total de _MAX_)"
         }
       }
     );

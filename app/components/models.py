@@ -98,6 +98,7 @@ class tBudgets(db.Model):
     reference = db.Column(db.String(255), nullable=True)
     id_funder = db.Column(db.Integer(), nullable=True)
     id_type_budget = db.Column(db.Integer(), nullable=True)
+    id_activity = db.Column(db.Integer(), nullable=True)
     date_max_expenditure = db.Column(db.Date(), nullable=True)
     date_return = db.Column(db.Date(), nullable=True)
     budget_amount = db.Column(db.Numeric(8,2), nullable=True)
@@ -109,11 +110,12 @@ class tBudgets(db.Model):
     meta_create_date = db.Column(db.DateTime(), nullable=True)
     meta_update_date = db.Column(db.DateTime(), nullable=True)
 
-    def __init__(self, name, reference, id_funder, id_type_budget, date_max_expenditure, date_return, budget_amount, payroll_limit, indirect_charges, comment, allowed_fixed_cost, active):
+    def __init__(self, name, reference, id_funder, id_type_budget, id_activity, date_max_expenditure, date_return, budget_amount, payroll_limit, indirect_charges, comment, allowed_fixed_cost, active):
         self.name = name
         self.reference = reference
         self.id_funder = id_funder
         self.id_type_budget = id_type_budget
+        self.id_activity = id_activity
         self.date_max_expenditure = date_max_expenditure
         self.date_return = date_return
         self.budget_amount = budget_amount
@@ -270,6 +272,21 @@ class loginHistory(db.Model):
         self.id_user = id_user
         self.login_time = login_time 
 
+
+class tActivities(db.Model):
+
+    __tablename__ = "t_activities"
+    __table_args__ = {"schema": "comptasso"}
+    id_activity = db.Column(db.Integer, primary_key=True)
+    label = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Unicode, nullable=True)
+    active = db.Column(db.Boolean)
+    
+    def __init__(self, label, description, active):
+        self.label = label
+        self.description = description 
+        self.active = active
+
         
 ###############################
 ## TABLES DE CORRESPONDANCES ##
@@ -319,6 +336,19 @@ class corPayrollBudget(db.Model):
 ## VUES ##
 ##########
 
+class vSyntheseActivities(db.Model):
+
+    __tablename__ = "v_synthese_activities"
+    __table_args__ = {"schema": "comptasso"}
+    id_activity =  db.Column(db.Integer, nullable=False, primary_key=True)
+    label =  db.Column(db.String(255), nullable=False)
+    description =  db.Column(db.Unicode, nullable=True)
+    active =  db.Column(db.Boolean)
+    to_receive = db.Column(db.Numeric(8,2), nullable=True)
+    global_amount = db.Column(db.Numeric(8,2), nullable=True)
+    active_budgets = db.Column(db.Integer)
+    inactive_budgets = db.Column(db.Integer)
+
 class vBudgets(db.Model):
 
     __tablename__ = "v_budgets"
@@ -329,6 +359,7 @@ class vBudgets(db.Model):
     id_funder = db.Column(db.Integer, nullable=True)
     funder = db.Column(db.String(50), nullable=True)
     type_budget = db.Column(db.String(50), nullable=True)
+    activity = db.Column(db.String(255), nullable=True)
     date_max_expenditure = db.Column(db.Date(), nullable=True)
     date_return = db.Column(db.Date(), nullable=True)
     budget_amount = db.Column(db.Numeric(8,2), nullable=True)

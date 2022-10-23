@@ -47,6 +47,14 @@
             {% endfor %}
           </div> 
           <div class="form-group col-md-4">
+            <label for = "id_activity"><strong>Activité</strong></label>
+            <br>
+            {{ form.id_activity(class="form-control") }}
+            {% for error in form.id_activity.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+          <div class="form-group col-md-4">
             <label for = "budget_amount"><strong>Montant global du budget *</strong></label><br>
             {{ form.budget_amount(class="form-control") }}
             <small class="text-muted">Le séparateur de décimale doit être un point</small>

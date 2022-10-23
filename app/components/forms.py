@@ -34,6 +34,7 @@ class formBudget(Form):
     reference = StringField('Description', [validators.Length(max=50, message='Ne doit pas dépasser 50 caractères')], render_kw={"placeholder": "Référence du budget"})
     id_funder = SelectField('Funder', [validators.NoneOf([''], message='Vous devez sélectionner une valeur')])
     id_type_budget = SelectField('TypeBudget', [validators.NoneOf([''], message='Vous devez sélectionner une valeur')])
+    id_activity = SelectField('Activity')
     date_max_expenditure = DateField('Date de fin des dépenses')
     date_return = DateField('Date bilan et rendus')
     budget_amount = DecimalField('Montant du budget', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')],places=2)
@@ -52,12 +53,20 @@ class formAccount(Form):
     uploaded_file = FileField('uploaded_file')
     keep_file = BooleanField('keep_file', default=True)
 
+# For actions on a budget
 class formAction(Form):
     id_budget_action_types = SelectField('TypeAction', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
     date_action = DateField('Date d\'action', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
     description_action = TextAreaField()
     uploaded_file = FileField('uploaded_file')
     keep_file = BooleanField('keep_file', default=True)
+
+
+# For activities 
+class formActivity(Form):
+    label =StringField('Description', [validators.Length(max=255, message='Ne doit pas dépasser 255 caractères')], render_kw={"placeholder": "Nom de l'activité"})
+    description = StringField('Description', render_kw={"placeholder": "Description de l'activité"})
+    active = BooleanField('Actif')
 
 class formMovement(Form):
     name = StringField('Libellé de l\'opération', [validators.Length(min=1, max=50, message='Doit faire entre 1 et 50 caractères'), validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], render_kw={"placeholder": "Libellé de l'opération"})
