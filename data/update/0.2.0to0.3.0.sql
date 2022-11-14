@@ -1,4 +1,4 @@
--- Add projet
+-- Add activities
 CREATE TABLE comptasso.t_activities (
 	id_activity serial primary key,
 	label varchar(255) NOT NULL,
@@ -34,9 +34,12 @@ FROM comptasso.t_activities a
 LEFT JOIN comptasso.t_budgets b ON b.id_activity=a.id_activity
 LEFT JOIN LATERAL ( SELECT count(*)
             FROM comptasso.t_budgets
-            WHERE v_1.uuid_attached_row = s.unique_id_sinp
-            GROUP BY id_activity
-            LIMIT 1) b1 ON true
+            WHERE active
+            GROUP BY id_activity) b1 ON b1.id_activity=a.id_activity
+LEFT JOIN LATERAL ( SELECT count(*)
+            FROM comptasso.t_budgets
+            WHERE NOT active
+            GROUP BY id_activity) b2 ON b1.id_activity=a.id_activity
 GROUP BY a.id_activity, a.label, a.description, a.active
 );
 
@@ -75,3 +78,68 @@ AS SELECT b.id_budget,
      LEFT JOIN comptasso.cor_action_budget cab ON cab.id_budget = b.id_budget
   GROUP BY b.id_budget, b.name, b.reference, f.id_funder, f.name, bt.label, a.label, b.date_max_expenditure, b.date_return, b.budget_amount, b.payroll_limit, b.indirect_charges, b.comment, b.active, (comptasso.get_sum_movement(b.id_budget, 'Recette'::text)), ((comptasso.get_sum_movement(b.id_budget, 'Recette'::text) / b.budget_amount * 100::numeric)::numeric(8,2)), (comptasso.get_sum_movement(b.id_budget, 'Dépense'::text)), ((comptasso.get_sum_movement(b.id_budget, 'Dépense'::text) / b.budget_amount * 100::numeric)::numeric(8,2)), (comptasso.get_sum_movement(b.id_budget, 'Engagement'::text)), ((comptasso.get_sum_movement(b.id_budget, 'Engagement'::text) / b.budget_amount * 100::numeric)::numeric(8,2)), (b.budget_amount - (comptasso.get_sum_movement(b.id_budget, 'Dépense'::text) + comptasso.get_sum_movement(b.id_budget, 'Engagement'::text)))
   ORDER BY b.active DESC, b.name;
+
+
+
+
+
+# Work valuation and volunteering
+DROP TABLE comptasso.cor_member_payroll;
+DROP TABLE comptasso.cor_payroll_budget;
+DROP TRIGGER tri_meta_dates_change_cor_member_payroll ON comptasso.cor_member_payroll ;
+DROP TRIGGER tri_meta_dates_change_cor_payroll_budget ON comptasso.cor_payroll_budget;
+DROP VIEW v_payroll_details;
+DROP VIEW v_payrolls;
+
+CREATE TABLE comptasso.t_work_value (
+  id_work_value serial PRIMARY KEY,
+  id_member integer NOT NULL,
+  date_min_period date NOT NULL,
+  date_max_period date NOT NULL,
+  gross_remuneration numeric(8,2) NOT NULL,
+  gross_premium numeric(8,2) NOT NULL,
+  employer_charge_amount numeric(8,2) NOT NULL,
+  volunteering_valuation numeric(8,2) NOT NULL,
+  real_worked_days numeric(8,2) NOT NULL,
+  meta_create_date timestamp WITHOUT time ZONE,
+  meta_update_date timestamp WITHOUT time ZONE
+);
+
+CREATE TABLE comptasso.cor_work_budget (
+  id_work_budget serial PRIMARY KEY,
+  id_work_value integer NOT NULL,
+  id_budget integer NOT NULL,
+  nb_days_allocated numeric(8,2) NOT NULL,
+  fixed_cost numeric(8,2),
+  meta_create_date timestamp WITHOUT time ZONE,
+  meta_update_date timestamp WITHOUT time ZONE
+);
+
+CREATE TRIGGER tri_meta_dates_change_t_work_value 
+BEFORE INSERT OR UPDATE ON comptasso.t_work_value
+FOR EACH ROW EXECUTE PROCEDURE fct_trg_meta_dates_change();
+
+CREATE TRIGGER tri_meta_dates_change_cor_work_budget 
+BEFORE INSERT OR UPDATE ON comptasso.cor_work_budget 
+FOR EACH ROW EXECUTE PROCEDURE fct_trg_meta_dates_change();
+
+
+-- t_work_value
+ALTER TABLE comptasso.t_work_value
+ADD CONSTRAINT fk_t_work_value_id_member FOREIGN KEY (id_member) 
+REFERENCES comptasso.t_members(id_member) ON UPDATE CASCADE;
+
+-- cor_work_budget
+ALTER TABLE comptasso.cor_work_budget
+ADD CONSTRAINT fk_cor_work_budget_id_budget FOREIGN KEY (id_budget) 
+REFERENCES comptasso.t_budgets(id_budget) ON UPDATE CASCADE;
+
+ALTER TABLE comptasso.cor_work_budget
+ADD CONSTRAINT fk_cor_work_budget_id_member FOREIGN KEY (id_member) 
+REFERENCES comptasso.t_members(id_member) ON UPDATE CASCADE;
+
+
+
+-- Mise en place des notes de frais
+-- Retirer la contrainte NOT NULL sur le champs account_number de t_accounts (pour les notes de frais)
+ALTER TABLE comptasso.t_accounts ALTER COLUMN account_number DROP NOT NULL;

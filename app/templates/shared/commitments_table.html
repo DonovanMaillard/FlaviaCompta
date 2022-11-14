@@ -14,7 +14,7 @@
          <tbody>
             {% for Commitment in Commitments %}
                <tr>
-                  <td> {{ Commitment.operation_date }} </td>
+                  <td> {{ Commitment.operation_date|format_datetime }} </td>
                   <td> {{ Commitment.type_operation }} <i class="fa fa-question-circle" title="{{ Commitment.category }}"></i></td>
                   <td> {{ Commitment.name_operation }} 
                       {% if Commitment.uploaded_file != '' and Commitment.uploaded_file is not none %}
@@ -54,9 +54,9 @@
                       <div class="modal-body">
                         <div class="row">
                           <div class="col-md-8"> 
-                            <strong>Date d'engagement : </strong>{{ Commitment.operation_date or '' }}
+                            <strong>Date d'engagement : </strong>{{ Commitment.operation_date|format_datetime or '' }}
                             <br>
-                            <strong>Date d'effet : </strong>{{ Commitment.effective_date or '' }}
+                            <strong>Date d'effet : </strong>{{ Commitment.effective_date|format_datetime or '' }}
                             <br>
                             <strong>Type d'opération : </strong>{{ Commitment.type_operation }}
                             <br>

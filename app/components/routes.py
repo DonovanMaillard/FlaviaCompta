@@ -7,11 +7,13 @@ from datetime import datetime, timedelta, date
 from flask_login import login_required, current_user, login_user, logout_user, LoginManager
 from calendar import monthrange
 
+
 #import logging
 import os
 import pdfkit
 import csv
 import uuid
+import babel
 
 from .init_db import db
 from .models import *
@@ -130,6 +132,10 @@ def getFileUrl(input):
         file_url=None
     return file_url
 
+@app.template_filter()
+def format_datetime(value):
+    format="dd-MM-y"
+    return babel.dates.format_datetime(value, format)
 
 ############
 ### MAIN ###
@@ -484,7 +490,7 @@ def addMovement(type_operation): #movement = Dépense + Recette
     id_type_operation = dictOperationTypes.query.filter_by(label = type_operation).one().id_type_operation
     form = formMovement(request.form)
     # Get accounts
-    Accounts = tAccounts.query.filter_by(is_personnal=False)
+    Accounts = tAccounts.query.all()
     # Form Choices
     # accounts
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
@@ -544,7 +550,7 @@ def updateMovement(id_operation): #movement = Dépense + Recette
     #Get choices and form
     form = formMovement(request.form, obj=Operation)
     # Get accounts
-    Accounts = tAccounts.query.filter_by(is_personnal=False)
+    Accounts = tAccounts.query.all()
     # Form Choices
     # accounts
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
@@ -1008,23 +1014,24 @@ def deleteFunder(id_funder):
     return redirect('/funders')
 
 
-###############
-### PAYROLL ###
-###############
+##################
+### WORK VALUE ###
+##################
 
-@app.route('/employees/payrolls')
+## Payrolls
+@app.route('/members/payrolls')
 @login_required
 def payrolls():
     members=tMembers.query.filter_by(is_employed=True)
     id_member = request.args.get('id_member', None, type=int)
     if id_member:
-        payrolls = vPayrolls.query.filter_by(id_member=id_member).all()
+        payrolls = vWorkValue.query.filter_by(id_member=id_member).filter(vWorkValue.volunteering_valuation == 0).all()
     else :
-        payrolls = vPayrolls.query.all()
+        payrolls = vWorkValue.query.filter(vWorkValue.volunteering_valuation == 0).all()
     return render_template('payrolls/payrolls_list.html', payrolls=payrolls, members=members)
 
 
-@app.route('/employees/payrolls/add', methods=['GET', 'POST'])
+@app.route('/members/payrolls/add', methods=['GET', 'POST'])
 @login_required
 def addPayroll():
     form = formPayroll(request.form)
@@ -1039,13 +1046,14 @@ def addPayroll():
     form.period_year.data = date.today().year
     # Get data from form
     if request.method == 'POST' and form.validate():
-        payroll = tPayrolls(
+        payroll = tWorkValue(
             request.form['id_member'],
             datetime(int(request.form['period_year']), int(request.form['period_month']), 1), #min date
             datetime(int(request.form['period_year']), int(request.form['period_month']), monthrange(int(request.form['period_year']), int(request.form['period_month']))[1]), #max date
             getDecimal(request.form['gross_remuneration']), 
             getDecimal(request.form['gross_premium']), 
-            getDecimal(request.form['employer_charge_amount']), 
+            getDecimal(request.form['employer_charge_amount']),
+            0, # as volunteering valuation 
             getDecimal(request.form['real_worked_days'])
             )
         db.session.add(payroll)
@@ -1054,10 +1062,10 @@ def addPayroll():
     return render_template('payrolls/add_or_update_member_payroll.html', form=form, payroll=None, Members=Members)
 
 # Update payroll
-@app.route('/employees/payrolls/edit/<id_payroll>', methods=['GET', 'POST'])
+@app.route('/members/payrolls/edit/<id_work_value>', methods=['GET', 'POST'])
 @login_required
-def updatePayroll(id_payroll):
-    payroll = tPayrolls.query.get(id_payroll)
+def updatePayroll(id_work_value):
+    payroll = tWorkValue.query.get(id_work_value)
     form = formPayroll(request.form, obj=payroll)
     # Get employees
     Members = tMembers.query.filter_by(is_employed=True)
@@ -1080,21 +1088,113 @@ def updatePayroll(id_payroll):
     return render_template('payrolls/add_or_update_member_payroll.html', form=form, payroll=None, Members=Members)
 
 # Details payroll
-@app.route('/employees/payrolls/detail/<id_payroll>', methods=['GET', 'POST'])
+@app.route('/members/payrolls/detail/<id_work_value>', methods=['GET', 'POST'])
 @login_required
-def detailPayroll(id_payroll):
-    current_payroll=vPayrolls.query.get(id_payroll)
+def detailPayroll(id_work_value):
+    current_payroll=vWorkValue.query.get(id_work_value)
     return render_template('payrolls/detail_payroll.html', payroll=current_payroll)
 
 # Delete payroll
-@app.route('/employees/payrolls/delete/<id_payroll>', methods=['GET', 'POST'])
+@app.route('/members/payrolls/delete/<id_work_value>', methods=['GET', 'POST'])
 @login_required
-def deletePayroll(id_payroll):
-    current_payroll=tPayrolls.query.get(id_payroll)
+def deletePayroll(id_work_value):
+    current_payroll=tWorkValue.query.get(id_work_value)
     db.session.delete(current_payroll)
     db.session.commit()
     return redirect(url_for('payrolls'))
 
+
+######
+# Volunteering
+@app.route('/members/volunteering')
+@login_required
+def volunteering():
+    members=tMembers.query.all()
+    id_member = request.args.get('id_member', None, type=int)
+    if id_member:
+        volunteerings = vWorkValue.query.filter_by(id_member=id_member).filter(vWorkValue.volunteering_valuation != 0).all()
+    else :
+        volunteerings = vWorkValue.query.filter(vWorkValue.volunteering_valuation != 0).all()
+    return render_template('volunteering/volunteering_list.html', volunteerings=volunteerings)
+
+
+@app.route('/members/volunteering/add', methods=['GET', 'POST'])
+@login_required
+def addVolunteering():
+    form = formVolunteering(request.form)
+    # Get members
+    Members = tMembers.query.all()
+    form.id_member.choices = [('', '-- Sélectionnez un membre --')]+[(Member.id_member, Member.member_name) for Member in Members]
+    # Get months
+    form.period_month.choices = [('1','Janvier'),('2', 'Février'),('3','Mars'),('4','Avril'),('5','Mai'),('6','Juin'),('7','Juillet'),('8','Août'),('9','Septembre'),('10','Octobre'),('11','Novembre'),('12','Décembre')]
+    # Pre-fill period data
+    # Pre-load data
+    form.period_month.data = str(date.today().month)
+    form.period_year.data = date.today().year
+    # Pre-load daily valuation
+    form.daily_valuation.data = app.config['DAILY_VALUATION']
+    # Get data from form
+    if request.method == 'POST' and form.validate():
+        volunteering = tWorkValue(
+            request.form['id_member'],
+            datetime(int(request.form['period_year']), int(request.form['period_month']), 1), #min date
+            datetime(int(request.form['period_year']), int(request.form['period_month']), monthrange(int(request.form['period_year']), int(request.form['period_month']))[1]), #max date
+            0, #as gross_remuneration, 
+            0, #as gross_premium, 
+            0, #as employer_charge_amount,
+            getDecimal(request.form['real_worked_days'])*getDecimal(request.form['daily_valuation']), # as volunteering valuation 
+            getDecimal(request.form['real_worked_days'])
+            )
+        db.session.add(volunteering)
+        db.session.commit()
+        return redirect(url_for('volunteering'))
+    return render_template('volunteering/add_or_update_member_volunteering.html', form=form, volunteering=None, Members=Members)
+
+# Update volunteering
+@app.route('/employees/volunteering/edit/<id_work_value>', methods=['GET', 'POST'])
+@login_required
+def updateVolunteering(id_work_value):
+    volunteering = tWorkValue.query.get(id_work_value)
+    form = formVolunteering(request.form, obj=volunteering)
+    # Get employees
+    Members = tMembers.query.all()
+    form.id_member.choices = [(Member.id_member, Member.member_name) for Member in Members]
+    form.id_member.default = volunteering.id_member
+    # Get months
+    form.period_month.choices = [('1','Janvier'),('2', 'Février'),('3','Mars'),('4','Avril'),('5','Mai'),('6','Juin'),('7','Juillet'),('8','Août'),('9','Septembre'),('10','Octobre'),('11','Novembre'),('12','Décembre')]
+    form.period_month.data = str(volunteering.date_min_period.month)
+    form.period_year.data = volunteering.date_min_period.year
+    form.daily_valuation.data = volunteering.volunteering_valuation/volunteering.real_worked_days
+    if request.method == 'POST' and form.validate():
+        volunteering.id_member = request.form['id_member'], 
+        volunteering.date_min_period = datetime(int(request.form['period_year']), int(request.form['period_month']), 1), 
+        volunteering.date_max_period = datetime(int(request.form['period_year']), int(request.form['period_month']), monthrange(int(request.form['period_year']), int(request.form['period_month']))[1]), 
+        volunteering.real_worked_days = getDecimal(request.form['real_worked_days'])
+        volunteering.volunteering_valuation = getDecimal(request.form['daily_valuation'])*getDecimal(request.form['real_worked_days'])
+        db.session.commit()
+        return redirect(url_for('volunteering'))
+    return render_template('volunteering/add_or_update_member_volunteering.html', form=form, Members=Members)
+
+# Details volunteering
+@app.route('/employees/volunteering/detail/<id_work_value>', methods=['GET', 'POST'])
+@login_required
+def detailVolunteering(id_work_value):
+    current_volunteering=vWorkValue.query.get(id_work_value)
+    return render_template('volunteering/detail_volunteering.html', volunteering=current_volunteering)
+
+# Delete volunteering
+@app.route('/employees/volunteering/delete/<id_work_value>', methods=['GET', 'POST'])
+@login_required
+def deleteVolunteering(id_work_value):
+    current_volunteering=tWorkValue.query.get(id_work_value)
+    db.session.delete(current_volunteering)
+    db.session.commit()
+    return redirect(url_for('volunteering'))
+
+
+
+
+# Work budget allocation
 @app.route('/employees/payroll_budget/add', methods=['GET', 'POST'])
 @login_required
 def addPayrollBudget():

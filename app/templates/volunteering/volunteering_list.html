@@ -1,0 +1,71 @@
+{% extends 'main.html' %}
+
+
+{% block content %}
+
+<div class="container">
+
+  <h1>Bénévolat valorisé</h1>
+
+  <div>
+    <a class="btn btn-success btn-right" href="{{ url_for('addVolunteering') }}"><i class="fa fa-plus"></i> Ajouter une valorisation de bénévolat</a>
+    <br><br>
+  </div>
+
+  <table class="table table-striped" id="volunteering">
+    <thead>
+      <tr>
+        <th>Période</th>
+        <th>Membre</th>
+        <th>Jours valorisés</th>
+        <th>Coût justifié</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+         
+    <tbody>
+      {% for volunteering in volunteerings %}
+      <tr>
+        <td>du {{volunteering.date_min_period|format_datetime}}<br>au {{volunteering.date_max_period|format_datetime}}</td>
+        <td>{{volunteering.member_name}}</td>
+        <td>{{volunteering.real_worked_days}}
+        <td>{{volunteering.volunteering_valuation}} €</td>
+        <td>
+          <div>
+            <div class="btn btn-group">
+              <a class="btn btn-info" href="{{ url_for('detailVolunteering', id_work_value=volunteering.id_work_value)}}"> <i class="fa fa-eye"></i> </a>
+              <a class="btn btn-warning" href="{{ url_for('updateVolunteering', id_work_value=volunteering.id_work_value)}}"> <i class="fa fa-edit"></i> </a>
+              <!--<a class="btn btn-success" href="#" title="Affecter une part à un projet"> <i class="fa fa-diagram-project"></i> </a>-->
+              <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{volunteering.id_work_value}}"> <i class="fa fa-trash"></i> </a>
+            </div>
+          </div>
+      </tr>
+
+
+      <!-- Delete Modal -->
+        <div class="modal fade" id="deleteModal{{volunteering.id_work_value}}" tabindex="0" aria-labelledby="ModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Supprimer la masse salariale</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                  <p> Souhaitez-vous vraiment supprimer la valorisation du bénévolat du <strong>{{volunteering.date_min_period|format_datetime}}</strong> au <strong>{{volunteering.date_max_period|format_datetime}}</strong> pour <strong>{{ volunteering.member_name }}</strong> ?</p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <a class="btn btn-danger" href="{{ url_for('deleteVolunteering', id_work_value=volunteering.id_work_value) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      <!-- end modal -->
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+</div>
+
+{% endblock %}

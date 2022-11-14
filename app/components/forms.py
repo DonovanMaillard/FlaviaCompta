@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from wtforms import Form, validators, BooleanField, StringField, TextAreaField, IntegerField, SelectField, DecimalField, PasswordField
 from flask_wtf.file import FileField, FileAllowed
-from wtforms.fields import DateField
+from wtforms.fields.html5 import DateField
 from werkzeug.utils import secure_filename
 
 from .init_db import db
@@ -109,6 +109,13 @@ class formPayroll(Form):
     gross_remuneration = DecimalField('gross_remuneration', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], default=0, places=2)
     gross_premium = DecimalField('gross_premium', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], default=0, places=2)
     employer_charge_amount = DecimalField('employer_charge_amount', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], default=0, places=2)
+    real_worked_days = DecimalField('real_worked_days', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], places=2)
+
+class formVolunteering(Form):
+    id_member = SelectField('id_member', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner'),validators.NoneOf([''], message='Vous devez sélectionner une valeur')])
+    period_month = SelectField('period_month', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
+    period_year = IntegerField('period_year', [validators.NumberRange(min=1900, max=2100), validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
+    daily_valuation = DecimalField('gross_remuneration', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], default=0, places=2)
     real_worked_days = DecimalField('real_worked_days', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], places=2)
 
 # Todo error messages

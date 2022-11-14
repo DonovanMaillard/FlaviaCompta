@@ -1,0 +1,67 @@
+{% extends 'main.html' %}
+
+{% block content %}
+
+<div class="container">
+    {% if Budget %}
+      <h1> Modifier une valorisation de bénévolat </h1>
+    {% else %}
+      <h1> Valoriser du bénévolat </h1>
+    {% endif %}
+    
+      <form method = "post" enctype="multipart/form-data" novalidate>
+        <div class="row">
+         <div class="form-group col-md-6">
+            <label for = "id_member"><strong>Membre *</strong></label>
+            {{ form.id_member(class="form-control") }}
+            {% for error in form.id_member.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+        </div>
+
+        <br>
+
+        <div class="row">
+          <div class="form-group col-md-6">
+            <label for = "period_month"><strong>Période d'activité *</strong></label><br>
+              {{ form.period_month(class="form-control") }}
+              {% for error in form.period_month.errors %} 
+                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+              {% endfor %}
+          </div>
+          <div class="form-group col-md-6">
+            <label for = "period_year"><strong>Année *</strong></label><br>
+            {{ form.period_year(class="form-control") }}
+            {% for error in form.period_year.errors %} 
+              <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div> 
+        </div>
+
+        <br><br>
+
+        <div class="row">
+          <div class="form-group col-md-6">
+            <label for = "real_worked_days"><strong>Nombre de jours bénévoles *</strong></label><br>
+            {{ form.real_worked_days(class="form-control") }}
+            {% for error in form.real_worked_days.errors %} 
+              <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div> 
+          <div class="form-group col-md-6">
+            <label for = "daily_valuation"><strong>Coût journalier appliqué en euros *</strong></label><br>
+            {{ form.daily_valuation(class="form-control") }}
+            <small class="text-muted">Montant valorisé par journée de bénévolat</small></br>
+            <small class="text-muted">Le séparateur de décimale doit être un point.</small>
+            {% for error in form.daily_valuation.errors %} 
+              <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          </div>
+        </div>
+        <br><br>
+        <input class="btn btn-primary float-right" type = "submit" value = "Enregistrer" />
+      </form>
+</div>
+
+{% endblock %}

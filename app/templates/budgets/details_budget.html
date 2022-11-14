@@ -33,15 +33,15 @@
               <br> 
               Charges indirectes max. : {{ Budget.indirect_charges_amount }}€ ({{ Budget.indirect_charges }}%)
             </p>
-            <strong>Dernière action : </strong>{{ Budget.last_action_date }}
+            <strong>Dernière action : </strong>{{ Budget.last_action_date|format_datetime or '' }}
             <br>
           </div>
           <div class="col-md-4">
-            <p><strong>Date d'échéance du rendu : </strong>{{ Budget.date_return }}
+            <p><strong>Date d'échéance du rendu : </strong>{{ Budget.date_return|format_datetime or '' }}
               <br>
-              Dépenses éligibles jusqu'au : {{ Budget.date_max_expenditure}}
+              Dépenses éligibles jusqu'au : {{ Budget.date_max_expenditure|format_datetime or '' }}
             </p>
-            <strong>Dernière opération : </strong> {{ Budget.last_operation }}
+            <strong>Dernière opération : </strong> {{ Budget.last_operation|format_datetime or '' }}
             <br>
           </div>
         </div>

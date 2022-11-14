@@ -2,51 +2,45 @@
 
 {% block content %}
 <div class="container">
-	<h1> Masse salariale et répartition par projet </h1>
+	<h1> Valorisation du bénévolat et répartition par projet </h1>
 
 <!-- Budget -->
 
     <div class="card">
       <div class="card-header">
-        <h4>Informations sur la masse salariale
+        <h4>Informations sur la valorisation du bénévolat
         </h4>
       </div>
       <div class="card-body">
         <div class="row">
           <div class="col-md-4"> 
-            <strong>Salarié : </strong>{{payroll.member_name}}
+            <strong>Membre bénévole : </strong>{{volunteering.member_name}}
             <br>
             <br>
           </div>
           <div class="col-md-4"> 
-            <strong>Période : </strong> du {{payroll.date_min_period|format_datetime}} au {{payroll.date_max_period|format_datetime}}
+            <strong>Période : </strong> du {{volunteering.date_min_period|format_datetime}} au {{volunteering.date_max_period|format_datetime}}
             <br>
           </div>
           <div class="col-md-4"> 
-            <strong>Nombre de jours travaillés : </strong>{{ payroll.real_worked_days }}
+            <strong>Nombre de jours bénévoles valorisés : </strong>{{ volunteering.real_worked_days }}
             <br>
           </div>
           <div class="col-md-4"> 
-            <strong>Rémunération brute : </strong>{{payroll.gross_remuneration}} €
+            <strong>Coût journalier appliqué : </strong>{{volunteering.volunteering_valuation/volunteering.real_worked_days}} €
             <br>
-            <small class="text-muted">Catégorie fiscale 641 - Rémunération du personnel</small>
           </div>
-          <div class="col-md-4"> 
-            <strong>Primes brutes : </strong>{{payroll.gross_premium}} €
+          <div class="col-md-8"> 
+            <strong>Équivalent de bénévolat valorisé : </strong>{{volunteering.volunteering_valuation }} €
             <br>
-            <small class="text-muted">Catégorie fiscale 641 - Rémunération du personnel</small>
-          </div>
-          <div class="col-md-4"> 
-            <strong>Charges patronales : </strong>{{payroll.employer_charge_amount}} €
-            <br>
-            <small class="text-muted">Catégorie fiscale 645 - Charges de sécurité sociale et prévoyance</small> 
+            <small class="text-muted">Catégories fiscales 870 (valorisation du bénévolat) et 86 (emploi des contributions volontaires)</small> 
           </div>
         </div>
         <br><br>
 
         <div class="btn-group">
-          <a class="btn btn-warning" href="{{ url_for('updatePayroll', id_work_value=payroll.id_work_value) }}"> <i class="fa fa-edit"></i> Modifier</a>
-          <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"> <i class="fa fa-trash"></i> Supprimer </a>  
+          <a class="btn btn-warning" href="{{ url_for('updateVolunteering', id_work_value=volunteering.id_work_value) }}"> <i class="fa fa-edit"></i> Modifier</a>
+          <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"> <i class="fa fa-trash"></i> Supprimer </a>        
         </div>
 
         <!-- Delete Modal -->
@@ -58,11 +52,11 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
               <div class="modal-body">
-                  <p> Souhaitez-vous vraiment supprimer cette masse salariale de {{payroll.member_name}} pour la période du {{payroll.date_min_period|format_datetime}} au {{payroll.date_max_period|format_datetime}} ?</p>
+                  <p> Souhaitez-vous vraiment supprimer cette valorisation du bénévolat de {{volunteering.member_name}} pour la période du {{volunteering.date_min_period|format_datetime}} au {{volunteering.date_max_period|format_datetime}} ?</p>
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                <a class="btn btn-danger" href="{{ url_for('deletePayroll', id_work_value=payroll.id_work_value) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
+                <a class="btn btn-danger" href="{{ url_for('deleteVolunteering', id_work_value=volunteering.id_work_value) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
               </div>
             </div>
           </div>
@@ -85,7 +79,7 @@
                   <tr>
                     <th>Budget</th>
                     <th>Temps alloué</th>
-                    <th>Coût valorisé (au prorata)</th>
+                    <th>Décompte au prorata</th>
                     <th>Cout forfaitaire</th>
                     <th>Actions</th>
                   </tr>
@@ -103,7 +97,7 @@
               <a class="btn btn-success" href="#"> <i class="fa fa-plus"></i> Attribuer du temps à un projet </a>        
 
             </div>-->
-            <p>Patience... Cette fonctionnalité arrive à la prochaine mise à jour !</p>
+            <p> Patience... Cette fonctionnalité arrive à la prochaine mise à jour ! </p>
         </div>
       </div>
     </div>

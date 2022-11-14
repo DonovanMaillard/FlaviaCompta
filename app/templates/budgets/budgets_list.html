@@ -4,32 +4,33 @@
 {% block content %}
 <div class="container">
 
-  <div class="row" id="synthese-activities" style="margin-bottom:80px">
-  <h1> Synthèse par activité </h1>
-    {% for Activity in Activities %}
-    <div class="col-md-4">
-      <div class="card">
-        <div class="card-header">
-          <strong>{{Activity.label}}</strong>
-        </div>
-        <div class="card-body">
-           {{ Activity.active_budgets or '0' }} financements actifs
-          <br>
-          <small style="color:grey">{{ Activity.inactive_budgets or '0' }} financements inactifs</small>
-          <hr>
-          <strong>Montant à percevoir : {{ Activity.to_receive or '0' }} € </strong>
-        </div>
+<h1> Synthèse par activité </h1>
+      <div class="row">
+        {% for Activity in Activities %}
+          <div class="col-md-4">
+            <div class="card">
+              <div class="card-header">
+                <strong>{{Activity.label}}</strong>
+              </div>
+              <div class="card-body">
+                {{ Activity.active_budgets or '0' }} ligne(s) budgétaire(s) active(s)
+                <br>
+                <small style="color:grey">{{ Activity.inactive_budgets or '0' }} inactive(s)</small>
+                <hr>
+                <strong>Montant à percevoir : {{ Activity.to_receive or '0' }} € </strong>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
       </div>
-    </div>
-    {% endfor %}
-  </div>
-
+  
+  <hr>
 
   <div id="budgets-detail">
 	<h1> Liste des lignes budgétaires </h1>
 
   <a class="btn btn-success btn-right " href="{{ url_for('addBudget') }}"><i class="fa fa-plus"></i> Ajouter un nouveau budget</a>
-
+  <br><br>
 
       <table class="table table-striped" id="budgets">
          <thead>
@@ -54,7 +55,7 @@
                     {% endif %}
                   </td>
                   <td>{{ Budget.name }}</td>
-                  <td>{{ Budget.date_max_expenditure }}</td>
+                  <td>{{ Budget.date_max_expenditure|format_datetime or '' }}</td>
                   <td>{{ Budget.budget_amount }}€ </td>
                   <td>{{ Budget.spent_amount }}€ </td>
                   <td>{{ Budget.committed_amount }}€</td>
@@ -93,25 +94,5 @@
       </table>
   </div>
 </div>
-
-<script>
- $(document).ready(function () {
-    $('#budgets').DataTable(
-      {
-        "language": {
-          "paginate": {
-            "previous": "Précédent",
-            "next": "Suivant"
-          },
-          "lengthMenu": "Afficher _MENU_ lignes",
-          "search": "Recherche:",
-          "zeroRecords": "Aucune donnée à afficher",
-          "info": "Affichage des lignes budgétaires _START_ à _END_ sur _TOTAL_.",
-          "infoFiltered":"(filtré sur un total de _MAX_)"
-        }
-      }
-    );
-});
-</script>
 
 {% endblock %}

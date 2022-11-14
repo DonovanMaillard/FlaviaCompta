@@ -13,7 +13,7 @@
     <tbody>
       {% for Action in Actions %}
       <tr>
-        <td>{{Action.date_action}}</td>
+        <td>{{Action.date_action|format_datetime}}</td>
         <td>{{Action.type_action}}</td>
         <td>{{Action.description_action}}</td>
         <td>{% if Action.uploaded_file %}<a href="{{ url_for('static', filename=Action.uploaded_file) }}">voir ou télécharger le document</a> {% endif %}</td>
@@ -35,7 +35,7 @@
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-              <p> Souhaitez-vous vraiment supprimer <strong>"{{ Action.type_action }}" du {{Action.date_action}}</strong> des actions ?</p>
+              <p> Souhaitez-vous vraiment supprimer <strong>"{{ Action.type_action }}" du {{Action.date_action|format_datetime}}</strong> des actions ?</p>
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>

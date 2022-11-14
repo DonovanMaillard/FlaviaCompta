@@ -13,7 +13,7 @@
     <div class="row">
       <div style="margin-bottom:50px;">
         {% if Type == 'personnal' %}
-          <a class="btn btn-success btn-right " href="{{url_for('addAccount', type='personnal')}}"><i class="fa fa-plus"> </i> Ajouter un compte d'avance de frais personnels</a>
+          <a class="btn btn-success btn-right " href="{{url_for('addAccount', type='personnal')}}"><i class="fa fa-plus"> </i> Ajouter une note de frais</a>
         {% else %}
           <a class="btn btn-success btn-right " href="{{url_for('addAccount')}}"><i class="fa fa-plus"></i> Ajouter un nouveau compte</a>
         {% endif %}
@@ -38,9 +38,14 @@
           <div class="col-md-3">
             <p class="card-text"> <strong>Dernière opération :</strong> {{ Account.last_operation or '-' }}</p>
           </div>
+          {% if Type == 'personnal' %}
+          <div class="col-md-3">
+          </div>
+          {% else %}
           <div class="col-md-3">
             <p class="card-text"> <strong>Sommes engagées :</strong> {{ Account.account_commitments or '-' }}€</p>
           </div>
+          {% endif %}
           <div class="col-md-3">
             <p class="card-text"> <strong> {% if Account.is_personnal %} Crédit :{% else %} Solde :{% endif %}</strong> 
                     {% if not Account.account_balance or Account.account_balance > 0 %}

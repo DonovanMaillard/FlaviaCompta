@@ -51,7 +51,7 @@ VALUES
 ('625','Déplacements et missions (transport, repas, voyages...)','Frais kilométriques, paniers repas, frais de restauration, billets de transports en commun etc',2,62,(SELECT id_type_operation FROM comptasso.dict_operation_types WHERE label='Dépense'),true),
 ('626','Frais postaux, bancaires & télécommunication','Frais postaux, frais de banque, frais téléphoniques et internet...',2,62,(SELECT id_type_operation FROM comptasso.dict_operation_types WHERE label='Dépense'),true),
 ('63','Impôts, taxes et versements assimilés','Tous impôts et taxes',1,63,(SELECT id_type_operation FROM comptasso.dict_operation_types WHERE label='Dépense'),true),
-('64','Charges de personnel','Coûts directement associés à l''embauche et le rémunération des salariés',1,64,(SELECT id_type_operation FROM comptasso.dict_operation_types WHERE label='Dépense'),false),
+('64','Charges de personnel (salaires, primes, prélèvements urssaf...)','Coûts directement associés à l''embauche et le rémunération des salariés',1,64,(SELECT id_type_operation FROM comptasso.dict_operation_types WHERE label='Dépense'),true),
 ('641','Rémunérations du personnel (salaires, primes, avantages...)','Salaires, primes, avantages',2,64,(SELECT id_type_operation FROM comptasso.dict_operation_types WHERE label='Dépense'),false),
 ('645','Charges de sécurité sociale et prévoyance','Cotisations sociales, frais de mutuelle etc',2,64,(SELECT id_type_operation FROM comptasso.dict_operation_types WHERE label='Dépense'),false),
 ('648','Autres charges de personnels (gratifications, indemnités de stage...)','Gratifications et indemnités de stages, services civiques etc',2,64,(SELECT id_type_operation FROM comptasso.dict_operation_types WHERE label='Dépense'),true),
@@ -72,8 +72,7 @@ VALUES
 ('875','Dons en nature','Ensemble des dons en nature : matériels et consommables',2,87,(SELECT id_type_operation FROM comptasso.dict_operation_types WHERE label='Valorisation du bénévolat'),true),
 -- Transactions internes et catégories créées pour l'outil
 ('900','Transaction interne','Régules entre comptes : cotisations sociales, avances, trésorerie, transactions entre les comptes et activités',1,900,(SELECT id_type_operation FROM comptasso.dict_operation_types WHERE label='Transaction interne'),true),
-('910','Remboursement des avances de frais personnels','Remboursement des frais avancés par les personnels salariés ou bénévoles : frais kilométriques, matériels, abonnements...',1,910,(SELECT id_type_operation FROM comptasso.dict_operation_types WHERE label='Remboursement de frais'),true),
-('920','Masses salariales (rémunérations et charges)','Mouvements de comptes liés aux masses salariales, pouvant mélanger ou couvrir seulement en partie les catégories fiscales dédiées 641 et 645',1,920,(SELECT id_type_operation FROM comptasso.dict_operation_types WHERE label='Dépense'),true);
+('910','Remboursement des avances de frais personnels','Remboursement des frais avancés par les personnels salariés ou bénévoles : frais kilométriques, matériels, abonnements...',1,910,(SELECT id_type_operation FROM comptasso.dict_operation_types WHERE label='Remboursement de frais'),true);
 
 INSERT INTO comptasso.t_users (name, firstname, login, password, is_active)
 VALUES('Test','Administrateur','admin','pbkdf2:sha256:260000$6I0pzswR3g8TQIrL$b0bf9bbec495852f284f13e82e83e9a729ab518d9af864cbc7634264f2465921',TRUE);

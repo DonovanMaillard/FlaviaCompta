@@ -15,8 +15,8 @@
   <table class="table table-striped" id="payrolls">
     <thead>
       <tr>
-        <th>Salarié</th>
         <th>Période</th>
+        <th>Salarié</th>
         <th>Rémunération brute</th>
         <th>Charges patronales</th>
         <th>Montant global</th>
@@ -27,25 +27,25 @@
     <tbody>
       {% for payroll in payrolls %}
       <tr>
+        <td>du {{payroll.date_min_period|format_datetime}}<br>au {{payroll.date_max_period|format_datetime}}</td>
         <td>{{payroll.member_name}}</td>
-        <td>du {{payroll.date_min_period}}<br>au {{payroll.date_max_period}}</td>
         <td>{{payroll.gross_remuneration}}€ {% if payroll.gross_premium != 0.00 %}<br>prime : {{payroll.gross_premium}}€{% endif %}</td>
         <td>{{payroll.employer_charge_amount}}</td>
         <td>{{payroll.total_amount}} €</td>
         <td>
           <div>
             <div class="btn btn-group">
-              <a class="btn btn-info" href="{{ url_for('detailPayroll', id_payroll=payroll.id_payroll)}}"> <i class="fa fa-eye"></i> </a>
-              <a class="btn btn-warning" href="{{ url_for('updatePayroll', id_payroll=payroll.id_payroll)}}"> <i class="fa fa-edit"></i> </a>
-              <a class="btn btn-success" href="#" title="Affecter une part à un projet"> <i class="fa fa-diagram-project"></i> </a>
-              <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{payroll.id_payroll}}"> <i class="fa fa-trash"></i> </a>
+              <a class="btn btn-info" href="{{ url_for('detailPayroll', id_work_value=payroll.id_work_value)}}"> <i class="fa fa-eye"></i> </a>
+              <a class="btn btn-warning" href="{{ url_for('updatePayroll', id_work_value=payroll.id_work_value)}}"> <i class="fa fa-edit"></i> </a>
+              <!-- <a class="btn btn-success" href="#" title="Affecter une part à un projet"> <i class="fa fa-diagram-project"></i> </a> -->
+              <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{payroll.id_work_value}}"> <i class="fa fa-trash"></i> </a>
             </div>
           </div>
       </tr>
 
 
       <!-- Delete Modal -->
-        <div class="modal fade" id="deleteModal{{payroll.id_payroll}}" tabindex="0" aria-labelledby="ModalLabel" aria-hidden="true">
+        <div class="modal fade" id="deleteModal{{payroll.id_work_value}}" tabindex="0" aria-labelledby="ModalLabel" aria-hidden="true">
           <div class="modal-dialog">
             <div class="modal-content">
               <div class="modal-header">
@@ -53,11 +53,11 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
               <div class="modal-body">
-                  <p> Souhaitez-vous vraiment supprimer la masse salariale du <strong>{{payroll.date_min_period}}</strong> au <strong>{{payroll.date_min_period}}</strong> pour <strong>{{ payroll.member_name }}</strong> ?</p>
+                  <p> Souhaitez-vous vraiment supprimer la masse salariale du <strong>{{payroll.date_min_period|format_datetime}}</strong> au <strong>{{payroll.date_max_period|format_datetime}}</strong> pour <strong>{{ payroll.member_name }}</strong> ?</p>
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                <a class="btn btn-danger" href="{{ url_for('deletePayroll', id_payroll=payroll.id_payroll) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
+                <a class="btn btn-danger" href="{{ url_for('deletePayroll', id_work_value=payroll.id_work_value) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
               </div>
             </div>
           </div>
@@ -69,25 +69,5 @@
 
 </div>
 </div>
-
-<script>
- $(document).ready(function () {
-    $('#payrolls').DataTable(
-      {
-        "language": {
-          "paginate": {
-            "previous": "Précédent",
-            "next": "Suivant"
-          },
-          "lengthMenu": "Afficher _MENU_ lignes",
-          "search": "Recherche:",
-          "zeroRecords": "Aucune donnée à afficher",
-          "info": "Affichage des masses salariales _START_ à _END_ sur _TOTAL_.",
-          "infoFiltered":"(filtré sur un total de _MAX_)"
-        }
-      }
-    );
-});
-</script>
 
 {% endblock %}

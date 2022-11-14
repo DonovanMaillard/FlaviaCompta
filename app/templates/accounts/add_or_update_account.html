@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container">
     {% if Account == None %}
-	<h1> Ajouter un nouveau compte {% if Type == 'personnal' %} de frais de personnel {% endif %} </h1>
+	<h1> Ajouter {% if Type == 'personnal' %} une note de frais de personnel {% else %} un nouveau compte{% endif %} </h1>
     {% else %}
     <h1> Modifier "{{Account.name}}" </h1>
     {% endif %}

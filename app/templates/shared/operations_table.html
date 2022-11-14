@@ -14,7 +14,7 @@
          <tbody>
             {% for Operation in Operations %}
                <tr>
-                  <td> {{ Operation.effective_date }} </td>
+                  <td> {{ Operation.effective_date|format_datetime }} </td>
                   <td> {{ Operation.type_operation }} <i class="fa fa-question-circle" title="{{ Operation.category }}"></i></td>
                   <td> {{ Operation.name_operation }} 
                       {% if Operation.uploaded_file != '' and Operation.uploaded_file is not none %}
@@ -58,9 +58,9 @@
                       <div class="modal-body">
                         <div class="row">
                           <div class="col-md-8"> 
-                            <strong>Date d'opération : </strong>{{ Operation.operation_date or '' }}
+                            <strong>Date d'opération : </strong>{{ Operation.operation_date|format_datetime or '' }}
                             <br>
-                            <strong>Date d'effet : </strong>{{ Operation.effective_date or '' }}
+                            <strong>Date d'effet : </strong>{{ Operation.effective_date|format_datetime or '' }}
                             <br>
                             <strong>Type d'opération : </strong>{{ Operation.type_operation }}
                             <br>
@@ -153,23 +153,3 @@
             {% endfor %}
          </tbody>
       </table>
-
-<script>
- $(document).ready(function () {
-    $('#operations').DataTable(
-      {
-        "language": {
-          "paginate": {
-            "previous": "Précédent",
-            "next": "Suivant"
-          },
-          "lengthMenu": "Afficher _MENU_ lignes",
-          "search": "Recherche:",
-          "zeroRecords": "Aucune donnée à afficher",
-          "info": "Affichage des opérations _START_ à _END_ sur _TOTAL_.",
-          "infoFiltered":"(filtré sur un total de _MAX_)"
-        }
-      }
-    );
-});
-</script>
