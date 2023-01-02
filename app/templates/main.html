@@ -64,10 +64,10 @@
                   <li><h6 class="dropdown-header"><i class="fa fa-edit"></i>Saisir une opération</h6></li>
                   <li><hr class="dropdown-divider"></li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('addMovement', type_operation = 'Dépense')}}">Une dépense</a>
+                    <a class="dropdown-item" href="{{url_for('addMovement', type_operation = 'Recette')}}">Une recette</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('addMovement', type_operation = 'Recette')}}">Une recette</a>
+                    <a class="dropdown-item" href="{{url_for('addMovement', type_operation = 'Dépense')}}">Une dépense</a>
                   </li>
                   <li>
                     <a class="dropdown-item" href="{{url_for('addCommitment')}}">Un engagement</a>
@@ -75,39 +75,18 @@
                   <li>
                     <a class="dropdown-item" href="/admin/categories">Des frais kilométriques (véhicule personnel)</a>
                   </li>
+                  <li>
+                    <a class="dropdown-item disabled" href="{{url_for('volunteering')}}">Dons & mises à dispositions (à venir)</a>
+                  </li> 
                   <br/>
                   <li><h6 class="dropdown-header"><i class="fa fa-edit"></i>Saisir une régule</h6></li>
                   <li><hr class="dropdown-divider"></li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('addTransfer', type_transfer = 'Internal')}}">Un transfert de compte à compte</a>
+                    <a class="dropdown-item" href="{{url_for('addTransfer', type_transfer='Internal')}}">Régule entre comptes</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('addTransfer', type_transfer = 'Refund')}}">Un remboursement de frais des personnels</a>
+                    <a class="dropdown-item" href="{{url_for('addTransfer', type_transfer='Refund')}}">Remboursement de frais</a>
                   </li>
-                </ul>
-              </li>
-
-              <!-- Déclarations des personnels (temps de travail et dons)  -->
-              <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Déclarations des personnels</a>
-                <ul class="dropdown-menu">
-                  <li><h6 class="dropdown-header"><i class="fa fa-user"></i> Salariés</h6></li>
-                  <li><hr class="dropdown-divider"></li>
-                  <li class="dropdown-item inline-item">
-                    <a class="dropdown-item" href="{{url_for('payrolls')}}">Masses salariales </a>
-                    <a class="dropdown-item" href="{{url_for('addPayroll')}}"><i class="fa-solid fa-square-plus"></i></a>
-                  </li>
-                  <br/>
-                  <li><h6 class="dropdown-header"><i class="fa fa-users"></i> Bénévoles</h6></li>
-                  <li><hr class="dropdown-divider"></li>
-                  <li class="dropdown-item inline-item">
-                    <a class="dropdown-item" href="{{url_for('volunteering')}}">Bénévolat valorisé</a>
-                    <a class="dropdown-item" href="{{url_for('addVolunteering')}}"><i class="fa-solid fa-square-plus"></i></a>
-                  </li> 
-                  <li class="dropdown-item inline-item">
-                    <a class="dropdown-item disabled" href="{{url_for('volunteering')}}">Dons & mises à dispositions (à venir)</a>
-                    <a class="dropdown-item disabled" href="{{url_for('addVolunteering')}}"><i class="fa-solid fa-square-plus"></i></a>
-                  </li>                   
                 </ul>
               </li>
 
@@ -137,6 +116,28 @@
                 -->
                 </ul>
               </li>
+
+              <!-- Valorisation du travail  -->
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Valorisation du travail</a>
+                <ul class="dropdown-menu">
+                  <li><h6 class="dropdown-header"><i class="fa fa-user"></i> Salariés</h6></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li class="dropdown-item inline-item">
+                    <a class="dropdown-item" href="{{url_for('payrolls')}}">Masses salariales </a>
+                    <a class="dropdown-item" href="{{url_for('addPayroll')}}"><i class="fa-solid fa-square-plus"></i></a>
+                  </li>
+                  <br/>
+                  <li><h6 class="dropdown-header"><i class="fa fa-users"></i> Bénévoles</h6></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li class="dropdown-item inline-item">
+                    <a class="dropdown-item" href="{{url_for('volunteering')}}">Bénévolat valorisé</a>
+                    <a class="dropdown-item" href="{{url_for('addVolunteering')}}"><i class="fa-solid fa-square-plus"></i></a>
+                  </li> 
+                                    
+                </ul>
+              </li>
+
               
               <!-- Admin -->
               <li class="nav-item dropdown">
@@ -202,9 +203,12 @@
 
 
 <script>
+
  $(document).ready(function () {
     $('.table').DataTable(
       {
+        /* No ordering applied by DataTables during initialisation */
+        "order": [],
         "language": {
           "paginate": {
             "previous": "Précédent",

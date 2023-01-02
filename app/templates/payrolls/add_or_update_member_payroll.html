@@ -38,9 +38,9 @@
             {% endfor %}
           </div> 
           <div class="form-group col-md-4">
-            <label for = "real_worked_days"><strong>Nombre réel de jours travaillés *</strong></label><br>
-            {{ form.real_worked_days(class="form-control") }}
-            {% for error in form.real_worked_days.errors %} 
+            <label for = "worked_days"><strong>Nombre réel de jours travaillés *</strong></label><br>
+            {{ form.worked_days(class="form-control") }}
+            {% for error in form.worked_days.errors %} 
               <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
             {% endfor %}
           </div> 

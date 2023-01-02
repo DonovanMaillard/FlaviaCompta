@@ -128,16 +128,28 @@ CREATE TABLE comptasso.t_operations (
 	meta_update_date timestamp WITHOUT time ZONE
 );
 
-CREATE TABLE comptasso.t_work_value (
-	id_work_value serial PRIMARY KEY,
+CREATE TABLE comptasso.t_payrolls (
+	id_payroll serial PRIMARY KEY,
 	id_member integer NOT NULL,
 	date_min_period date NOT NULL,
 	date_max_period date NOT NULL,
 	gross_remuneration numeric(8,2) NOT NULL,
 	gross_premium numeric(8,2) NOT NULL,
 	employer_charge_amount numeric(8,2) NOT NULL,
-	volunteering_valuation numeric(8,2) NOT NULL,
-	real_worked_days numeric(8,2) NOT NULL,
+	worked_days numeric(8,2) NOT NULL,
+	meta_create_date timestamp WITHOUT time ZONE,
+	meta_update_date timestamp WITHOUT time ZONE
+);
+
+
+CREATE TABLE comptasso.t_volunteerings(
+	id_volunteering serial PRIMARY KEY,
+	date_min_period date NOT NULL,
+	date_max_period date NOT NULL,
+	id_budget integer,
+	id_member integer NOT NULL,
+	worked_days numeric(8,2) NOT NULL,
+	valuation_cost numeric(8,2) NOT NULL,
 	meta_create_date timestamp WITHOUT time ZONE,
 	meta_update_date timestamp WITHOUT time ZONE
 );
@@ -180,10 +192,10 @@ CREATE TABLE comptasso.cor_action_budget (
 	meta_update_date timestamp WITHOUT time ZONE
 );
 
-CREATE TABLE comptasso.cor_work_budget (
-	id_work_budget serial PRIMARY KEY,
-	id_work_value integer NOT NULL,
-	id_budget integer NOT NULL,
+CREATE TABLE comptasso.cor_payroll_budget (
+	id_payroll_budget serial PRIMARY KEY,
+	id_payroll integer NOT NULL,
+	id_budget integer,
 	nb_days_allocated numeric(8,2) NOT NULL,
 	fixed_cost numeric(8,2),
 	meta_create_date timestamp WITHOUT time ZONE,
@@ -248,28 +260,6 @@ LANGUAGE plpgsql IMMUTABLE
 $$;
 
 
-CREATE OR REPLACE FUNCTION comptasso.get_payroll_details(cur_id_member integer, cur_date_min_period date, cur_date_max_period date)
-RETURNS table(total_gross_remuneration_on_period numeric(8,2), total_employer_charges_on_period numeric(8,2), total_payroll_on_period numeric(8,2), total_worked_days_on_period numeric(8,2))
-LANGUAGE plpgsql IMMUTABLE
-    AS $$
--- Fonction permettant de calculer - pour un employé donné sur une période donnée - la masse salariale réelle et le nombre de jours ouvrés réels appliqués
--- Cette fonction tient compte des mois complets intersectant la période recherchée. Par exemple, si je cherche la période du 23 janvier au 8 février, la
--- fonction retournera la rémunération nette, brute, et la masse salariale gloable ainsi que les jours ouvrés réels pour la période du 1er janvier au 28 février.
--- Utilisé pour la valorisation du temps salarié au réel sur la période d'actions d'une ligne budgétaire
-  BEGIN
-  	return query 
-	SELECT 
-		sum(w.gross_remuneration+w.gross_premium) AS total_gross_remuneration_on_period,
-		sum(w.employer_charge_amount) AS total_employer_charges_on_period,
-		sum(w.gross_remuneration+w.gross_premium)+sum(w.employer_charge_amount) AS total_payroll_on_period,
-		sum(w.real_worked_days) AS total_worked_days_on_period
-	FROM comptasso.t_work_value w
-	WHERE w.id_member=cur_id_member
-	AND cur_date_min_period <= w.date_max_period
-	AND cur_date_max_period >= w.date_min_period;
-  END;
-$$;
-
 
 -- Fonction trigger calculant les meta_create_date et meta_update_date
 CREATE OR REPLACE FUNCTION public.fct_trg_meta_dates_change()
@@ -290,6 +280,46 @@ end;
 $function$
 ;
 
+
+ CREATE OR REPLACE FUNCTION comptasso.get_payrolls(cur_id_member integer, cur_id_budget integer)
+ RETURNS TABLE (
+ 	id_payroll integer,
+	date_min_period date,
+	date_max_period date,
+	gross_remuneration numeric(8,2),
+	gross_premium numeric(8,2),
+	total_gross_remuneration numeric(8,2),
+	employer_charge_amount numeric(8,2),
+	worked_days numeric(8,2)
+ 	)
+LANGUAGE plpgsql IMMUTABLE
+    AS $$
+-- Fonction permettant de connaitre les engagements pour un compte donné
+  BEGIN
+	  RETURN QUERY 
+	  WITH my_period AS (
+	  	SELECT 
+      		min(p.date_min_period) AS date_min_period,
+      		max(p.date_max_period) AS date_max_period
+      	FROM comptasso.t_payrolls p
+      	JOIN comptasso.cor_payroll_budget cpb ON p.id_payroll=cpb.id_payroll
+      	WHERE p.id_member = cur_id_member 
+      	AND cpb.id_budget=cur_id_budget)
+      SELECT 
+      	p.id_payroll,
+      	p.date_min_period,
+      	p.date_max_period,
+      	p.gross_remuneration,
+      	p.gross_premium,
+      	p.gross_remuneration+p.gross_premium AS total_gross_remuneration,
+      	p.employer_charge_amount,
+	  	p.worked_days
+	  FROM comptasso.t_payrolls p
+	  CROSS JOIN my_period
+	  WHERE p.date_min_period<my_period.date_max_period
+  	  AND p.date_max_period>my_period.date_min_period;
+  END;
+$$;
 
 -- Create triggers on tables with meta_date fields
 CREATE TRIGGER tri_meta_dates_change_t_funders
@@ -320,14 +350,17 @@ CREATE TRIGGER tri_meta_dates_change_cor_action_budget
 BEFORE INSERT OR UPDATE ON comptasso.cor_action_budget 
 FOR EACH ROW EXECUTE PROCEDURE fct_trg_meta_dates_change();
 
-CREATE TRIGGER tri_meta_dates_change_t_work_value 
-BEFORE INSERT OR UPDATE ON comptasso.t_work_value
+CREATE TRIGGER tri_meta_dates_change_t_payrolls
+BEFORE INSERT OR UPDATE ON comptasso.t_payrolls
 FOR EACH ROW EXECUTE PROCEDURE fct_trg_meta_dates_change();
 
-CREATE TRIGGER tri_meta_dates_change_cor_work_budget 
-BEFORE INSERT OR UPDATE ON comptasso.cor_work_budget 
+CREATE TRIGGER tri_meta_dates_change_cor_payroll_budget 
+BEFORE INSERT OR UPDATE ON comptasso.cor_payroll_budget 
 FOR EACH ROW EXECUTE PROCEDURE fct_trg_meta_dates_change();
 
+CREATE TRIGGER tri_meta_dates_change_t_volunteerings
+BEFORE INSERT OR UPDATE ON comptasso.t_volunteerings
+FOR EACH ROW EXECUTE PROCEDURE fct_trg_meta_dates_change();
 
 
 --
@@ -354,39 +387,7 @@ CREATE OR REPLACE VIEW comptasso.v_accounts AS (
 ); 
 
 
-CREATE OR REPLACE VIEW comptasso.v_budgets
-AS SELECT b.id_budget,
-    b.name,
-    b.reference,
-    f.id_funder,
-    f.name AS funder,
-    bt.label AS type_budget,
-    a.label AS activity,
-    COALESCE(b.date_max_expenditure::text, '-'::text) AS date_max_expenditure,
-    COALESCE(b.date_return::text, '-'::text) AS date_return,
-    COALESCE(b.budget_amount, 0::numeric)::numeric(8,2) AS budget_amount,
-    COALESCE(b.payroll_limit, 0::numeric)::numeric(8,2) AS payroll_limit,
-    COALESCE(b.indirect_charges, 0::numeric)::numeric(8,2) AS indirect_charges,
-    COALESCE(b.indirect_charges / 100::numeric * b.payroll_limit, 0::numeric)::numeric(8,2) AS indirect_charges_amount,
-    b.comment,
-    b.active,
-    comptasso.get_sum_movement(b.id_budget, 'Recette'::text) AS received_amount,
-    (comptasso.get_sum_movement(b.id_budget, 'Recette'::text) / b.budget_amount * 100::numeric)::numeric(8,2) AS percent_received,
-    comptasso.get_sum_movement(b.id_budget, 'Dépense'::text) AS spent_amount,
-    (comptasso.get_sum_movement(b.id_budget, 'Dépense'::text) / b.budget_amount * 100::numeric)::numeric(8,2) AS percent_spent,
-    comptasso.get_sum_movement(b.id_budget, 'Engagement'::text) AS committed_amount,
-    (comptasso.get_sum_movement(b.id_budget, 'Engagement'::text) / b.budget_amount * 100::numeric)::numeric(8,2) AS percent_committed,
-    b.budget_amount - (comptasso.get_sum_movement(b.id_budget, 'Dépense'::text) + comptasso.get_sum_movement(b.id_budget, 'Engagement'::text)) AS available_amount,
-    COALESCE(max(op.effective_date)::text, '-'::text) AS last_operation,
-    COALESCE(max(cab.date_action)::text, '-'::text) AS last_action_date
-   FROM comptasso.t_budgets b
-   	 LEFT JOIN comptasso.t_activities a ON b.id_activity = a.id_activity
-     LEFT JOIN comptasso.dict_budget_types bt ON b.id_type_budget = bt.id_type_budget
-     LEFT JOIN comptasso.t_funders f ON f.id_funder = b.id_funder
-     LEFT JOIN comptasso.t_operations op ON op.id_budget = b.id_budget
-     LEFT JOIN comptasso.cor_action_budget cab ON cab.id_budget = b.id_budget
-  GROUP BY b.id_budget, b.name, b.reference, f.id_funder, f.name, bt.label, a.label, b.date_max_expenditure, b.date_return, b.budget_amount, b.payroll_limit, b.indirect_charges, b.comment, b.active, (comptasso.get_sum_movement(b.id_budget, 'Recette'::text)), ((comptasso.get_sum_movement(b.id_budget, 'Recette'::text) / b.budget_amount * 100::numeric)::numeric(8,2)), (comptasso.get_sum_movement(b.id_budget, 'Dépense'::text)), ((comptasso.get_sum_movement(b.id_budget, 'Dépense'::text) / b.budget_amount * 100::numeric)::numeric(8,2)), (comptasso.get_sum_movement(b.id_budget, 'Engagement'::text)), ((comptasso.get_sum_movement(b.id_budget, 'Engagement'::text) / b.budget_amount * 100::numeric)::numeric(8,2)), (b.budget_amount - (comptasso.get_sum_movement(b.id_budget, 'Dépense'::text) + comptasso.get_sum_movement(b.id_budget, 'Engagement'::text)))
-  ORDER BY b.active DESC, b.name;
+
 
 
 CREATE OR REPLACE VIEW comptasso.v_actions AS (
@@ -436,40 +437,95 @@ CREATE OR REPLACE VIEW comptasso.v_operations AS (
 	ORDER BY effective_date
 );
 
-CREATE OR REPLACE VIEW comptasso.v_work_value AS (
-	SELECT
-		w.id_work_value,
-		w.id_member,
-		m.member_name,
-		w.date_min_period,
-		w.date_max_period,
-		w.gross_remuneration,
-		w.gross_premium,
-		w.employer_charge_amount,
-		w.volunteering_valuation,
-		w.gross_remuneration+w.gross_premium+w.employer_charge_amount as total_amount, 
-		w.real_worked_days
-	FROM comptasso.t_work_value w
-	JOIN comptasso.t_members m ON w.id_member=m.id_member
-	ORDER BY w.date_min_period
+CREATE OR REPLACE VIEW comptasso.v_payrolls AS (
+  SELECT
+    p.id_payroll,
+    p.id_member,
+    m.member_name,
+    p.date_min_period,
+    p.date_max_period,
+    p.gross_remuneration,
+    p.gross_premium,
+    p.employer_charge_amount,
+    p.gross_remuneration+p.gross_premium+p.employer_charge_amount as total_amount, 
+    p.worked_days
+  FROM comptasso.t_payrolls p
+  JOIN comptasso.t_members m ON p.id_member=m.id_member
+  ORDER BY p.date_min_period
 );
 
---CREATE OR REPLACE VIEW comptasso.v_decode_work_budgets AS (
---	SELECT 
---		cpb.id_work_value_budget AS id_work_value_budget,
---		p.id_work_value AS id_work_value,
---		cpb.id_budget AS id_budget,
---		b.budget_name AS budget_name,
---		cpb.id_member AS id_member,
---		m.member_name AS member_name,
---		cpb.nb_days_allocated AS nb_days_allocated,
---		cpb.fixed_cost AS fixed_cost
---	FROM comptasso.cor_payroll_budget cpb
---	LEFT JOIN comptasso.t_payrolls p on cpb.id
---	LEFT JOIN comptasso.t_budgets b ON cpb.id_budget = b.id_budget
---	LEFT JOIN comptasso.t_members m ON m.id_member = cpb.id_member
---	GROUP BY cpb.id_payroll_budget, b.id_budget, cpb.id_member, m.member_name, m.member_role, cpb.nb_days_allocated, cpb.fixed_cost
---);
+CREATE OR REPLACE VIEW comptasso.v_decode_payroll_budgets AS (
+  SELECT 
+    cpb.id_payroll_budget AS id_payroll_budget,
+    p.id_payroll AS id_payroll,
+    cpb.id_budget AS id_budget,
+    b.name AS budget_name,
+    cpb.nb_days_allocated AS nb_days_allocated,
+    cpb.fixed_cost AS fixed_cost
+  FROM comptasso.cor_payroll_budget cpb
+  LEFT JOIN comptasso.t_payrolls p ON cpb.id_payroll=p.id_payroll
+  LEFT JOIN comptasso.t_budgets b ON cpb.id_budget = b.id_budget
+);
+
+CREATE OR REPLACE VIEW comptasso.v_synthese_payroll_by_budget AS (
+SELECT DISTINCT
+    b.id_budget,
+    b.name,
+    m.id_member,
+    m.member_name,    
+    cpb.fixed_cost,
+    (SELECT min(date_min_period) FROM comptasso.get_payrolls(m.id_member, b.id_budget)) AS date_min_period,
+    (SELECT max(date_max_period) FROM comptasso.get_payrolls(m.id_member, b.id_budget)) AS date_max_period,
+    (SELECT sum(total_gross_remuneration)::numeric(8,2) FROM comptasso.get_payrolls(m.id_member, b.id_budget)) AS gross_remuneration_on_period,
+    (SELECT sum(employer_charge_amount)::numeric(8,2) FROM comptasso.get_payrolls(m.id_member, b.id_budget)) AS employer_charges_on_period,
+    (SELECT sum(worked_days)::numeric(8,2) FROM comptasso.get_payrolls(m.id_member, b.id_budget)) AS total_worked_days_on_period,
+    sum(cpb.nb_days_allocated)::numeric(8,2) AS allocated_days,
+    CASE 
+		WHEN cpb.fixed_cost IS NULL THEN ((SELECT (sum(total_gross_remuneration)+sum(employer_charge_amount))/sum(worked_days) FROM comptasso.get_payrolls(m.id_member, b.id_budget)) * sum(cpb.nb_days_allocated))::numeric(8,2)
+		ELSE sum(cpb.nb_days_allocated*cpb.fixed_cost)::numeric(8,2)
+    END AS work_valuation
+  FROM comptasso.cor_payroll_budget cpb
+  JOIN comptasso.t_payrolls p ON cpb.id_payroll=p.id_payroll
+  LEFT JOIN comptasso.t_members m ON p.id_member=m.id_member
+  LEFT JOIN comptasso.t_budgets b ON b.id_budget=cpb.id_budget
+  GROUP BY 1,2,3,4,5
+  );
+
+
+CREATE OR REPLACE VIEW comptasso.v_budgets
+AS SELECT b.id_budget,
+    b.name,
+    b.reference,
+    f.id_funder,
+    f.name AS funder,
+    bt.label AS type_budget,
+    a.label AS activity,
+    COALESCE(b.date_max_expenditure::text, '-'::text) AS date_max_expenditure,
+    COALESCE(b.date_return::text, '-'::text) AS date_return,
+    COALESCE(b.budget_amount, 0::numeric)::numeric(8,2) AS budget_amount,
+    COALESCE(b.payroll_limit, 0::numeric)::numeric(8,2) AS payroll_limit,
+    COALESCE(b.indirect_charges, 0::numeric)::numeric(8,2) AS indirect_charges,
+    COALESCE(b.indirect_charges / 100::numeric * b.payroll_limit, 0::numeric)::numeric(8,2) AS indirect_charges_amount,
+    b.comment,
+    b.active,
+    comptasso.get_sum_movement(b.id_budget, 'Recette'::text) AS received_amount,
+    (comptasso.get_sum_movement(b.id_budget, 'Recette'::text) / b.budget_amount * 100::numeric)::numeric(8,2) AS percent_received,
+    comptasso.get_sum_movement(b.id_budget, 'Dépense'::text) AS spent_amount,
+    (comptasso.get_sum_movement(b.id_budget, 'Dépense'::text) / b.budget_amount * 100::numeric)::numeric(8,2) AS percent_spent,
+    comptasso.get_sum_movement(b.id_budget, 'Engagement'::text) AS committed_amount,
+    (comptasso.get_sum_movement(b.id_budget, 'Engagement'::text) / b.budget_amount * 100::numeric)::numeric(8,2) AS percent_committed,
+    b.budget_amount - (comptasso.get_sum_movement(b.id_budget, 'Dépense'::text) + comptasso.get_sum_movement(b.id_budget, 'Engagement'::text)) AS available_amount,
+    COALESCE(max(op.effective_date)::text, '-'::text) AS last_operation,
+    COALESCE(max(cab.date_action)::text, '-'::text) AS last_action_date
+   FROM comptasso.t_budgets b
+   	 LEFT JOIN comptasso.t_activities a ON b.id_activity = a.id_activity
+     LEFT JOIN comptasso.dict_budget_types bt ON b.id_type_budget = bt.id_type_budget
+     LEFT JOIN comptasso.t_funders f ON f.id_funder = b.id_funder
+     LEFT JOIN comptasso.t_operations op ON op.id_budget = b.id_budget
+     LEFT JOIN comptasso.cor_action_budget cab ON cab.id_budget = b.id_budget
+  GROUP BY b.id_budget, b.name, b.reference, f.id_funder, f.name, bt.label, a.label, b.date_max_expenditure, b.date_return, b.budget_amount, b.payroll_limit, b.indirect_charges, b.comment, b.active, (comptasso.get_sum_movement(b.id_budget, 'Recette'::text)), ((comptasso.get_sum_movement(b.id_budget, 'Recette'::text) / b.budget_amount * 100::numeric)::numeric(8,2)), (comptasso.get_sum_movement(b.id_budget, 'Dépense'::text)), ((comptasso.get_sum_movement(b.id_budget, 'Dépense'::text) / b.budget_amount * 100::numeric)::numeric(8,2)), (comptasso.get_sum_movement(b.id_budget, 'Engagement'::text)), ((comptasso.get_sum_movement(b.id_budget, 'Engagement'::text) / b.budget_amount * 100::numeric)::numeric(8,2)), (b.budget_amount - (comptasso.get_sum_movement(b.id_budget, 'Dépense'::text) + comptasso.get_sum_movement(b.id_budget, 'Engagement'::text)))
+  ORDER BY b.active DESC, b.name;
+
 
 CREATE VIEW comptasso.v_synthese_activities AS (
 SELECT 

@@ -91,23 +91,34 @@ DROP TRIGGER tri_meta_dates_change_cor_payroll_budget ON comptasso.cor_payroll_b
 DROP VIEW v_payroll_details;
 DROP VIEW v_payrolls;
 
-CREATE TABLE comptasso.t_work_value (
-  id_work_value serial PRIMARY KEY,
+CREATE TABLE comptasso.t_payrolls (
+  id_payroll serial PRIMARY KEY,
   id_member integer NOT NULL,
   date_min_period date NOT NULL,
   date_max_period date NOT NULL,
   gross_remuneration numeric(8,2) NOT NULL,
   gross_premium numeric(8,2) NOT NULL,
   employer_charge_amount numeric(8,2) NOT NULL,
-  volunteering_valuation numeric(8,2) NOT NULL,
-  real_worked_days numeric(8,2) NOT NULL,
+  worked_days numeric(8,2) NOT NULL,
   meta_create_date timestamp WITHOUT time ZONE,
   meta_update_date timestamp WITHOUT time ZONE
 );
 
-CREATE TABLE comptasso.cor_work_budget (
-  id_work_budget serial PRIMARY KEY,
-  id_work_value integer NOT NULL,
+CREATE TABLE comptasso.t_volunteerings(
+  id_volunteering serial PRIMARY KEY,
+  date_min_period date NOT NULL,
+  date_max_period date NOT NULL,
+  id_budget integer,
+  id_member integer NOT NULL,
+  worked_days numeric(8,2) NOT NULL,
+  valuation_cost numeric(8,2) NOT NULL,
+  meta_create_date timestamp WITHOUT time ZONE,
+  meta_update_date timestamp WITHOUT time ZONE
+);
+
+CREATE TABLE comptasso.cor_payroll_budget (
+  id_payroll_budget serial PRIMARY KEY,
+  id_payroll integer NOT NULL,
   id_budget integer NOT NULL,
   nb_days_allocated numeric(8,2) NOT NULL,
   fixed_cost numeric(8,2),
@@ -115,28 +126,138 @@ CREATE TABLE comptasso.cor_work_budget (
   meta_update_date timestamp WITHOUT time ZONE
 );
 
-CREATE TRIGGER tri_meta_dates_change_t_work_value 
-BEFORE INSERT OR UPDATE ON comptasso.t_work_value
+
+
+CREATE OR REPLACE FUNCTION comptasso.get_payrolls(cur_id_member integer, cur_id_budget integer)
+ RETURNS TABLE (
+  id_payroll integer,
+  date_min_period date,
+  date_max_period date,
+  gross_remuneration numeric(8,2),
+  gross_premium numeric(8,2),
+  total_gross_remuneration numeric(8,2),
+  employer_charge_amount numeric(8,2),
+  worked_days numeric(8,2)
+  )
+LANGUAGE plpgsql IMMUTABLE
+    AS $$
+-- Fonction permettant de connaitre les engagements pour un compte donné
+  BEGIN
+    RETURN QUERY 
+    WITH my_period AS (
+      SELECT 
+          min(p.date_min_period) AS date_min_period,
+          max(p.date_max_period) AS date_max_period
+        FROM comptasso.t_payrolls p
+        JOIN comptasso.cor_payroll_budget cpb ON p.id_payroll=cpb.id_payroll
+        WHERE p.id_member = cur_id_member 
+        AND cpb.id_budget=cur_id_budget)
+      SELECT 
+        p.id_payroll,
+        p.date_min_period,
+        p.date_max_period,
+        p.gross_remuneration,
+        p.gross_premium,
+        p.gross_remuneration+p.gross_premium AS total_gross_remuneration,
+        p.employer_charge_amount,
+      p.worked_days
+    FROM comptasso.t_payrolls p
+    CROSS JOIN my_period
+    WHERE p.date_min_period<my_period.date_max_period
+      AND p.date_max_period>my_period.date_min_period;
+  END;
+$$;
+
+
+-- VUES
+
+CREATE OR REPLACE VIEW comptasso.v_payrolls AS (
+  SELECT
+    p.id_payroll,
+    p.id_member,
+    m.member_name,
+    p.date_min_period,
+    p.date_max_period,
+    p.gross_remuneration,
+    p.gross_premium,
+    p.employer_charge_amount,
+    p.gross_remuneration+p.gross_premium+p.employer_charge_amount as total_amount, 
+    p.worked_days
+  FROM comptasso.t_payrolls p
+  JOIN comptasso.t_members m ON p.id_member=m.id_member
+  ORDER BY p.date_min_period
+);
+
+CREATE OR REPLACE VIEW comptasso.v_decode_payroll_budgets AS (
+  SELECT 
+    cpb.id_payroll_budget AS id_payroll_budget,
+    p.id_payroll AS id_payroll,
+    cpb.id_budget AS id_budget,
+    b.name AS budget_name,
+    p.id_member AS id_member,
+    m.member_name AS member_name,
+    p.date_min_period AS date_min_period,
+    p.date_max_period AS date_max_period,
+    cpb.nb_days_allocated AS nb_days_allocated,
+    cpb.fixed_cost AS fixed_cost
+  FROM comptasso.cor_payroll_budget cpb
+  LEFT JOIN comptasso.t_payrolls p ON cpb.id_payroll=p.id_payroll
+  LEFT JOIN comptasso.t_budgets b ON cpb.id_budget = b.id_budget
+  LEFT JOIN comptasso.t_members m ON m.id_member = p.id_member
+);
+
+
+CREATE OR REPLACE VIEW comptasso.v_synthese_payroll_by_budget AS (
+SELECT DISTINCT
+    b.id_budget,
+    b.name,
+    m.id_member,
+    m.member_name,    
+    cpb.fixed_cost,
+    (SELECT min(date_min_period) FROM comptasso.get_payrolls(m.id_member, b.id_budget)) AS date_min_period,
+    (SELECT max(date_max_period) FROM comptasso.get_payrolls(m.id_member, b.id_budget)) AS date_max_period,
+    (SELECT sum(total_gross_remuneration)::numeric(8,2) FROM comptasso.get_payrolls(m.id_member, b.id_budget)) AS gross_remuneration_on_period,
+    (SELECT sum(employer_charge_amount)::numeric(8,2) FROM comptasso.get_payrolls(m.id_member, b.id_budget)) AS employer_charges_on_period,
+    (SELECT sum(worked_days)::numeric(8,2) FROM comptasso.get_payrolls(m.id_member, b.id_budget)) AS total_worked_days_on_period,
+    sum(cpb.nb_days_allocated)::numeric(8,2) AS allocated_days,
+    CASE 
+    WHEN cpb.fixed_cost IS NULL THEN ((SELECT (sum(total_gross_remuneration)+sum(employer_charge_amount))/sum(worked_days) FROM comptasso.get_payrolls(m.id_member, b.id_budget)) * sum(cpb.nb_days_allocated))::numeric(8,2)
+    ELSE sum(cpb.nb_days_allocated*cpb.fixed_cost)::numeric(8,2)
+    END AS work_valuation
+  FROM comptasso.cor_payroll_budget cpb
+  JOIN comptasso.t_payrolls p ON cpb.id_payroll=p.id_payroll
+  LEFT JOIN comptasso.t_members m ON p.id_member=m.id_member
+  LEFT JOIN comptasso.t_budgets b ON b.id_budget=cpb.id_budget
+  GROUP BY 1,2,3,4,5
+  );
+
+DROP VIEW IF EXISTS comptasso.v_decode_payroll_budgets;
+
+CREATE OR REPLACE VIEW comptasso.v_decode_payroll_budgets AS (
+  SELECT 
+    cpb.id_payroll_budget AS id_payroll_budget,
+    p.id_payroll AS id_payroll,
+    cpb.id_budget AS id_budget,
+    b.name AS budget_name,
+    cpb.nb_days_allocated AS nb_days_allocated,
+    cpb.fixed_cost AS fixed_cost
+  FROM comptasso.cor_payroll_budget cpb
+  LEFT JOIN comptasso.t_payrolls p ON cpb.id_payroll=p.id_payroll
+  LEFT JOIN comptasso.t_budgets b ON cpb.id_budget = b.id_budget
+);
+
+
+CREATE TRIGGER tri_meta_dates_change_t_payrolls
+BEFORE INSERT OR UPDATE ON comptasso.t_payrolls
 FOR EACH ROW EXECUTE PROCEDURE fct_trg_meta_dates_change();
 
-CREATE TRIGGER tri_meta_dates_change_cor_work_budget 
-BEFORE INSERT OR UPDATE ON comptasso.cor_work_budget 
+CREATE TRIGGER tri_meta_dates_change_cor_payroll_budget 
+BEFORE INSERT OR UPDATE ON comptasso.cor_payroll_budget 
 FOR EACH ROW EXECUTE PROCEDURE fct_trg_meta_dates_change();
 
-
--- t_work_value
-ALTER TABLE comptasso.t_work_value
-ADD CONSTRAINT fk_t_work_value_id_member FOREIGN KEY (id_member) 
-REFERENCES comptasso.t_members(id_member) ON UPDATE CASCADE;
-
--- cor_work_budget
-ALTER TABLE comptasso.cor_work_budget
-ADD CONSTRAINT fk_cor_work_budget_id_budget FOREIGN KEY (id_budget) 
-REFERENCES comptasso.t_budgets(id_budget) ON UPDATE CASCADE;
-
-ALTER TABLE comptasso.cor_work_budget
-ADD CONSTRAINT fk_cor_work_budget_id_member FOREIGN KEY (id_member) 
-REFERENCES comptasso.t_members(id_member) ON UPDATE CASCADE;
+CREATE TRIGGER tri_meta_dates_change_t_volunteerings
+BEFORE INSERT OR UPDATE ON comptasso.t_volunteerings
+FOR EACH ROW EXECUTE PROCEDURE fct_trg_meta_dates_change();
 
 
 

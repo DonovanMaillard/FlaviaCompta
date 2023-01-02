@@ -4,7 +4,7 @@
 {% block content %}
 <div class="container">
 
-<h1> Synthèse par activité </h1>
+<h2> Synthèse par activité </h2>
       <div class="row">
         {% for Activity in Activities %}
           <div class="col-md-4">
@@ -24,7 +24,7 @@
         {% endfor %}
       </div>
   
-  <hr>
+  <hr style="margin-bottom:50px">
 
   <div id="budgets-detail">
 	<h1> Liste des lignes budgétaires </h1>
@@ -39,7 +39,7 @@
                <th>Nom</th>
                <th>Dépenses jusqu'au</th>
                <th>Montant global</th>
-               <th>Dépenses effectuées</th>
+               <th>Coûts justifiés</th>
                <th>Engagements</th>
                <th>Sommes perçues</th>
                <th>Action</th>
@@ -57,7 +57,7 @@
                   <td>{{ Budget.name }}</td>
                   <td>{{ Budget.date_max_expenditure|format_datetime or '' }}</td>
                   <td>{{ Budget.budget_amount }}€ </td>
-                  <td>{{ Budget.spent_amount }}€ </td>
+                  <td>--TODO--</td>
                   <td>{{ Budget.committed_amount }}€</td>
                   <td>{{ Budget.received_amount }}€</td>
                   <td>

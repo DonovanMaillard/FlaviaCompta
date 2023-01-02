@@ -55,12 +55,16 @@
               </div>
           </div>
           <div class="col-md-6">
-            <strong>État des dépenses :</strong> {{ Budget.spent_amount }}€ dépensés - {{ Budget.committed_amount }}€ engagés
+            <strong>État des dépenses : </strong>
+            <br> Masse salariale : {{ (Payrolls | sum(attribute='work_valuation'))*(1+Budget.indirect_charges/100) }} € - Dépenses : {{ Budget.spent_amount }}€ - Engagements : {{ Budget.committed_amount }}€
               <div class="progress" style="height: 30px;">
+                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ (Payrolls | sum(attribute='work_valuation'))*(1+Budget.indirect_charges/100)/Budget.budget_amount*100 }}%;" aria-valuenow="(Payrolls | sum(attribute='work_valuation'))*(1+Budget.indirect_charges/100)" aria-valuemin="0" aria-valuemax="{{ Budget.budget_amount }}">
+                </div>
                 <div class="progress-bar bg-primary" role="progressbar" style="width: {{ Budget.percent_spent}}%;" aria-valuenow="{{ Budget.spent_amount }}" aria-valuemin="0" aria-valuemax="{{ Budget.budget_amount }}">
                 </div>
                 <div class="progress-bar bg-info" role="progressbar" style="width: {{ Budget.percent_committed}}%;" aria-valuenow="{{ Budget.committed_amount }}" aria-valuemin="0" aria-valuemax="{{ Budget.budget_amount }}">
                 </div>
+                
               </div>
           </div>
         </div>
@@ -99,6 +103,7 @@
     <button class="nav-link active" id="nav-operations-tab" data-bs-toggle="tab" data-bs-target="#nav-operations" type="button" role="tab" aria-controls="nav-operations" aria-selected="false">Opérations rattachées</button>
     <button class="nav-link" id="nav-commitments-tab" data-bs-toggle="tab" data-bs-target="#nav-commitments" type="button" role="tab" aria-controls="nav-commitments" aria-selected="false">Engagements en cours</button>
     <button class="nav-link" id="nav-action-tab" data-bs-toggle="tab" data-bs-target="#nav-actions" type="button"role="tab" aria-controls="nav-actions" aria-selected="true">Historique des actions</button>
+    <button class="nav-link" id="nav-payrolls-tab" data-bs-toggle="tab" data-bs-target="#nav-payrolls" type="button"role="tab" aria-controls="nav-payrolls" aria-selected="true">Masse salariale justifiée</button>
     <!-- <button class="nav-link" id="nav-results-tab" data-bs-toggle="tab" data-bs-target="#nav-result" type="button" role="tab" aria-controls="nav-result" aria-selected="false">Bilan</button> -->
   </div>
 </nav>
@@ -119,11 +124,74 @@
   <!-- Fin de la tab engagements-->
 
   <!-- Tab actions -->
-  <div class="tab-pane fade" id="nav-actions" role="tabpanel" aria-labelledby="nav-home-tab">  
+  <div class="tab-pane fade" id="nav-actions" role="tabpanel" aria-labelledby="nav-actions-tab">  
     {% include 'budgets/details_actions.html' %}
   </div>
   <!-- Fin de la tab engagements-->
 
+    <!-- Tab Masses salariales -->
+  <div class="tab-pane fade" id="nav-payrolls" role="tabpanel" aria-labelledby="nav-payrolls-tab"> 
+
+    {% if (Payrolls | sum(attribute='work_valuation'))*(1+Budget.indirect_charges/100) > Budget.payroll_limit %}
+      <div class="alert alert-danger" role="alert">
+        Attention ! La masse salariale allouée à ce projet dépasse le montant éligible pour ce budget.
+      </div>
+    {% endif %}
+
+    <table class="table table-striped">
+      <thead>
+            <tr>
+               <th>Salarié</th>
+               <th>Depuis le</th>
+               <th>Jusqu'au</th>
+               <th>Cout forfaitaire</th>
+               <th>Jours alloués</th>
+               <th>Cout salarié valorisé</th>
+            </tr>
+      </thead>
+
+      <tbody>
+        {% for Payroll in Payrolls%}
+        <tr>
+          <td>{{ Payroll.member_name }}</td>
+          <td>{{ Payroll.date_min_period|format_datetime }}</td>
+          <td>{{ Payroll.date_max_period|format_datetime }}</td>
+          <td>{{ Payroll.fixed_cost or '' }}</td>
+          <td>{{ Payroll.allocated_days }}j</td>
+          <td>{{ Payroll.work_valuation }}€</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+
+      <tfoot>
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td><em>masse salariale</em></td>
+          <td><em>{{ '%0.2f'|format((Payrolls | sum(attribute='work_valuation')))  }}€</em></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td><em>charges indirectes</em></td>
+          <td><em>{{ '%0.2f'|format((Payrolls | sum(attribute='work_valuation'))*Budget.indirect_charges/100)  }}€</em></td>
+        </tr>
+        <tr>
+          <td><strong>Total éligible</strong></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td><strong>{{ '%0.2f'|format((Payrolls | sum(attribute='work_valuation'))*(1+Budget.indirect_charges/100)) }}€</strong></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <!-- Fin de la tab engagements-->
   <!-- Tab résultats 
   <div class="tab-pane fade" id="nav-result" role="tabpanel" aria-labelledby="nav-result-tab">
     <a class="btn btn-success" href="http://localhost:5050/results/pdf">Télécharger le bilan au format PDF</a>

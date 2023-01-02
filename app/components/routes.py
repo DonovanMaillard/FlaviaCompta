@@ -6,6 +6,7 @@ from io import StringIO
 from datetime import datetime, timedelta, date
 from flask_login import login_required, current_user, login_user, logout_user, LoginManager
 from calendar import monthrange
+from sqlalchemy import func
 
 
 #import logging
@@ -106,7 +107,7 @@ def logout():
 #    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 # Todo : clean decimal inputs
-def getDecimal(input):
+def getDecimal(input, allow_none=False):
     if input is None or input=='' :
         decimal=0.00
     else :
@@ -246,7 +247,9 @@ def deleteAccount(id_account):
 @app.route('/budgets')
 @login_required
 def budgets():
-    return render_template('budgets/budgets_list.html', Budgets = vBudgets.query.all(), Activities=vSyntheseActivities.query.all())
+    Budgets = vBudgets.query.all()
+    Activities=vSyntheseActivities.query.all()
+    return render_template('budgets/budgets_list.html', Budgets=Budgets, Activities=Activities)
 
 # Details budget & list actions
 @app.route('/budgets/detail/<id_budget>', methods=['GET', 'POST'])
@@ -256,7 +259,8 @@ def detailBudget(id_budget):
     Actions = vActions.query.filter_by(id_budget=id_budget)
     Operations = vOperations.query.filter(vOperations.id_budget==id_budget, vOperations.type_operation != 'Engagement').order_by(vOperations.effective_date.desc()).all()
     Commitments = vOperations.query.filter(vOperations.id_budget==id_budget, vOperations.type_operation == 'Engagement').order_by(vOperations.effective_date.desc()).all()
-    return render_template('budgets/details_budget.html', Budget = Budget, Actions = Actions, Operations = Operations, Commitments = Commitments)
+    Payrolls = vSynthesePayrollByBudget.query.filter_by(id_budget=id_budget).all()
+    return render_template('budgets/details_budget.html', Budget = Budget, Actions = Actions, Operations = Operations, Commitments = Commitments, Payrolls = Payrolls)
 
 # Add budget
 @app.route('/budgets/add', methods=['GET', 'POST'])
@@ -490,7 +494,10 @@ def addMovement(type_operation): #movement = Dépense + Recette
     id_type_operation = dictOperationTypes.query.filter_by(label = type_operation).one().id_type_operation
     form = formMovement(request.form)
     # Get accounts
-    Accounts = tAccounts.query.all()
+    if type_operation=='Recette':
+        Accounts = tAccounts.query.filter_by(is_personnal=False)
+    else :
+        Accounts = tAccounts.query.all()
     # Form Choices
     # accounts
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
@@ -550,7 +557,10 @@ def updateMovement(id_operation): #movement = Dépense + Recette
     #Get choices and form
     form = formMovement(request.form, obj=Operation)
     # Get accounts
-    Accounts = tAccounts.query.all()
+    if type_operation=='Recette':
+        Accounts = tAccounts.query.filter_by(is_personnal=False)
+    else :
+        Accounts = tAccounts.query.all()
     # Form Choices
     # accounts
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
@@ -1019,19 +1029,19 @@ def deleteFunder(id_funder):
 ##################
 
 ## Payrolls
-@app.route('/members/payrolls')
+@app.route('/payrolls')
 @login_required
 def payrolls():
     members=tMembers.query.filter_by(is_employed=True)
     id_member = request.args.get('id_member', None, type=int)
     if id_member:
-        payrolls = vWorkValue.query.filter_by(id_member=id_member).filter(vWorkValue.volunteering_valuation == 0).all()
+        payrolls = vPayrolls.query.filter_by(id_member=id_member).order_by(vPayrolls.date_min_period.desc()).all()
     else :
-        payrolls = vWorkValue.query.filter(vWorkValue.volunteering_valuation == 0).all()
+        payrolls = vPayrolls.query.order_by(vPayrolls.date_min_period.desc()).all()
     return render_template('payrolls/payrolls_list.html', payrolls=payrolls, members=members)
 
 
-@app.route('/members/payrolls/add', methods=['GET', 'POST'])
+@app.route('/payrolls/add', methods=['GET', 'POST'])
 @login_required
 def addPayroll():
     form = formPayroll(request.form)
@@ -1046,15 +1056,14 @@ def addPayroll():
     form.period_year.data = date.today().year
     # Get data from form
     if request.method == 'POST' and form.validate():
-        payroll = tWorkValue(
+        payroll = tPayrolls(
             request.form['id_member'],
             datetime(int(request.form['period_year']), int(request.form['period_month']), 1), #min date
             datetime(int(request.form['period_year']), int(request.form['period_month']), monthrange(int(request.form['period_year']), int(request.form['period_month']))[1]), #max date
             getDecimal(request.form['gross_remuneration']), 
             getDecimal(request.form['gross_premium']), 
             getDecimal(request.form['employer_charge_amount']),
-            0, # as volunteering valuation 
-            getDecimal(request.form['real_worked_days'])
+            getDecimal(request.form['worked_days'])
             )
         db.session.add(payroll)
         db.session.commit()
@@ -1062,10 +1071,10 @@ def addPayroll():
     return render_template('payrolls/add_or_update_member_payroll.html', form=form, payroll=None, Members=Members)
 
 # Update payroll
-@app.route('/members/payrolls/edit/<id_work_value>', methods=['GET', 'POST'])
+@app.route('/payrolls/edit/<id_payroll>', methods=['GET', 'POST'])
 @login_required
-def updatePayroll(id_work_value):
-    payroll = tWorkValue.query.get(id_work_value)
+def updatePayroll(id_payroll):
+    payroll = tPayrolls.query.get(id_payroll)
     form = formPayroll(request.form, obj=payroll)
     # Get employees
     Members = tMembers.query.filter_by(is_employed=True)
@@ -1082,39 +1091,101 @@ def updatePayroll(id_work_value):
         payroll.gross_remuneration = getDecimal(request.form['gross_remuneration']), 
         payroll.gross_premium = getDecimal(request.form['gross_premium']), 
         payroll.employer_charge_amount = getDecimal(request.form['employer_charge_amount']), 
-        payroll.real_worked_days = getDecimal(request.form['real_worked_days'])
+        payroll.worked_days = getDecimal(request.form['worked_days'])
         db.session.commit()
         return redirect(url_for('payrolls'))
     return render_template('payrolls/add_or_update_member_payroll.html', form=form, payroll=None, Members=Members)
 
 # Details payroll
-@app.route('/members/payrolls/detail/<id_work_value>', methods=['GET', 'POST'])
+@app.route('/payrolls/detail/<id_payroll>', methods=['GET', 'POST'])
 @login_required
-def detailPayroll(id_work_value):
-    current_payroll=vWorkValue.query.get(id_work_value)
-    return render_template('payrolls/detail_payroll.html', payroll=current_payroll)
+def detailPayroll(id_payroll):
+    payroll = vPayrolls.query.get(id_payroll)
+    corsPayrollBudget = vDecodeCorPayrollBudget.query.filter_by(id_payroll=id_payroll).order_by(vDecodeCorPayrollBudget.budget_name.desc()).all()
+    return render_template('payrolls/detail_payroll.html', payroll=payroll, corsPayrollBudget=corsPayrollBudget)
 
 # Delete payroll
-@app.route('/members/payrolls/delete/<id_work_value>', methods=['GET', 'POST'])
+@app.route('/payrolls/delete/<id_payroll>', methods=['GET', 'POST'])
 @login_required
-def deletePayroll(id_work_value):
-    current_payroll=tWorkValue.query.get(id_work_value)
+def deletePayroll(id_payroll):
+    current_payroll=tPayrolls.query.get(id_payroll)
     db.session.delete(current_payroll)
     db.session.commit()
     return redirect(url_for('payrolls'))
 
 
+### 
+# Cor budget payroll
+@app.route('/payrolls/<id_payroll>/cor_budget/add', methods=['GET', 'POST'])
+@login_required
+def addCorPayrollBudget(id_payroll):
+    form = formPayrollBudget(request.form)
+    # Get budgets
+    Budgets = tBudgets.query.filter_by(active=True)
+    form.id_budget.choices = [('','Gestion associative & Autres activités')]+[(Budget.id_budget, Budget.name) for Budget in Budgets]
+    if request.method == 'POST' and form.validate():
+        # Allow None fixed cost
+        if request.form['fixed_cost'] is None or request.form['fixed_cost']=='' :
+            fixed_cost=None
+        else :
+            fixed_cost=getDecimal(request.form['fixed_cost'])
+        # Insert data
+        payrollBudget = corPayrollBudget(
+            id_payroll,
+            getChoiceOrNone(request.form['id_budget']),  
+            getDecimal(request.form['nb_days_allocated']), 
+            fixed_cost
+            )
+        db.session.add(payrollBudget)
+        db.session.commit()
+        return redirect(url_for('detailPayroll', id_payroll=id_payroll))
+    return render_template('payrolls/add_or_update_allocation_payroll_budget.html', form=form, payrollBudget=None, Budgets=Budgets)
+
+
+@app.route('/payrolls/<id_payroll>/cor_budget/<id_payroll_budget>/edit', methods=['GET', 'POST'])
+@login_required
+def updateCorPayrollBudget(id_payroll, id_payroll_budget):
+    cor = corPayrollBudget.query.get(id_payroll_budget)
+    form = formPayrollBudget(request.form, obj=cor)
+    # Get budgets
+    Budgets = tBudgets.query.filter_by(active=True)
+    form.id_budget.choices = [('','Gestion associative & Autres activités')]+[(Budget.id_budget, Budget.name) for Budget in Budgets]
+    if request.method == 'POST' and form.validate():
+        if request.form['fixed_cost'] is None or request.form['fixed_cost']=='' :
+            fixed_cost=None
+        else :
+            fixed_cost=getDecimal(request.form['fixed_cost'])
+        cor.id_budget = getChoiceOrNone(request.form['id_budget'])
+        cor.nb_days_allocated = getDecimal(request.form['nb_days_allocated'])
+        cor.fixed_cost = fixed_cost
+        db.session.commit()
+        return redirect(url_for('detailPayroll', id_payroll=id_payroll))
+    return render_template('payrolls/add_or_update_allocation_payroll_budget.html', form=form, corPayrollBudget=cor, Budgets=Budgets)
+
+
+# Delete doc payroll budget
+@app.route('/payrolls/<id_payroll>/cor_budget/<id_payroll_budget>/delete', methods=['GET', 'POST'])
+@login_required
+def deleteCorPayrollBudget(id_payroll, id_payroll_budget):
+    cor = corPayrollBudget.query.get(id_payroll_budget)
+    db.session.delete(cor)
+    db.session.commit()
+    return redirect(url_for('detailPayroll', id_payroll=id_payroll))
+
+
+
 ######
 # Volunteering
+
 @app.route('/members/volunteering')
 @login_required
 def volunteering():
     members=tMembers.query.all()
     id_member = request.args.get('id_member', None, type=int)
     if id_member:
-        volunteerings = vWorkValue.query.filter_by(id_member=id_member).filter(vWorkValue.volunteering_valuation != 0).all()
+        volunteerings = vPayrolls.query.filter_by(id_member=id_member).filter(vPayrolls.volunteering_valuation != 0).all()
     else :
-        volunteerings = vWorkValue.query.filter(vWorkValue.volunteering_valuation != 0).all()
+        volunteerings = vPayrolls.query.filter(vPayrolls.volunteering_valuation != 0).all()
     return render_template('volunteering/volunteering_list.html', volunteerings=volunteerings)
 
 
@@ -1135,7 +1206,7 @@ def addVolunteering():
     form.daily_valuation.data = app.config['DAILY_VALUATION']
     # Get data from form
     if request.method == 'POST' and form.validate():
-        volunteering = tWorkValue(
+        volunteering = tPayrolls(
             request.form['id_member'],
             datetime(int(request.form['period_year']), int(request.form['period_month']), 1), #min date
             datetime(int(request.form['period_year']), int(request.form['period_month']), monthrange(int(request.form['period_year']), int(request.form['period_month']))[1]), #max date
@@ -1154,7 +1225,7 @@ def addVolunteering():
 @app.route('/employees/volunteering/edit/<id_work_value>', methods=['GET', 'POST'])
 @login_required
 def updateVolunteering(id_work_value):
-    volunteering = tWorkValue.query.get(id_work_value)
+    volunteering = tPayrolls.query.get(id_work_value)
     form = formVolunteering(request.form, obj=volunteering)
     # Get employees
     Members = tMembers.query.all()
@@ -1179,45 +1250,17 @@ def updateVolunteering(id_work_value):
 @app.route('/employees/volunteering/detail/<id_work_value>', methods=['GET', 'POST'])
 @login_required
 def detailVolunteering(id_work_value):
-    current_volunteering=vWorkValue.query.get(id_work_value)
+    current_volunteering=vPayrolls.query.get(id_work_value)
     return render_template('volunteering/detail_volunteering.html', volunteering=current_volunteering)
 
 # Delete volunteering
 @app.route('/employees/volunteering/delete/<id_work_value>', methods=['GET', 'POST'])
 @login_required
 def deleteVolunteering(id_work_value):
-    current_volunteering=tWorkValue.query.get(id_work_value)
+    current_volunteering=tPayrolls.query.get(id_work_value)
     db.session.delete(current_volunteering)
     db.session.commit()
     return redirect(url_for('volunteering'))
-
-
-
-
-# Work budget allocation
-@app.route('/employees/payroll_budget/add', methods=['GET', 'POST'])
-@login_required
-def addPayrollBudget():
-    form = formPayrollBudget(request.form)
-    # Get employees
-    Members = tMembers.query.filter_by(is_employed=True)
-    form.id_member.choices = [(Member.id_member, Member.member_name) for Member in Members]
-    # Get budgets
-    Budgets = tBudgets.query.filter_by(active=True)
-    form.id_budget.choices = [(Budget.id_budget, Budget.name) for Budget in Budgets]
-    if request.method == 'POST' and form.validate():
-        payrollBudget = corPayrollBudget(
-            getChoiceOrNone(request.form['id_budget']), 
-            getChoiceOrNone(request.form['id_member']), 
-            request.form['date_min_period'], 
-            request.form['date_max_period'], 
-            getDecimal(request.form['nb_days_allocated']), 
-            getDecimal(request.form['fixed_cost'])
-            )
-        db.session.add(payrollBudget)
-        db.session.commit()
-        return redirect(url_for('payrollBudget'))
-    return render_template('payrolls/add_or_update_allocation_payroll_budget.html', form=form, payrollBudget=None, Members=Members, Budgets=Budgets)
 
 
 
@@ -1258,25 +1301,10 @@ def results():
 ###########################
 ### Frais kilométriques ###
 ###########################
-# TODO
-
-
-
-
-
-#################################
-### Valorisation de bénévolat ###
-#################################
-# Ajout
-@app.route('/volunteering/add')
-@login_required
-def addBenevolat():
-    return render_template('operations/add_or_update_benevolat.html')
-
-# Modification
-
-# Détail
-
-# Suppression
-
+# Prévoir simplement un formulaire avec nombre de kilomètres + liste de barêmes (actifs ou non). 
+# Ajouter des champs "unit_cost" et "quantity" dans la t_operations
+# Renseigner ces champs + calculer le total dans les dépenses avec la catégorie fiscale dédiée
+# Prévoir des contraintes là dessus
+# Voir pour que le bénévolat vienne directement alimenter cette table avec le nombre de jours, le cout journalier, les catégories fiscales correspondantes
+# De cette manière seul le détail des masses salariales est traité à part.
 

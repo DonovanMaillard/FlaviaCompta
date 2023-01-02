@@ -11,7 +11,7 @@
       <form method = "post" enctype="multipart/form-data" novalidate>
         <div class="row">
           <div class="form-group">
-            <label for = "name"><strong>Nom du compte *</strong></label><br>
+            <label for = "name"><strong>Nom {% if Type == 'personnal' %} de la note de frais {% else %} du compte{% endif %} *</strong></label><br>
             {{ form.name(class="form-control") }}
             {% for error in form.name.errors %} 
                 <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
@@ -29,6 +29,7 @@
             {% endfor %}
             <br>
           </div>
+          {% if Type != 'personnal' %}
           <div class="form-group col-md-4">
             <label for = "bank_url">Portail de connexion</label><br>
             {{ form.bank_url(class="form-control") }}
@@ -37,6 +38,7 @@
             {% endfor %}
             <br>
           </div>
+          {% endif %}
           <div class="form-group col-md-4">
             <label for = "account_number"><strong>N° de compte *</strong></label><br>
             {{ form.account_number(class="form-control") }}
@@ -57,7 +59,7 @@
 
         <div class="row">
           <div class="form-group col-md-6">
-             <label for = "uploaded_file">Justificatif (facultatif)</label><br>
+             <label for = "uploaded_file">RIB (facultatif)</label><br>
              {{ form.uploaded_file(class="form-control") }}
              {% for error in form.uploaded_file.errors %} 
                 <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>

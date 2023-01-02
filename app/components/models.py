@@ -209,31 +209,29 @@ class tMembers(db.Model):
         self.active = active
 
 
-class tWorkValue(db.Model):
+class tPayrolls(db.Model):
 
-    __tablename__ = "t_work_value"
+    __tablename__ = "t_payrolls"
     __table_args__ = {"schema": "comptasso"}
-    id_work_value = db.Column(db.Integer, primary_key=True)
+    id_payroll = db.Column(db.Integer, primary_key=True)
     id_member = db.Column(db.Integer, nullable=False)
     date_min_period = db.Column(db.Date(), nullable=False)
     date_max_period = db.Column(db.Date(), nullable=False)
     gross_remuneration = db.Column(db.Numeric(8,2), nullable=False)
     gross_premium = db.Column(db.Numeric(8,2), nullable=False)
     employer_charge_amount = db.Column(db.Numeric(8,2), nullable=False)
-    volunteering_valuation = db.Column(db.Numeric(8,2), nullable=False)
-    real_worked_days = db.Column(db.Numeric(8,2), nullable=False)
+    worked_days = db.Column(db.Numeric(8,2), nullable=False)
     meta_create_date = db.Column(db.DateTime(), nullable=True)
     meta_update_date = db.Column(db.DateTime(), nullable=True)
 
-    def __init__ (self, id_member, date_min_period, date_max_period, gross_remuneration, gross_premium, employer_charge_amount, volunteering_valuation, real_worked_days):
+    def __init__ (self, id_member, date_min_period, date_max_period, gross_remuneration, gross_premium, employer_charge_amount, worked_days):
         self.id_member = id_member
         self.date_min_period = date_min_period
         self.date_max_period = date_max_period
         self.gross_remuneration = gross_remuneration
         self.gross_premium = gross_premium
         self.employer_charge_amount = employer_charge_amount
-        self.volunteering_valuation = volunteering_valuation
-        self.real_worked_days = real_worked_days
+        self.worked_days = worked_days
 
 
 class tUsers(UserMixin, db.Model):
@@ -315,20 +313,20 @@ class corActionBudget(db.Model):
         self.uploaded_file = uploaded_file
 
 
-class corWorkBudget(db.Model):
+class corPayrollBudget(db.Model):
 
-    __tablename__ = "cor_work_budget"
+    __tablename__ = "cor_payroll_budget"
     __table_args__ = {"schema": "comptasso"}
-    id_work_budget = db.Column(db.Integer, primary_key=True)
-    id_work_value = db.Column(db.Integer, nullable=False)
+    id_payroll_budget = db.Column(db.Integer, primary_key=True)
+    id_payroll = db.Column(db.Integer, nullable=False)
     id_budget = db.Column(db.Integer, nullable=False)
     nb_days_allocated = db.Column(db.Numeric(8,2), nullable=True)
     fixed_cost = db.Column(db.Numeric(8,2), nullable=True)
     meta_create_date = db.Column(db.DateTime(), nullable=True)
     meta_update_date = db.Column(db.DateTime(), nullable=True)
 
-    def __init__ (self, id_work_value, id_budget, nb_days_allocated, fixed_cost):
-        self.id_work_value = id_work_value
+    def __init__ (self, id_payroll, id_budget, nb_days_allocated, fixed_cost):
+        self.id_payroll = id_payroll
         self.id_budget = id_budget
         self.nb_days_allocated = nb_days_allocated
         self.fixed_cost = fixed_cost
@@ -438,12 +436,12 @@ class vOperations(db.Model):
     meta_update_date = db.Column(db.DateTime(), nullable=True)
 
 
-class vWorkValue(db.Model):
+class vPayrolls(db.Model):
 
-    __tablename__ = "v_work_value"
+    __tablename__ = "v_payrolls"
     __table_args__ = {"schema": "comptasso"}
 
-    id_work_value = db.Column(db.Integer, primary_key=True)
+    id_payroll = db.Column(db.Integer, primary_key=True)
     id_member = db.Column(db.Integer, nullable=False)
     member_name = db.Column(db.String(50), nullable=False)
     date_min_period = db.Column(db.Date(), nullable=False)
@@ -451,28 +449,37 @@ class vWorkValue(db.Model):
     gross_remuneration = db.Column(db.Numeric(8,2), nullable=False)
     gross_premium = db.Column(db.Numeric(8,2), nullable=False)
     employer_charge_amount = db.Column(db.Numeric(8,2), nullable=False)
-    volunteering_valuation = db.Column(db.Numeric(8,2), nullable=False)
     total_amount = db.Column(db.Numeric(8,2), nullable=False)
-    real_worked_days = db.Column(db.Numeric(8,2), nullable=False)
+    worked_days = db.Column(db.Numeric(8,2), nullable=False)
 
 
-class vPayrollDetails(db.Model):
+class vDecodeCorPayrollBudget(db.Model):
 
-    __tablename__ = "v_payroll_details"
+    __tablename__ = "v_decode_payroll_budgets"
     __table_args__ = {"schema": "comptasso"}
 
     id_payroll_budget = db.Column(db.Integer, primary_key=True)
-    id_budget = db.Column(db.Integer, nullable=False)
-    budget_name = db.Column(db.Unicode, nullable=False)
-    id_member = db.Column(db.Integer, nullable=False)
-    member_role = db.Column(db.Unicode, nullable=False)
-    date_min_period = db.Column(db.Date, nullable=False)
-    date_max_period = db.Column(db.Date, nullable=False)
-    total_worked_days_on_period = db.Column(db.Numeric(8,2), nullable=True)
-    total_brut_cost_on_period = db.Column(db.Numeric(8,2), nullable=True)
-    total_employer_charges_on_period = db.Column(db.Numeric(8,2), nullable=True)
-    total_payroll_on_period = db.Column(db.Numeric(8,2), nullable=True)
-    daily_payroll_on_period = db.Column(db.Numeric(8,2), nullable=True)
+    id_payroll = db.Column(db.Integer, nullable=False)
+    id_budget =  db.Column(db.Integer, nullable=True)
+    budget_name = db.Column(db.String(255), nullable=True)
     nb_days_allocated = db.Column(db.Numeric(8,2), nullable=False)
     fixed_cost = db.Column(db.Numeric(8,2), nullable=True)
-    applied_payroll = db.Column(db.Numeric(8,2), nullable=False)
+
+
+class vSynthesePayrollByBudget(db.Model):
+
+    __tablename__ = "v_synthese_payroll_by_budget"
+    __table_args__ = {"schema": "comptasso"}
+
+    id_budget = db.Column(db.Integer, nullable=False, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    id_member = db.Column(db.Integer, nullable=False, primary_key=True)
+    member_name = db.Column(db.String(255), nullable=False)
+    date_min_period = db.Column(db.Date, nullable=False)
+    date_max_period = db.Column(db.Date, nullable=False)
+    fixed_cost = db.Column(db.Numeric(8,2), nullable=True, primary_key=True)
+    gross_remuneration_on_period = db.Column(db.Numeric(8,2), nullable=True)
+    employer_charges_on_period = db.Column(db.Numeric(8,2), nullable=True)
+    total_worked_days_on_period = db.Column(db.Numeric(8,2), nullable=True)
+    allocated_days = db.Column(db.Numeric(8,2), nullable=True)
+    work_valuation = db.Column(db.Numeric(8,2), nullable=True)

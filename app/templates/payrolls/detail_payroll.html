@@ -2,7 +2,8 @@
 
 {% block content %}
 <div class="container">
-	<h1> Masse salariale et répartition par projet </h1>
+	<h1 style="margin-bottom:5px;"> Masse salariale et décompte par projet </h1>
+  <h4 style="margin-bottom:50px;"> <em>{{payroll.member_name}} - du {{payroll.date_min_period|format_datetime}} au {{payroll.date_max_period|format_datetime}}</em></h4>
 
 <!-- Budget -->
 
@@ -23,7 +24,7 @@
             <br>
           </div>
           <div class="col-md-4"> 
-            <strong>Nombre de jours travaillés : </strong>{{ payroll.real_worked_days }}
+            <strong>Nombre de jours travaillés : </strong>{{ payroll.worked_days }}
             <br>
           </div>
           <div class="col-md-4"> 
@@ -45,7 +46,7 @@
         <br><br>
 
         <div class="btn-group">
-          <a class="btn btn-warning" href="{{ url_for('updatePayroll', id_work_value=payroll.id_work_value) }}"> <i class="fa fa-edit"></i> Modifier</a>
+          <a class="btn btn-warning" href="{{ url_for('updatePayroll', id_payroll=payroll.id_payroll) }}"> <i class="fa fa-edit"></i> Modifier</a>
           <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"> <i class="fa fa-trash"></i> Supprimer </a>  
         </div>
 
@@ -62,7 +63,7 @@
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                <a class="btn btn-danger" href="{{ url_for('deletePayroll', id_work_value=payroll.id_work_value) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
+                <a class="btn btn-danger" href="{{ url_for('deletePayroll', id_payroll=payroll.id_payroll) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
               </div>
             </div>
           </div>
@@ -75,38 +76,70 @@
       <div class="card-header">
         <h4>Décompte de la masse salariale par projet
         </h4>
+
       </div>
 
       <div class="card-body">
+        <div class="btn-group" >
+          <a class="btn btn-success" href="{{ url_for('addCorPayrollBudget', id_payroll=payroll.id_payroll) }}"> <i class="fa fa-plus"></i> Attribuer du temps à une ligne budgétaire </a>
+        </div>
+        <br><br><br>
+
         <div class="row">
-          <!--<div>
+          <div>
               <table class="table table-striped">
                 <thead>
                   <tr>
                     <th>Budget</th>
                     <th>Temps alloué</th>
-                    <th>Coût valorisé (au prorata)</th>
-                    <th>Cout forfaitaire</th>
+                    <th>Coût appliqué</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
-                     <td>--</td>
-                     <td>--</td>
-                     <td>--</td>
-                     <td>--</td>
-                     <td>--</td>
                 <tbody>
-                  
+                  {% for cor in corsPayrollBudget %}
+                  <tr>
+                     <td> {{ cor.budget_name or 'Gestion associative & Autres activités' }} </td>
+                     <td> {{ cor.nb_days_allocated }} j </td>
+                     <td> {% if not cor.fixed_cost %} <em>décompté au réel</em> {% else %} {{ cor.fixed_cost }}€ {% endif %} </td>
+                     <td>
+                        <div class="btn-group">
+                          <a class="btn btn-warning" href="{{ url_for('updateCorPayrollBudget', id_payroll=payroll.id_payroll, id_payroll_budget=cor.id_payroll_budget) }}"> <i class="fa fa-edit"></i></a>
+                          <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteCorModal{{cor.id_payroll_budget}}"> <i class="fa fa-trash"></i> </a>  
+                        </div>
+                     </td>
+                  </tr>
+
+                  <!-- Delete Modal for CorPayrollBudget -->
+                  <div class="modal fade" id="deleteCorModal{{cor.id_payroll_budget}}" tabindex="0" aria-labelledby="deleteCorModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="deleteCorModalLabel">Supprimer le temps alloué à la ligne budgétaire</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p> Souhaitez-vous vraiment supprimer le temps attribué au projet <strong>{{ cor.budget_name or 'Gestion associative & Autres activités' }}</strong> pour la masse salariale de <strong>{{payroll.member_name}}</strong> sur la <strong>période du {{payroll.date_min_period|format_datetime}} au {{payroll.date_max_period|format_datetime}}</strong> ?
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                            <a class="btn btn-danger" href="{{ url_for('deleteCorPayrollBudget', id_payroll=payroll.id_payroll, id_payroll_budget=cor.id_payroll_budget) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- end modal -->
+
+                  {% endfor %}
                 </tbody>
               </table>
-              
-              <a class="btn btn-success" href="#"> <i class="fa fa-plus"></i> Attribuer du temps à un projet </a>        
-
-            </div>-->
-            <p>Patience... Cette fonctionnalité arrive à la prochaine mise à jour !</p>
+            </div> 
         </div>
-      </div>
+
+
+      </div> <!-- end card body -->
     </div>
+
 
    
 </div>

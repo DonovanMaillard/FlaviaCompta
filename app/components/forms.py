@@ -109,23 +109,20 @@ class formPayroll(Form):
     gross_remuneration = DecimalField('gross_remuneration', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], default=0, places=2)
     gross_premium = DecimalField('gross_premium', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], default=0, places=2)
     employer_charge_amount = DecimalField('employer_charge_amount', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], default=0, places=2)
-    real_worked_days = DecimalField('real_worked_days', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], places=2)
+    worked_days = DecimalField('worked_days', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], places=2)
 
 class formVolunteering(Form):
     id_member = SelectField('id_member', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner'),validators.NoneOf([''], message='Vous devez sélectionner une valeur')])
     period_month = SelectField('period_month', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
     period_year = IntegerField('period_year', [validators.NumberRange(min=1900, max=2100), validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
     daily_valuation = DecimalField('gross_remuneration', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], default=0, places=2)
-    real_worked_days = DecimalField('real_worked_days', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], places=2)
+    worked_days = DecimalField('worked_days', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], places=2)
 
-# Todo error messages
+# Todo
 class formPayrollBudget(Form):
-    id_budget = SelectField('id_budget', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner'),validators.NoneOf([''], message='Vous devez sélectionner une valeur')])
-    id_member = SelectField('id_member', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner'),validators.NoneOf([''], message='Vous devez sélectionner une valeur')])
-    date_min_period = DateField('date_min_period', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
-    date_max_period = DateField('date_max_period', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
+    id_budget = SelectField('id_budget')
     nb_days_allocated = DecimalField('nb_days_allocated', places=2)
-    fixed_cost = DecimalField('fixed_cost', validators=[validators.Optional()], places=2)
+    fixed_cost = DecimalField('fixed_cost', validators=[validators.Optional()], places=2, render_kw={"placeholder": "Laisser vide pour un décompte au réel"})
 
 class formMember(Form):
     member_name = StringField('Nom du membre', [validators.Length(min=1, max=50, message='Doit faire entre 1 et 50 caractères'), validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], render_kw={"placeholder": "Nom du membre"})
