@@ -436,7 +436,7 @@ def operationsCSV():
         w = csv.writer(data)
 
         # write header
-        header=['Groupe_operation','Libelle','Detail','Type','Date_operation','Date_effet','Montant','Moyen_de_paiement','Compte','Budget','Categorie_fiscale','Categorie_parente','Date_creation','Derniere_modification']
+        header=['Date_operation','Date_effet','Libelle','Detail','Montant','Moyen_de_paiement','Compte','Budget','Groupe_operation','Type','Categorie_fiscale','Categorie_parente','Justificatif','Date_creation','Derniere_modification']
         w.writerow(header)
         yield data.getvalue()
         data.seek(0)
@@ -445,20 +445,24 @@ def operationsCSV():
         # write each item
         Operations = vOperations.query.filter(vOperations.type_operation != 'Engagement').order_by(vOperations.effective_date.desc()).all()
         for operation in Operations:
-            print(operation)
+            if operation.uploaded_file is None or operation.uploaded_file == '':
+                document_url=None
+            else:
+                document_url=app.config['BASE_URL']+'/static/'+str(operation.uploaded_file)
             w.writerow((
-                operation.id_grp_operation,
+                operation.operation_date,  
+                operation.effective_date, 
                 operation.name_operation,
                 operation.detail_operation,
-                operation.type_operation,
-                operation.operation_date,  
-                operation.effective_date,  
                 operation.amount,
                 operation.payment_method,
                 operation.account_name,
                 operation.budget_name,
+                operation.id_grp_operation,
+                operation.type_operation,
                 operation.category,
                 operation.parent_category,
+                document_url,
                 operation.meta_crate_date,
                 operation.meta_update_date
             ))
