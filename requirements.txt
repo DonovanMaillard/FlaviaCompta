@@ -6,3 +6,4 @@ flask_login
 pdfkit 
 wtforms == 3.0.1
 Flask-WTF == 1.0.1
+zipfile36

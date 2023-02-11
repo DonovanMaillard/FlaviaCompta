@@ -103,7 +103,8 @@ CREATE TABLE comptasso.t_accounts (
 	bank_url varchar(255),
 	iban varchar(50), 
 	uploaded_file varchar(255),
-	is_personnal boolean,
+	is_personnal boolean DEFAULT False,
+	active boolean DEFAULT True,
 	meta_create_date timestamp WITHOUT time ZONE,
 	meta_update_date timestamp WITHOUT time ZONE
 );--OK 
@@ -281,43 +282,45 @@ $function$
 ;
 
 
- CREATE OR REPLACE FUNCTION comptasso.get_payrolls(cur_id_member integer, cur_id_budget integer)
+  CREATE OR REPLACE FUNCTION comptasso.get_payrolls(cur_id_member integer, cur_id_budget integer)
  RETURNS TABLE (
- 	id_payroll integer,
-	date_min_period date,
-	date_max_period date,
-	gross_remuneration numeric(8,2),
-	gross_premium numeric(8,2),
-	total_gross_remuneration numeric(8,2),
-	employer_charge_amount numeric(8,2),
-	worked_days numeric(8,2)
- 	)
+  id_payroll integer,
+  date_min_period date,
+  date_max_period date,
+  gross_remuneration numeric(8,2),
+  gross_premium numeric(8,2),
+  total_gross_remuneration numeric(8,2),
+  employer_charge_amount numeric(8,2),
+  worked_days numeric(8,2)
+  )
 LANGUAGE plpgsql IMMUTABLE
     AS $$
 -- Fonction permettant de connaitre les engagements pour un compte donné
   BEGIN
-	  RETURN QUERY 
-	  WITH my_period AS (
-	  	SELECT 
-      		min(p.date_min_period) AS date_min_period,
-      		max(p.date_max_period) AS date_max_period
-      	FROM comptasso.t_payrolls p
-      	JOIN comptasso.cor_payroll_budget cpb ON p.id_payroll=cpb.id_payroll
-      	WHERE p.id_member = cur_id_member 
-      	AND cpb.id_budget=cur_id_budget)
+    RETURN QUERY 
+    WITH my_period AS (
       SELECT 
-      	p.id_payroll,
-      	p.date_min_period,
-      	p.date_max_period,
-      	p.gross_remuneration,
-      	p.gross_premium,
-      	p.gross_remuneration+p.gross_premium AS total_gross_remuneration,
-      	p.employer_charge_amount,
-	  	p.worked_days
-	  FROM comptasso.t_payrolls p
-	  CROSS JOIN my_period
-	  WHERE p.date_min_period<my_period.date_max_period
-  	  AND p.date_max_period>my_period.date_min_period;
+          min(p.date_min_period) AS date_min_period,
+          max(p.date_max_period) AS date_max_period
+        FROM comptasso.t_payrolls p
+        JOIN comptasso.cor_payroll_budget cpb ON p.id_payroll=cpb.id_payroll
+        WHERE p.id_member = cur_id_member 
+        AND cpb.id_budget=cur_id_budget)
+      SELECT 
+        p.id_payroll,
+        p.date_min_period,
+        p.date_max_period,
+        p.gross_remuneration,
+        p.gross_premium,
+        p.gross_remuneration+p.gross_premium AS total_gross_remuneration,
+        p.employer_charge_amount,
+      p.worked_days
+    FROM comptasso.t_payrolls p
+    CROSS JOIN my_period
+    WHERE p.date_min_period<=my_period.date_max_period
+      AND p.date_max_period>=my_period.date_min_period
+      AND p.id_member = cur_id_member 
+    ;
   END;
 $$;
 
@@ -366,28 +369,26 @@ FOR EACH ROW EXECUTE PROCEDURE fct_trg_meta_dates_change();
 --
 -- VUES CALCULEES
 CREATE OR REPLACE VIEW comptasso.v_accounts AS (
-	SELECT 
-		ac.id_account, 
-		ac.name AS name, 
-		ac.account_number AS account_number,
-		ac.bank AS bank,
-		ac.bank_url AS bank_url,
-		ac.iban AS iban, 
-		ac.uploaded_file AS uploaded_file,
-		ac.is_personnal AS is_personnal,
-		ac.meta_create_date AS meta_create_date,
-		ac.meta_update_date AS meta_update_date,
-		comptasso.get_account_balance(ac.id_account) AS account_balance,
-		comptasso.get_account_commitment(ac.id_account) AS account_commitments,
-		max(op.effective_date) AS last_operation
-	FROM comptasso.t_accounts ac
-	LEFT JOIN comptasso.t_operations op ON op.id_account=ac.id_account
-	GROUP BY ac.id_account, ac.name, ac.account_number, ac.bank, ac.iban, ac.uploaded_file, ac.meta_create_date, ac.meta_update_date
-	ORDER BY name
+  SELECT 
+    ac.id_account, 
+    ac.name AS name, 
+    ac.account_number AS account_number,
+    ac.bank AS bank,
+    ac.bank_url AS bank_url,
+    ac.iban AS iban, 
+    ac.uploaded_file AS uploaded_file,
+    ac.is_personnal AS is_personnal,
+    ac.meta_create_date AS meta_create_date,
+    ac.meta_update_date AS meta_update_date,
+    comptasso.get_account_balance(ac.id_account) AS account_balance,
+    comptasso.get_account_commitment(ac.id_account) AS account_commitments,
+    max(op.effective_date) AS last_operation,
+    ac.active AS active
+  FROM comptasso.t_accounts ac
+  LEFT JOIN comptasso.t_operations op ON op.id_account=ac.id_account
+  GROUP BY ac.id_account, ac.name, ac.account_number, ac.bank, ac.iban, ac.uploaded_file, ac.meta_create_date, ac.meta_update_date, ac.active
+  ORDER BY active DESC, name ASC
 ); 
-
-
-
 
 
 CREATE OR REPLACE VIEW comptasso.v_actions AS (
@@ -467,29 +468,48 @@ CREATE OR REPLACE VIEW comptasso.v_decode_payroll_budgets AS (
   LEFT JOIN comptasso.t_budgets b ON cpb.id_budget = b.id_budget
 );
 
-CREATE OR REPLACE VIEW comptasso.v_synthese_payroll_by_budget AS (
-SELECT DISTINCT
-    b.id_budget,
-    b.name,
-    m.id_member,
-    m.member_name,    
-    cpb.fixed_cost,
-    (SELECT min(date_min_period) FROM comptasso.get_payrolls(m.id_member, b.id_budget)) AS date_min_period,
-    (SELECT max(date_max_period) FROM comptasso.get_payrolls(m.id_member, b.id_budget)) AS date_max_period,
-    (SELECT sum(total_gross_remuneration)::numeric(8,2) FROM comptasso.get_payrolls(m.id_member, b.id_budget)) AS gross_remuneration_on_period,
-    (SELECT sum(employer_charge_amount)::numeric(8,2) FROM comptasso.get_payrolls(m.id_member, b.id_budget)) AS employer_charges_on_period,
-    (SELECT sum(worked_days)::numeric(8,2) FROM comptasso.get_payrolls(m.id_member, b.id_budget)) AS total_worked_days_on_period,
-    sum(cpb.nb_days_allocated)::numeric(8,2) AS allocated_days,
-    CASE 
-		WHEN cpb.fixed_cost IS NULL THEN ((SELECT (sum(total_gross_remuneration)+sum(employer_charge_amount))/sum(worked_days) FROM comptasso.get_payrolls(m.id_member, b.id_budget)) * sum(cpb.nb_days_allocated))::numeric(8,2)
-		ELSE sum(cpb.nb_days_allocated*cpb.fixed_cost)::numeric(8,2)
-    END AS work_valuation
-  FROM comptasso.cor_payroll_budget cpb
-  JOIN comptasso.t_payrolls p ON cpb.id_payroll=p.id_payroll
-  LEFT JOIN comptasso.t_members m ON p.id_member=m.id_member
-  LEFT JOIN comptasso.t_budgets b ON b.id_budget=cpb.id_budget
-  GROUP BY 1,2,3,4,5
-  );
+-- Vue synthèse payroll budget
+CREATE OR REPLACE VIEW comptasso.v_synthese_payroll_budget AS(
+SELECT
+  p.id_member,
+  m.member_name,
+  cpb.id_budget,
+  b.name,
+  cpb.fixed_cost,
+  (SELECT min(date_min_period) FROM comptasso.get_payrolls(p.id_member,cpb.id_budget)) AS date_min_period,
+  (SELECT max(date_max_period) FROM comptasso.get_payrolls(p.id_member,cpb.id_budget)) AS date_max_period,
+  (SELECT sum(total_gross_remuneration) FROM comptasso.get_payrolls(p.id_member,cpb.id_budget)) AS total_gross_remuneration,
+  (SELECT sum(employer_charge_amount) FROM comptasso.get_payrolls(p.id_member,cpb.id_budget)) AS total_employer_charges,
+  (SELECT sum(worked_days) FROM comptasso.get_payrolls(p.id_member,cpb.id_budget)) AS total_work_days,
+  sum(cpb.nb_days_allocated) AS allocated_days,
+  -- Rémunération brute au réel si pas de cout fixe
+  CASE 
+    WHEN cpb.fixed_cost IS NULL THEN (SELECT round(sum(total_gross_remuneration)/sum(worked_days),2) FROM comptasso.get_payrolls(p.id_member,cpb.id_budget))*sum(cpb.nb_days_allocated)
+    ELSE NULL
+  END AS justified_remuneration,
+  -- Charges employeurs au réel si pas de cout fixe
+  CASE 
+    WHEN cpb.fixed_cost IS NULL THEN (SELECT round(sum(employer_charge_amount)/sum(worked_days),2) FROM comptasso.get_payrolls(p.id_member,cpb.id_budget))*sum(cpb.nb_days_allocated)
+    ELSE NULL
+  END AS justified_charges,
+  -- Cout fixe appliqué
+  CASE 
+    WHEN cpb.fixed_cost IS NOT NULL THEN (cpb.fixed_cost*sum(cpb.nb_days_allocated))
+    ELSE NULL
+  END AS justified_fixed_cost,
+  -- Masse salariale globale décomptée
+  CASE 
+    -- Si au réel, somme des charges et de la rémunération brute
+    WHEN cpb.fixed_cost IS NULL THEN (SELECT round(sum(employer_charge_amount)/sum(worked_days),2) FROM comptasso.get_payrolls(p.id_member,cpb.id_budget))*sum(cpb.nb_days_allocated)+(SELECT round(sum(total_gross_remuneration)/sum(worked_days),2) FROM comptasso.get_payrolls(p.id_member,cpb.id_budget))*sum(cpb.nb_days_allocated)
+    -- Cout forfaitaire si appliqué
+    ELSE (cpb.fixed_cost*sum(cpb.nb_days_allocated))
+  END AS justified_payroll
+FROM comptasso.cor_payroll_budget cpb
+JOIN comptasso.t_payrolls p ON cpb.id_payroll=p.id_payroll 
+JOIN comptasso.t_budgets b ON b.id_budget=cpb.id_budget
+JOIN comptasso.t_members m ON m.id_member=p.id_member
+GROUP BY 1,2,3,4,5)
+;
 
 
 CREATE OR REPLACE VIEW comptasso.v_budgets

@@ -52,6 +52,7 @@ class formAccount(Form):
     iban = StringField('IBAN', [validators.Length(max=50, message='Ne doit pas dépasser 50 caractères')], render_kw={"placeholder": "Iban"})
     uploaded_file = FileField('uploaded_file')
     keep_file = BooleanField('keep_file', default=True)
+    active = BooleanField('Actif') 
 
 # For actions on a budget
 class formAction(Form):

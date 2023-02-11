@@ -73,6 +73,11 @@
           </div>
           {% endif %}
         </div>
+
+        <br>
+        <label for = "active">Actif</label>
+            {{ form.active(class="form-check-input", checked=active) }}
+        <br><br>
               
          <input class="btn btn-primary float-right" type = "submit" value = "Enregistrer" />
       </form>

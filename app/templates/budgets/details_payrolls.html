@@ -1,0 +1,73 @@
+{% if (Payrolls | sum(attribute='justified_payroll'))*(1+Budget.indirect_charges/100) > Budget.payroll_limit %}
+      <div class="alert alert-danger" role="alert">
+        Attention ! La masse salariale allouée à ce projet dépasse le montant éligible.
+      </div>
+    {% endif %}
+
+    <table class="table table-striped">
+      <thead>
+            <tr>
+               <th>Salarié</th>
+               <th>Période</th>
+               <th>Temps de travail</th>
+               <th>Rémunération brute</th>
+               <th>Charges salariales</th>
+               <th>Coût forfaitaire</th>
+               <th>Masse salariale justifiée</th>
+            </tr>
+      </thead>
+
+      <tbody>
+        {% for Payroll in Payrolls%}
+        <tr>
+          <td>{{ Payroll.member_name }}</td>
+          <td>du {{ Payroll.date_min_period|format_datetime }} <br>
+            au {{ Payroll.date_max_period|format_datetime }}</td>
+          <td>
+            <em>Total période : {{ Payroll.total_work_days or '-' }}j</em><br>
+            <strong>projet : {{ Payroll.allocated_days or '-' }}j </strong> 
+          </td>
+          <td>
+            <em>Total période : {{ Payroll.total_gross_remuneration or '-' }}€ </em><br>
+            <strong>projet : {{ Payroll.justified_remuneration or '-' }}€ </strong> 
+          </td>
+          <td>
+            <em>Total période : {{ Payroll.total_employer_charges or '-' }}€</em><br>
+            <strong>projet : {{ Payroll.justified_charges or '-' }}€ </strong> 
+          </td>
+          <td>{{ Payroll.fixed_cost or '-' }}€</td>
+          <td>{{ Payroll.justified_payroll }}€</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+
+      <tfoot>
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td><em>masse salariale</em></td>
+          <td><em>{{ '%0.2f'|format((Payrolls | sum(attribute='justified_payroll')))  }}€</em></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td><em>charges indirectes</em></td>
+          <td><em>{{ '%0.2f'|format((Payrolls | sum(attribute='justified_payroll'))*Budget.indirect_charges/100)  }}€</em></td>
+        </tr>
+        <tr>
+          <td><strong>Total éligible</strong></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td><strong>{{ '%0.2f'|format((Payrolls | sum(attribute='justified_payroll'))*(1+Budget.indirect_charges/100)) }}€</strong></td>
+        </tr>
+      </tfoot>
+    </table>

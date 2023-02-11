@@ -25,7 +25,12 @@
       <div class="card">
       <div class="card-header">
         <div class="col-md-10">
-          <h4> {{ Account.name }}</h4>
+          <h4>
+            {% if Account.active %} <span class="badge table-badge alert-success">Actif</span>
+            {% else %} <span class="badge table-badge alert-dark">Inactif</span>
+            {% endif %}
+            {{ Account.name }}
+          </h4>
         </div>
         {% if Account.bank_url %}
         <div class="col-md-2">

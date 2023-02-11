@@ -137,11 +137,12 @@ class tAccounts(db.Model):
     bank_url = db.Column(db.String(255), nullable=True)
     iban = db.Column(db.String(50), nullable=True)
     uploaded_file = db.Column(db.String(255), nullable=True)
-    is_personnal = db.Column(db.Boolean, nullable=True)
+    is_personnal = db.Column(db.Boolean, nullable=False)
+    active = db.Column(db.Boolean, nullable=False)
     meta_create_date = db.Column(db.DateTime(), nullable=True)
     meta_update_date = db.Column(db.DateTime(), nullable=True)
 
-    def __init__(self, name, account_number, bank, bank_url, iban, uploaded_file, is_personnal):
+    def __init__(self, name, account_number, bank, bank_url, iban, uploaded_file, is_personnal, active):
         self.name = name
         self.account_number = account_number
         self.bank = bank
@@ -149,6 +150,7 @@ class tAccounts(db.Model):
         self.iban = iban
         self.uploaded_file = uploaded_file
         self.is_personnal = is_personnal
+        self.active = active
 
 
 class tOperations(db.Model):
@@ -389,7 +391,8 @@ class vAccounts(db.Model):
     bank_url = db.Column(db.String(255), nullable=False)
     iban = db.Column(db.String(50), nullable=False)
     uploaded_file = db.Column(db.String(50), nullable=False)
-    is_personnal = db.Column(db.Boolean, nullable=True)
+    is_personnal = db.Column(db.Boolean, nullable=False)
+    active = db.Column(db.Boolean, nullable=False)
     meta_create_date = db.Column(db.DateTime(), nullable=True)
     meta_update_date = db.Column(db.DateTime(), nullable=True)
     account_balance = db.Column(db.Numeric(8,2), nullable=True)
@@ -466,20 +469,23 @@ class vDecodeCorPayrollBudget(db.Model):
     fixed_cost = db.Column(db.Numeric(8,2), nullable=True)
 
 
-class vSynthesePayrollByBudget(db.Model):
+class vSynthesePayrollBudget(db.Model):
 
-    __tablename__ = "v_synthese_payroll_by_budget"
+    __tablename__ = "v_synthese_payroll_budget"
     __table_args__ = {"schema": "comptasso"}
 
-    id_budget = db.Column(db.Integer, nullable=False, primary_key=True)
-    name = db.Column(db.String(255), nullable=False)
     id_member = db.Column(db.Integer, nullable=False, primary_key=True)
     member_name = db.Column(db.String(255), nullable=False)
+    id_budget = db.Column(db.Integer, nullable=False, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    fixed_cost = db.Column(db.Numeric(8,2), nullable=True, primary_key=True)
     date_min_period = db.Column(db.Date, nullable=False)
     date_max_period = db.Column(db.Date, nullable=False)
-    fixed_cost = db.Column(db.Numeric(8,2), nullable=True, primary_key=True)
-    gross_remuneration_on_period = db.Column(db.Numeric(8,2), nullable=True)
-    employer_charges_on_period = db.Column(db.Numeric(8,2), nullable=True)
-    total_worked_days_on_period = db.Column(db.Numeric(8,2), nullable=True)
+    total_gross_remuneration = db.Column(db.Numeric(8,2), nullable=True)
+    total_employer_charges = db.Column(db.Numeric(8,2), nullable=True)
+    total_work_days = db.Column(db.Numeric(8,2), nullable=True)
     allocated_days = db.Column(db.Numeric(8,2), nullable=True)
-    work_valuation = db.Column(db.Numeric(8,2), nullable=True)
+    justified_remuneration = db.Column(db.Numeric(8,2), nullable=True)
+    justified_charges = db.Column(db.Numeric(8,2), nullable=True)
+    justified_fixed_cost = db.Column(db.Numeric(8,2), nullable=True)
+    justified_payroll = db.Column(db.Numeric(8,2), nullable=False)

@@ -2,11 +2,12 @@ from flask import Flask, render_template, request, flash, get_flashed_messages, 
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.wrappers import Response
-from io import StringIO
+from io import StringIO, BytesIO
 from datetime import datetime, timedelta, date
 from flask_login import login_required, current_user, login_user, logout_user, LoginManager
 from calendar import monthrange
 from sqlalchemy import func
+from zipfile import ZipFile, ZipInfo
 
 
 #import logging
@@ -185,7 +186,7 @@ def detailAccount(id_account):
 
 # Add account
 @app.route('/accounts/add/<type>', methods=['GET', 'POST'])
-@app.route('/accounts/add', defaults={'type': 'organism'}, methods=['GET', 'POST'])
+@app.route('/accounts/add', defaults={'type': 'not_personnal'}, methods=['GET', 'POST'])
 @login_required
 def addAccount(type):
     form = formAccount(request.form)
@@ -199,10 +200,11 @@ def addAccount(type):
             request.form['name'],
             request.form['account_number'],
             request.form['bank'],
-            request.form['bank_url'],
+            request.form.get('bank_url'),
             request.form['iban'],
             getFileUrl('uploaded_file'),
-            is_personnal
+            is_personnal,
+            bool(request.form.get('active'))
         )
         db.session.add(Account)
         db.session.commit()
@@ -215,17 +217,22 @@ def addAccount(type):
 def updateAccount(id_account):
   # pre-loaded form
     Account = tAccounts.query.get(id_account)
+    if Account.is_personnal:
+        type = 'personnal'
+    else :
+        type = 'not_personnal'
     form = formAccount(request.form, obj=Account)
     if request.method == 'POST' and form.validate():
         Account.name = request.form['name'], 
         Account.account_number = request.form['account_number'],
         Account.bank = request.form['bank'],
-        Account.bank_url = request.form['bank_url'],
+        Account.bank_url = request.form.get('bank_url'),
         Account.iban = request.form['iban'],
         if not request.form.get('keep_file'):
-            Account.uploaded_file = getFileUrl('uploaded_file')
+            Account.uploaded_file = getFileUrl('uploaded_file'),
+        Account.active = bool(request.form.get('active'))
         db.session.commit()
-        return redirect(url_for('accounts'))
+        return redirect(url_for('accounts', type=type))
     return render_template('accounts/add_or_update_account.html', form=form, Account=Account)
 
 # Delete account
@@ -259,7 +266,7 @@ def detailBudget(id_budget):
     Actions = vActions.query.filter_by(id_budget=id_budget)
     Operations = vOperations.query.filter(vOperations.id_budget==id_budget, vOperations.type_operation != 'Engagement').order_by(vOperations.effective_date.desc()).all()
     Commitments = vOperations.query.filter(vOperations.id_budget==id_budget, vOperations.type_operation == 'Engagement').order_by(vOperations.effective_date.desc()).all()
-    Payrolls = vSynthesePayrollByBudget.query.filter_by(id_budget=id_budget).all()
+    Payrolls = vSynthesePayrollBudget.query.filter_by(id_budget=id_budget).all()
     return render_template('budgets/details_budget.html', Budget = Budget, Actions = Actions, Operations = Operations, Commitments = Commitments, Payrolls = Payrolls)
 
 # Add budget
@@ -476,6 +483,32 @@ def operationsCSV():
     response.headers.set("Content-Disposition", "attachment", filename=datetime.now().strftime("%Y%m%d_%H-%M-%S")+"_export_operations.csv")
     return response
 
+'''
+Fonction à développer pour télécharger des justificatifs en lots
+@app.route('/operations/download_documents')
+@login_required
+def getDocuments(id_account=None, id_budget=None, year=None):
+    operations=tOperations.query.filter(tOperations.uploaded_file != None).all()
+    print(operations)
+    if id_account:
+        operations=operations.filter_by(id_account=id_account).all()
+    if id_budget:
+        operations=operations.filter_by(id_budget=id_budget).all()
+    if year:
+        operations=operations.filter(operations.effective_date.year==year).all()
+    # Create archive
+    memory_file = BytesIO()
+    with ZipFile(memory_file, 'w') as zf:
+        for operation in operations:
+            uploaded_file=app.config['BASE_DIR']+'app/static/'+operation.uploaded_file
+            data = ZipInfo(uploaded_file['fileName'])
+            data.date_time = time.localtime(time.time())[:6]
+            data.compress_type = ZIP_DEFLATED
+            zf.writestr(data, uploaded_file['fileData'])
+    memory_file.seek(0)
+    return send_file(memory_file, attachment_filename='justificatifs.zip', as_attachment=True)
+'''
+    
 # Suppression d'une opération ou de plusieurs opérations appariées
 @app.route('/operations/<id_operation>/delete', methods=['GET', 'POST'])
 @login_required
@@ -499,9 +532,9 @@ def addMovement(type_operation): #movement = Dépense + Recette
     form = formMovement(request.form)
     # Get accounts
     if type_operation=='Recette':
-        Accounts = tAccounts.query.filter_by(is_personnal=False)
+        Accounts = tAccounts.query.filter_by(is_personnal=False).filter_by(active=True)
     else :
-        Accounts = tAccounts.query.all()
+        Accounts = tAccounts.query.filter_by(active=True)
     # Form Choices
     # accounts
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
@@ -562,9 +595,9 @@ def updateMovement(id_operation): #movement = Dépense + Recette
     form = formMovement(request.form, obj=Operation)
     # Get accounts
     if type_operation=='Recette':
-        Accounts = tAccounts.query.filter_by(is_personnal=False)
+        Accounts = tAccounts.query.filter_by(is_personnal=False).filter_by(active=True)
     else :
-        Accounts = tAccounts.query.all()
+        Accounts = tAccounts.query.filter_by(active=True)
     # Form Choices
     # accounts
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
@@ -623,13 +656,13 @@ def addTransfer(type_transfer):
     #Get choices and form
     form = formTransfer(request.form)
     # Account
-    FromAccounts = tAccounts.query.filter_by(is_personnal=False)
+    FromAccounts = tAccounts.query.filter_by(is_personnal=False).filter_by(active=True)
     if type_transfer == 'Internal' :
-        ToAccounts = tAccounts.query.filter_by(is_personnal=False)
+        ToAccounts = tAccounts.query.filter_by(is_personnal=False).filter_by(active=True)
         id_type_operation = dictOperationTypes.query.filter_by(label = 'Transaction interne').one().id_type_operation
         id_category = dictCategories.query.filter_by(cd_category=900).one().id_category
     else :#refund
-        ToAccounts = tAccounts.query.filter_by(is_personnal=True)
+        ToAccounts = tAccounts.query.filter_by(is_personnal=True).filter_by(active=True)
         id_type_operation = dictOperationTypes.query.filter_by(label = 'Remboursement de frais').one().id_type_operation
         id_category = dictCategories.query.filter_by(cd_category=910).one().id_category
     form.from_id_account.choices = [('', '-- Sélectionnez un compte débiteur --')] + [(FromAccount.id_account, FromAccount.name) for FromAccount in FromAccounts]
@@ -690,12 +723,12 @@ def updateTransfer(id_grp_operation):
     if dictOperationTypes.query.get(credit.id_type_operation).label == 'Remboursement de frais' :
         type_operation = 'Refund'
         print('refund')
-        ToAccounts = tAccounts.query.filter_by(is_personnal=True)
+        ToAccounts = tAccounts.query.filter_by(is_personnal=True).filter_by(active=True)
         id_type_operation = dictOperationTypes.query.filter_by(label = 'Remboursement de frais').one().id_type_operation
         id_category = dictCategories.query.filter_by(cd_category=910).one().id_category
     elif dictOperationTypes.query.get(credit.id_type_operation).label == 'Transaction interne' :
         type_operation = 'Internal'
-        ToAccounts = tAccounts.query.filter_by(is_personnal=False)
+        ToAccounts = tAccounts.query.filter_by(is_personnal=False).filter_by(active=True)
         id_type_operation = dictOperationTypes.query.filter_by(label = 'Transaction interne').one().id_type_operation
         id_category = dictCategories.query.filter_by(cd_category=900).one().id_category
     # Filter debitable accounts
@@ -778,7 +811,7 @@ def addCommitment():
     form = formCommitment(request.form)
     # Form Choices
     # accounts
-    Accounts = tAccounts.query.filter_by(is_personnal=False)
+    Accounts = tAccounts.query.filter_by(is_personnal=False).filter_by(active=True)
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
     # Budget
     activeBudgets = tBudgets.query.filter_by(active=True)
@@ -822,7 +855,7 @@ def updateCommitment(id_operation):
     form = formCommitment(request.form, obj=Operation)
     # Form Choices
     # accounts
-    Accounts = tAccounts.query.filter_by(is_personnal=False)
+    Accounts = tAccounts.query.filter_by(is_personnal=False).filter_by(active=True)
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
     form.id_account.default=Operation.id_account
     # Budget
@@ -863,7 +896,7 @@ def convertCommitment(id_operation):
     form = formMovement(request.form, obj=Operation)
     # Form Choices
     # accounts
-    Accounts = tAccounts.query.filter_by(is_personnal=False)
+    Accounts = tAccounts.query.filter_by(is_personnal=False).filter_by(active=True)
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
     form.id_account.default=Operation.id_account
     # Budget
@@ -1118,8 +1151,9 @@ def deletePayroll(id_payroll):
     return redirect(url_for('payrolls'))
 
 
-### 
-# Cor budget payroll
+######################
+# Cor payroll budget #
+######################
 @app.route('/payrolls/<id_payroll>/cor_budget/add', methods=['GET', 'POST'])
 @login_required
 def addCorPayrollBudget(id_payroll):

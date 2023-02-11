@@ -73,9 +73,6 @@
                     <a class="dropdown-item" href="{{url_for('addCommitment')}}">Un engagement</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="/admin/categories">Des frais kilométriques (véhicule personnel)</a>
-                  </li>
-                  <li>
                     <a class="dropdown-item disabled" href="{{url_for('volunteering')}}">Dons & mises à dispositions (à venir)</a>
                   </li> 
                   <br/>
@@ -131,8 +128,8 @@
                   <li><h6 class="dropdown-header"><i class="fa fa-users"></i> Bénévoles</h6></li>
                   <li><hr class="dropdown-divider"></li>
                   <li class="dropdown-item inline-item">
-                    <a class="dropdown-item" href="{{url_for('volunteering')}}">Bénévolat valorisé</a>
-                    <a class="dropdown-item" href="{{url_for('addVolunteering')}}"><i class="fa-solid fa-square-plus"></i></a>
+                    <a class="dropdown-item disabled" href="{{url_for('volunteering')}}">Bénévolat valorisé (à venir)</a>
+                    <a class="dropdown-item disabled" href="{{url_for('addVolunteering')}}"><i class="fa-solid fa-square-plus"></i></a>
                   </li> 
                                     
                 </ul>
@@ -147,13 +144,16 @@
                     <a class="dropdown-item" href="{{ url_for('members') }}">Membres</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('funders')}}">Mes financeurs</a>
+                    <a class="dropdown-item" href="{{url_for('funders')}}">Financeurs</a>
                   </li>
                   <li>
                     <a class="dropdown-item" href="{{url_for('funders')}}">Activités</a>
                   </li>
                   <li>
                     <a class="dropdown-item" href="{{url_for('categories')}}">Catégories fiscales</a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item disabled" href="{{url_for('categories')}}">Documents (à venir)</a>
                   </li>
                 </ul>
               </li>

@@ -2,7 +2,11 @@
 
 {% block content %}
 <div class="container">
-	<h1> {{ Account.name }} </h1>
+	<h1>
+  {% if Account.active %} <span class="badge table-badge alert-success">Actif</span>
+  {% else %} <span class="badge table-badge alert-dark">Inactif</span>
+  {% endif %}
+  {{ Account.name }} </h1>
   <p style="color:grey"> n°{{ Account.account_number }} </p>
   <br/>
 
