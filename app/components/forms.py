@@ -1,7 +1,8 @@
 from flask_sqlalchemy import SQLAlchemy
 from wtforms import Form, validators, BooleanField, StringField, TextAreaField, IntegerField, SelectField, DecimalField, PasswordField
 from flask_wtf.file import FileField, FileAllowed
-from wtforms.fields.html5 import DateField
+#from wtforms.fields.html5 import DateField
+from wtforms.fields import DateField
 from werkzeug.utils import secure_filename
 
 from .init_db import db
