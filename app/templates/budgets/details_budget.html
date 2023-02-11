@@ -37,11 +37,11 @@
             <br>
           </div>
           <div class="col-md-4">
-            <p><strong>Date d'échéance du rendu : </strong>{{ Budget.date_return|format_datetime or '' }}
+            <p><strong>Date d'échéance du rendu : </strong>{{ Budget.date_return or '' }}
               <br>
-              Dépenses éligibles jusqu'au : {{ Budget.date_max_expenditure|format_datetime or '' }}
+              Dépenses éligibles jusqu'au : {{ Budget.date_max_expenditure or '' }}
             </p>
-            <strong>Dernière opération : </strong> {{ Budget.last_operation|format_datetime or '' }}
+            <strong>Dernière opération : </strong> {{ Budget.last_operation or '' }}
             <br>
           </div>
         </div>
