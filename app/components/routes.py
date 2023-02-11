@@ -995,6 +995,11 @@ def categories():
     Transferts=dictCategories.query.filter_by(id_type_operation = dictOperationTypes.query.filter_by(label='Transaction interne').one().id_type_operation).all()
     return render_template('admin/categories/categories_list.html', Depenses = Depenses, Recettes=Recettes, Benevolats=Benevolats,Transferts=Transferts)
 
+### Activities
+@app.route('/activities', methods=['GET'])
+@login_required
+def activities():
+    return render_template('admin/activities/activities_list.html', Activities = tActivities.query.all() )
 
 ###############
 ### Funders ###
