@@ -313,6 +313,6 @@ CREATE OR REPLACE VIEW comptasso.v_accounts AS (
   FROM comptasso.t_accounts ac
   LEFT JOIN comptasso.t_operations op ON op.id_account=ac.id_account
   GROUP BY ac.id_account, ac.name, ac.account_number, ac.bank, ac.iban, ac.uploaded_file, ac.meta_create_date, ac.meta_update_date, ac.active
-  ORDER BY name
+  ORDER BY active DESC, name ASC
 ); 
 
