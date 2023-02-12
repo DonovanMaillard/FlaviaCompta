@@ -31,7 +31,7 @@
         <th>du {{payroll.date_min_period|format_datetime}}<br>au {{payroll.date_max_period|format_datetime}}</th>
         <th>{{payroll.member_name}}</th>
         <td>{{payroll.gross_remuneration}}€ {% if payroll.gross_premium != 0.00 %}<br>prime : {{payroll.gross_premium}}€{% endif %}</td>
-        <td>{{payroll.employer_charge_amount}}</td>
+        <td>{{payroll.employer_charge_amount}} €</td>
         <td>{{payroll.total_amount}} €</td>
         <td>{{payroll.worked_days}}j</td>
         <td>

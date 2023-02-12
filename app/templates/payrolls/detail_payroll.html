@@ -42,6 +42,14 @@
             <br>
             <small class="text-muted">Catégorie fiscale 645 - Charges de sécurité sociale et prévoyance</small> 
           </div>
+          <div class="col-md-4"> 
+            {% if payroll.uploaded_file %}
+              <strong>Justificatif :</strong> <a href="{{ url_for('static', filename=payroll.uploaded_file) }}">télécharger le bulletin de paie</a> 
+            {% else %}
+               <em>aucun bulletin de paie fourni</em>
+            {% endif %}
+            <br>
+          </div>
         </div>
         <br><br>
 

@@ -112,6 +112,8 @@ class formPayroll(Form):
     gross_premium = DecimalField('gross_premium', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], default=0, places=2)
     employer_charge_amount = DecimalField('employer_charge_amount', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], default=0, places=2)
     worked_days = DecimalField('worked_days', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], places=2)
+    uploaded_file = FileField('uploaded_file')
+    keep_file = BooleanField('keep_file', default=True)
 
 class formVolunteering(Form):
     id_member = SelectField('id_member', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner'),validators.NoneOf([''], message='Vous devez sélectionner une valeur')])

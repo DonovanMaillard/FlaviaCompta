@@ -138,6 +138,7 @@ CREATE TABLE comptasso.t_payrolls (
 	gross_premium numeric(8,2) NOT NULL,
 	employer_charge_amount numeric(8,2) NOT NULL,
 	worked_days numeric(8,2) NOT NULL,
+	uploaded_file varchar(255),
 	meta_create_date timestamp WITHOUT time ZONE,
 	meta_update_date timestamp WITHOUT time ZONE
 );
@@ -449,7 +450,8 @@ CREATE OR REPLACE VIEW comptasso.v_payrolls AS (
     p.gross_premium,
     p.employer_charge_amount,
     p.gross_remuneration+p.gross_premium+p.employer_charge_amount as total_amount, 
-    p.worked_days
+    p.worked_days, 
+    p.uploaded_file
   FROM comptasso.t_payrolls p
   JOIN comptasso.t_members m ON p.id_member=m.id_member
   ORDER BY p.date_min_period

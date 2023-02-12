@@ -223,10 +223,11 @@ class tPayrolls(db.Model):
     gross_premium = db.Column(db.Numeric(8,2), nullable=False)
     employer_charge_amount = db.Column(db.Numeric(8,2), nullable=False)
     worked_days = db.Column(db.Numeric(8,2), nullable=False)
+    uploaded_file = db.Column(db.String(255), nullable=True)
     meta_create_date = db.Column(db.DateTime(), nullable=True)
     meta_update_date = db.Column(db.DateTime(), nullable=True)
 
-    def __init__ (self, id_member, date_min_period, date_max_period, gross_remuneration, gross_premium, employer_charge_amount, worked_days):
+    def __init__ (self, id_member, date_min_period, date_max_period, gross_remuneration, gross_premium, employer_charge_amount, worked_days, uploaded_file):
         self.id_member = id_member
         self.date_min_period = date_min_period
         self.date_max_period = date_max_period
@@ -234,6 +235,7 @@ class tPayrolls(db.Model):
         self.gross_premium = gross_premium
         self.employer_charge_amount = employer_charge_amount
         self.worked_days = worked_days
+        self.uploaded_file = uploaded_file
 
 
 class tUsers(UserMixin, db.Model):
@@ -454,6 +456,7 @@ class vPayrolls(db.Model):
     employer_charge_amount = db.Column(db.Numeric(8,2), nullable=False)
     total_amount = db.Column(db.Numeric(8,2), nullable=False)
     worked_days = db.Column(db.Numeric(8,2), nullable=False)
+    uploaded_file = db.Column(db.String(255), nullable=True)
 
 
 class vDecodeCorPayrollBudget(db.Model):

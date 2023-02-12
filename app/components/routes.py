@@ -1105,7 +1105,8 @@ def addPayroll():
             getDecimal(request.form['gross_remuneration']), 
             getDecimal(request.form['gross_premium']), 
             getDecimal(request.form['employer_charge_amount']),
-            getDecimal(request.form['worked_days'])
+            getDecimal(request.form['worked_days']),
+            getFileUrl('uploaded_file'),
             )
         db.session.add(payroll)
         db.session.commit()
@@ -1134,9 +1135,11 @@ def updatePayroll(id_payroll):
         payroll.gross_premium = getDecimal(request.form['gross_premium']), 
         payroll.employer_charge_amount = getDecimal(request.form['employer_charge_amount']), 
         payroll.worked_days = getDecimal(request.form['worked_days'])
+        if not request.form.get('keep_file'):
+            payroll.uploaded_file = getFileUrl('uploaded_file')
         db.session.commit()
         return redirect(url_for('payrolls'))
-    return render_template('payrolls/add_or_update_member_payroll.html', form=form, payroll=None, Members=Members)
+    return render_template('payrolls/add_or_update_member_payroll.html', form=form, payroll=payroll, Members=Members)
 
 # Details payroll
 @app.route('/payrolls/detail/<id_payroll>', methods=['GET', 'POST'])
