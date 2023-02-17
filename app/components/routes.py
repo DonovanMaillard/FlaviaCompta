@@ -1083,9 +1083,9 @@ def addDocument():
         document = tDocuments(
             request.form['title'], 
             request.form['description'], 
-            request.form['id_type'], 
-            getFileUrl('uploaded_file'), 
-            current_user.id_user
+            request.form['id_type'],
+            getFileUrl('uploaded_file'),
+            current_user.id_user,
         )
         db.session.add(document)
         db.session.commit()
@@ -1104,10 +1104,11 @@ def updateDocument(id_document):
     form.id_type.choices = [('', '-- Sélectionnez un type de document --')] + [(DocumentType.id_type, DocumentType.label) for DocumentType in DocumentTypes]
     form.id_type.default=Document.id_type
     if request.method == 'POST' and form.validate():
+        print(getFileUrl('uploaded_file'))
         Document.title = request.form['title'], 
         Document.description = request.form['description'],
         if not request.form.get('keep_file'):
-            Document.uploaded_file = getFileUrl('uploaded_file'),
+            Document.uploaded_file = getFileUrl('uploaded_file')
         db.session.commit()
         return redirect(url_for('documents'))
     return render_template('admin/documents/add_or_update_document.html', form=form, document=Document)
