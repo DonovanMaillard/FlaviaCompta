@@ -1001,9 +1001,7 @@ def categories():
 def activities():
     return render_template('admin/activities/activities_list.html', Activities = tActivities.query.all() )
 
-###############
 ### Funders ###
-###############
 # List funders
 @app.route('/funders', methods=['GET'])
 @login_required
@@ -1065,6 +1063,63 @@ def deleteFunder(id_funder):
     db.session.commit()
     return redirect('/funders')
 
+
+### Documents ###
+# List documents
+@app.route('/documents', methods=['GET'])
+@login_required
+def documents():
+    return render_template('admin/documents/documents_list.html', documents = vDocuments.query.all() )
+
+# Add document
+@app.route('/documents/add', methods=['GET', 'POST'])
+@login_required
+def addDocument():
+    form = formDocument(request.form)
+    DocumentTypes = dictDocumentType.query.all()
+    form.id_type.choices = [('', '-- Sélectionnez un type de document --')] + [(DocumentType.id_type, DocumentType.label) for DocumentType in DocumentTypes]
+    # Formulaire
+    if request.method == 'POST' and form.validate():
+        document = tDocuments(
+            request.form['title'], 
+            request.form['description'], 
+            request.form['id_type'], 
+            request.form['uploaded_file'], 
+            current_user.id_user
+        )
+        db.session.add(document)
+        db.session.commit()
+        return redirect('/documents')
+    return render_template('admin/documents/add_or_update_document.html', form=form, document=None)
+
+
+# Edit account
+@app.route('/documents/edit/<id_document>', methods=['GET', 'POST'])
+@login_required
+def updateDocument(id_document):
+  # pre-loaded form
+    Document = tDocuments.query.get(id_document)
+    form = formDocument(request.form, obj=Document)
+    DocumentTypes = dictDocumentType.query.all()
+    form.id_type.choices = [('', '-- Sélectionnez un type de document --')] + [(DocumentType.id_type, DocumentType.label) for DocumentType in DocumentTypes]
+    form.id_type.default=Document.id_type
+    if request.method == 'POST' and form.validate():
+        Document.title = request.form['title'], 
+        Document.description = request.form['description'],
+        if not request.form.get('keep_file'):
+            Document.uploaded_file = getFileUrl('uploaded_file'),
+        db.session.commit()
+        return redirect(url_for('documents'))
+    return render_template('admin/documents/add_or_update_document.html', form=form, document=Document)
+
+# Delete funder
+@app.route('/documents/delete/<id_document>', methods=['GET', 'POST'])
+@login_required
+def deleteDocument(id_document):
+    current_document=tDocuments.query.get(id_document)
+    db.session.delete(current_document)
+    db.session.commit()
+    return redirect('/documents')
 
 ##################
 ### WORK VALUE ###

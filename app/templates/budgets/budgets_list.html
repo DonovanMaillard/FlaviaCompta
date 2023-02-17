@@ -63,9 +63,13 @@
                   <td>
                     <div>
                         <div class="btn btn-group">
-                           <a class="btn btn-info" href="{{ url_for('detailBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-eye"></i> </a>
-                           <a class="btn btn-warning" href="{{ url_for('updateBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-edit"></i> </a>
-                           <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{Budget.id_budget}}"> <i class="fa fa-trash"></i> </a>
+                          <a class="btn btn-info" href="{{ url_for('detailBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-eye"></i> </a>
+                          <a class="btn btn-warning" href="{{ url_for('updateBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-edit"></i> </a>
+                          {% if Budget.nb_operations == 0 %}
+                            <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{Budget.id_budget}}"> <i class="fa fa-trash"></i> </a>
+                          {% else %}
+                            <a class="btn btn-danger disabled"> <i class="fa fa-ban"></i> </a>
+                          {% endif %}
                         </div>
                     </div>
                </tr>

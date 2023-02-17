@@ -68,6 +68,7 @@
               </div>
               <div class="modal-body">
                   <p> Souhaitez-vous vraiment supprimer cette masse salariale de {{payroll.member_name}} pour la période du {{payroll.date_min_period|format_datetime}} au {{payroll.date_max_period|format_datetime}} ?</p>
+                  <p><i class="fa fa-triangle-exclamation" style="color:red"></i> <strong style="color:red">En supprimant la masse salariale, vous supprimerez également toutes ses correspondances avec les budgets auxquels du temps était attribué.</strong> </p>
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>

@@ -58,7 +58,11 @@
             <a class="btn btn-info" href="{{ Account.bank_url }}" title="Accéder au portail de connexion du compte"> <i class="fa fa-external-link"></i> Site de la banque</a>
           {% endif %}
           <a class="btn btn-warning" href="{{ url_for('updateAccount', id_account=Account.id_account) }}"> <i class="fa fa-edit"></i> Modifier</a>
-          <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"> <i class="fa fa-trash"></i> Supprimer </a>        
+          {% if Account.nb_operations == 0 %}
+            <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"> <i class="fa fa-trash"></i> Supprimer </a>
+          {% else %}
+            <a class="btn btn-danger disabled"> <i class="fa fa-ban"></i> Opérations liées</a>
+          {% endif %}        
         </div>
           <div class="col-md-6">
             <p style="color:grey;">Créé le : {{ Account.meta_create_date or ''}}<br>

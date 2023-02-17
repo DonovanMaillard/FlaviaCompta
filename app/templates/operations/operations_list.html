@@ -6,8 +6,19 @@
 <div class="container">
 	<h1> Liste des opérations enregistrées </h1>
 
-  <a class="btn btn-outline-danger btn-right" href="{{ url_for('addMovement', type_operation='Dépense') }}"> <i class="fa fa-plus"></i> Ajouter une dépense </a>
-  <a class="btn btn-outline-success btn-right" href="{{ url_for('addMovement', type_operation='Recette') }}"> <i class="fa fa-plus"></i> Ajouter une recette </a>
+	<div class="btn-group" role="group" aria-label="Button group with nested dropdown">
+	  <div class="btn-group" role="group">
+	    <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+	      Ajouter une opération
+	    </button>
+	    <ul class="dropdown-menu">
+	      <li><a class="dropdown-item" href="{{ url_for('addMovement', type_operation='Dépense') }}">Une dépense</a></li>
+	      <li><a class="dropdown-item" href="{{ url_for('addMovement', type_operation='Recette') }}">Une recette</a></li>
+	      <li><a class="dropdown-item" href="{{url_for('addTransfer', type_transfer = 'Internal')}}">Une régule entre comptes</a></li>
+	      <li><a class="dropdown-item" href="{{url_for('addTransfer', type_transfer='Refund')}}">Un remboursement de frais</a></li>
+	    </ul>
+	  </div>
+	</div>
 
 <br><br><br>
   <!-- Table des opérations -->

@@ -1,0 +1,106 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="container">
+	<h1> Documents de l'association</h1>
+
+  <a class="btn btn-success btn-right " href="{{ url_for('addDocument') }}"><i class="fa fa-plus"></i> Ajouter un nouveau document</a>
+
+  <br><br>
+	<table class="table table-striped">
+         <thead>
+            <tr>
+               <th>Type</th>
+               <th>Titre</th>
+               <th>Description</th>
+               <th>Actions</th>
+            </tr>
+         </thead>
+         
+         <tbody>
+            {% for document in documents %}
+               <tr>
+               	  <td>{{ document.type }}</td>
+                  <td>{{ document.title }}</td>
+                  <td>{{ document.description }}</td>
+                  <td>
+                  	<div>
+                        <div class="btn btn-group">
+                          <a class="btn btn-info" data-bs-toggle="modal" data-bs-target="#infoModal{{document.id_document}}"> <i class="fa fa-eye"></i> </a>
+                          <a class="btn btn-success" href=" {{ url_for('static', filename=document.uploaded_file) }}"> <i class="fa fa-download"></i> </a>
+                          <a class="btn btn-warning" href="{{ url_for('updateDocument', id_document=document.id_document) }}"> <i class="fa fa-edit"></i> </a>
+                          <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{document.id_document}}"> <i class="fa fa-trash"></i> </a>
+                        </div>
+                  	</div>
+               </tr>
+
+            <!-- Info Modal -->
+                <div class="modal fade" id="infoModal{{document.id_document}}" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
+                  <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Détails du document</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                          <div class="row">
+                            <div class="col-md-12">
+                              <strong>Titre : </strong> {{ document.title }}
+                            </div>
+                          </div>
+                          <br>
+                          <div class="row">
+                            <div class="col-md-12">
+                              <strong>Description : </strong> {{ document.description }}
+                            </div>
+                          </div>
+                          <br>
+                          <div class="row">
+                              <div class="col-md-12">
+                                <strong>Déposé par : </strong> {{ document.digitiser }} 
+                              </div>
+                              <br>
+                              <div class="col-md-12">
+                                Le {{ document.meta_create_date|format_datetime }}
+                                {% if document.meta_update_date %}
+                                  <em> (Dernière modification le {{ document.meta_update_date|format_datetime }}) </em>
+                                {% endif %}
+                              </div>
+                          </div>
+                      </div>
+                      <div class="modal-footer">
+                        <a class="btn btn-success" href=" {{ url_for('static', filename=document.uploaded_file) }}"> <i class="fa fa-download"></i> <strong>Télécharger</strong></a>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            <!-- end modal -->
+
+
+            <!-- Delete Modal -->
+                <div class="modal fade" id="deleteModal{{document.id_document}}" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Supprimer le document</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                          <p> Souhaitez-vous vraiment supprimer <strong>"{{ document.title }}"</strong> des documents ?</p>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <a class="btn btn-danger" href="{{ url_for('deleteDocument', id_document=document.id_document) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            <!-- end modal -->
+            {% endfor %}
+        </tbody>
+    </table>
+
+
+</div>
+{% endblock %}

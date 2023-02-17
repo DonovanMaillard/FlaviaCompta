@@ -5,6 +5,9 @@
 <div class="container">
 	<h1> Liste des financeurs </h1>
 
+      <a class="btn btn-success btn-right " href="{{ url_for('addFunder') }}"><i class="fa fa-plus"></i> Ajouter un nouveau financeur</a>
+      <br><br>
+      
       <table class="table table-striped">
          <thead>
             <tr>
@@ -38,7 +41,7 @@
                   <div class="modal-dialog">
                     <div class="modal-content">
                       <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLabel">Supprimer la ligne budgétaire</h5>
+                        <h5 class="modal-title" id="exampleModalLabel">Supprimer le financeur</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                       </div>
                       <div class="modal-body">
@@ -55,7 +58,5 @@
             {% endfor %}
          </tbody>
       </table>
-
-      <a class="btn btn-success" href="{{ url_for('addFunder') }}"><i class="fa fa-plus"></i> Ajouter un nouveau financeur</a>
 </div>
 {% endblock %}

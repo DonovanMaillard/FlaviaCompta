@@ -69,7 +69,11 @@
             <div class="btn btn-group">
               <a class="btn btn-info" href="{{ url_for('detailAccount', id_account=Account.id_account) }}"> <i class="fa fa-eye"></i> </a>
               <a class="btn btn-warning" href="{{ url_for('updateAccount', id_account=Account.id_account) }}"> <i class="fa fa-edit"></i> </a>
+              {% if Account.nb_operations == 0 %}
               <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{Account.id_account}}"> <i class="fa fa-trash"></i> </a>
+              {% else %}
+              <a class="btn btn-danger disabled"> <i class="fa fa-ban"></i> </a>
+              {% endif %}
             </div>          
           </div>
         </div>

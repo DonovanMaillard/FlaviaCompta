@@ -58,6 +58,18 @@ class dictCategories(db.Model):
     seizable = db.Column(db.Boolean, nullable=False)
 
 
+class dictDocumentType(db.Model):
+
+    __tablename__ = "dict_document_type"
+    __table_args__ = {"schema": "comptasso"}
+    id_type = db.Column(db.Integer, primary_key=True)
+    label = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.Unicode, nullable=True)
+    
+    def __init__(self, label, description):
+        self.label = label
+        self.description = description 
+
 #######################
 ## TABLES DE DONNEES ##
 #######################
@@ -291,6 +303,27 @@ class tActivities(db.Model):
         self.description = description 
         self.active = active
 
+
+class tDocuments(db.Model):
+
+    __tablename__ = "t_documents"
+    __table_args__ = {"schema": "comptasso"}
+    id_document = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.Unicode, nullable=True)
+    id_type = db.Column(db.Integer, nullable=False)
+    uploaded_file = db.Column(db.String(255), nullable=True)
+    meta_id_digitiser = db.Column(db.Integer, nullable=False)
+    meta_create_date = db.Column(db.DateTime(), nullable=True)
+    meta_update_date = db.Column(db.DateTime(), nullable=True)
+    
+    def __init__(self, title, description, id_type, uploaded_file, meta_id_digitiser):
+        self.title = title
+        self.description = description 
+        self.id_type = id_type
+        self.uploaded_file = uploaded_file
+        self.meta_id_digitiser = meta_id_digitiser
+
         
 ###############################
 ## TABLES DE CORRESPONDANCES ##
@@ -380,6 +413,7 @@ class vBudgets(db.Model):
     percent_committed = db.Column(db.Numeric(8,2), nullable=True)
     last_operation = db.Column(db.Date(), nullable=True)
     last_action_date = db.Column(db.Date(), nullable=True)
+    nb_operations = db.Column(db.Integer, nullable=False)
 
 
 class vAccounts(db.Model):
@@ -400,6 +434,7 @@ class vAccounts(db.Model):
     account_balance = db.Column(db.Numeric(8,2), nullable=True)
     account_commitments = db.Column(db.Numeric(8,2), nullable=True)
     last_operation = db.Column(db.Date(), nullable=True)
+    nb_operations = db.Column(db.Integer, nullable=False)
 
 
 class vActions(db.Model):
@@ -492,3 +527,18 @@ class vSynthesePayrollBudget(db.Model):
     justified_charges = db.Column(db.Numeric(8,2), nullable=True)
     justified_fixed_cost = db.Column(db.Numeric(8,2), nullable=True)
     justified_payroll = db.Column(db.Numeric(8,2), nullable=False)
+
+
+class vDocuments(db.Model):
+
+    __tablename__ = "v_documents"
+    __table_args__ = {"schema": "comptasso"}
+    id_document = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.Unicode, nullable=True)
+    type = db.Column(db.String(50), nullable=False)
+    uploaded_file = db.Column(db.String(255), nullable=True)
+    digitiser = db.Column(db.Unicode, nullable=True)
+    meta_create_date = db.Column(db.DateTime(), nullable=True)
+    meta_update_date = db.Column(db.DateTime(), nullable=True)
+    

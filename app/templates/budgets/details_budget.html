@@ -74,7 +74,11 @@
         <br><br>
         <div class="btn-group">
           <a class="btn btn-warning" href="{{ url_for('updateBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-edit"></i> Modifier</a>
-          <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"> <i class="fa fa-trash"></i> Supprimer </a>        
+          {% if Budget.nb_operations == 0 %}
+            <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"> <i class="fa fa-trash"></i> Supprimer </a>
+          {% else %}
+            <a class="btn btn-danger disabled"> <i class="fa fa-ban"></i> Opérations liées </a>
+          {% endif %}
         </div>
     </div>
   </div>

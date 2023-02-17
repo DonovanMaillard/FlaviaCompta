@@ -122,6 +122,13 @@ class formVolunteering(Form):
     daily_valuation = DecimalField('gross_remuneration', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], default=0, places=2)
     worked_days = DecimalField('worked_days', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], places=2)
 
+class formDocument(Form):
+    title = StringField('Titre du document', [validators.Length(min=1, max=50, message='Doit faire entre 1 et 50 caractères'), validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], render_kw={"placeholder": "Titre du document"})
+    description= TextAreaField('Description du document', render_kw={"placeholder": "Description du document"})
+    id_type = SelectField('id_type', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner'),validators.NoneOf([''], message='Vous devez sélectionner une valeur')])
+    uploaded_file = FileField('uploaded_file')
+    keep_file = BooleanField('keep_file', default=True)
+
 # Todo
 class formPayrollBudget(Form):
     id_budget = SelectField('id_budget')
