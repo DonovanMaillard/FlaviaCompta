@@ -1084,7 +1084,7 @@ def addDocument():
             request.form['title'], 
             request.form['description'], 
             request.form['id_type'], 
-            request.form['uploaded_file'], 
+            getFileUrl('uploaded_file'), 
             current_user.id_user
         )
         db.session.add(document)
