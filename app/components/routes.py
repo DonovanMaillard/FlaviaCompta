@@ -1069,7 +1069,9 @@ def deleteFunder(id_funder):
 @app.route('/documents', methods=['GET'])
 @login_required
 def documents():
-    return render_template('admin/documents/documents_list.html', documents = vDocuments.query.all() )
+    documents = vDocuments.query.order_by(vDocuments.meta_create_date.desc()).all()
+    print(documents)
+    return render_template('admin/documents/documents_list.html', documents = documents )
 
 # Add document
 @app.route('/documents/add', methods=['GET', 'POST'])

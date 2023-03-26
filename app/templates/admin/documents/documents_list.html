@@ -8,9 +8,11 @@
 
   <br><br>
 
- {% if documents %}
+ {% if not documents %}
  
- <p>Aucun document enregistré</p>
+  <div class="alert alert-warning" role="alert">
+    Aucun document n'est disponible pour le moment.
+  </div>
 
  {% else %} 
 	<table class="table table-striped">
@@ -33,7 +35,7 @@
                   	<div>
                         <div class="btn btn-group">
                           <a class="btn btn-info" data-bs-toggle="modal" data-bs-target="#infoModal{{document.id_document}}"> <i class="fa fa-eye"></i> </a>
-                          <a class="btn btn-success" href=" {{ url_for('static', filename=document.uploaded_file) }}"> <i class="fa fa-download"></i> </a>
+                          <a class="btn btn-success" href=" {{ url_for('static', filename=document.uploaded_file) }}" target="_blank"> <i class="fa fa-download"></i> </a>
                           <a class="btn btn-warning" href="{{ url_for('updateDocument', id_document=document.id_document) }}"> <i class="fa fa-edit"></i> </a>
                           <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{document.id_document}}"> <i class="fa fa-trash"></i> </a>
                         </div>
@@ -75,7 +77,7 @@
                           </div>
                       </div>
                       <div class="modal-footer">
-                        <a class="btn btn-success" href=" {{ url_for('static', filename=document.uploaded_file) }}"> <i class="fa fa-download"></i> <strong>Télécharger</strong></a>
+                        <a class="btn btn-success" href=" {{ url_for('static', filename=document.uploaded_file) }}" target="_blank"> <i class="fa fa-download"></i> <strong>Télécharger</strong></a>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
                       </div>
                     </div>
