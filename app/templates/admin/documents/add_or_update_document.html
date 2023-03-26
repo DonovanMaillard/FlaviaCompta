@@ -8,7 +8,7 @@
     <h1> Modifier "{{document.title}}" </h1>
     {% endif %}
 
-      <form method = "post" novalidate>
+      <form method = "post" enctype="multipart/form-data" novalidate>
         <div class="row">
 
           <div class="form-group col-md-8">
@@ -39,24 +39,21 @@
           </div>
         </div>
 
-        <div class="row">
-          <div class="form-group col-md-6">
-            <label for = "uploaded_file"><strong>Document *</strong></label><br>
-              {{ form.uploaded_file(class="form-control") }}
-              {% for error in form.uploaded_file.errors %} 
-                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-              {% endfor %}
-          </div>
+       <div class="form-group col-md-6">
+          <label for = "uploaded_file"><strong>Document *</strong></label><br>
+            {{ form.uploaded_file(class="form-control") }}
 
+            {% for error in form.uploaded_file.errors %} 
+              <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+            {% endfor %}
+          <!-- Keep previous uploaded file checkbox -->
           {% if document.uploaded_file %}
-          <div class="form-group">
-            <label for = "keep_file">Conserver le <a href="{{ url_for('static', filename=document.uploaded_file) }}"> document enregistré précédemment</a></label>
-            {{ form.keep_file(class="form-check-input", checked=true) }}
-          </div>
+            <div class="form-group">
+              <label for = "keep_file">Conserver le <a href="{{ url_for('static', filename=document.uploaded_file) }}"> document fourni précédemment</a></label>
+              {{ form.keep_file(class="form-check-input", checked=true) }}
+            </div>
           {% endif %}
         </div>
-
-       
 
 
         <div  class="btn btn-group">

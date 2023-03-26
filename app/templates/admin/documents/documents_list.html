@@ -7,6 +7,12 @@
   <a class="btn btn-success btn-right " href="{{ url_for('addDocument') }}"><i class="fa fa-plus"></i> Ajouter un nouveau document</a>
 
   <br><br>
+
+ {% if documents %}
+ 
+ <p>Aucun document enregistré</p>
+
+ {% else %} 
 	<table class="table table-striped">
          <thead>
             <tr>
@@ -101,6 +107,7 @@
         </tbody>
     </table>
 
+    {% endif %} 
 
 </div>
 {% endblock %}

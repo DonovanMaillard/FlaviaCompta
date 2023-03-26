@@ -1076,6 +1076,7 @@ def documents():
 @login_required
 def addDocument():
     form = formDocument(request.form)
+    #Types de documents
     DocumentTypes = dictDocumentType.query.all()
     form.id_type.choices = [('', '-- Sélectionnez un type de document --')] + [(DocumentType.id_type, DocumentType.label) for DocumentType in DocumentTypes]
     # Formulaire
@@ -1100,11 +1101,12 @@ def updateDocument(id_document):
   # pre-loaded form
     Document = tDocuments.query.get(id_document)
     form = formDocument(request.form, obj=Document)
+    # types
     DocumentTypes = dictDocumentType.query.all()
     form.id_type.choices = [('', '-- Sélectionnez un type de document --')] + [(DocumentType.id_type, DocumentType.label) for DocumentType in DocumentTypes]
     form.id_type.default=Document.id_type
+    #Formulaire
     if request.method == 'POST' and form.validate():
-        print(getFileUrl('uploaded_file'))
         Document.title = request.form['title'], 
         Document.description = request.form['description'],
         if not request.form.get('keep_file'):
