@@ -41,15 +41,6 @@ CREATE TABLE comptasso.dict_categories (
 	seizable boolean
 );
 
-CREATE TABLE comptasso.dict_kilometric_scale (
-	id_kilometric_scale serial PRIMARY KEY,
-	start_date date NOT NULL,
-	end_date date NOT NULL,
-	fiscal_power integer NOT NULL,
-	kilometric_scale numeric(8,2) NOT NULL,
-	active boolean
-);
-
 -- 
 -- TABLES DE DONNEES DYNAMIQUES
 
