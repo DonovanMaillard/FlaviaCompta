@@ -407,6 +407,7 @@ CREATE OR REPLACE VIEW comptasso.v_operations AS (
 		dot.label AS type_operation,
 		op.operation_date AS operation_date,
 		op.effective_date AS effective_date,
+		extract('year' FROM op.effective_date)::integer AS year,
 		op.amount AS amount, -- Les débits sont stockés avec un nombre négatif, les crédits avec un nombre positif
 		dpm.label AS payment_method,
 		op.id_account AS id_account,

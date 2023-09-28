@@ -18,7 +18,7 @@
 		<tr>
 			<td>{{ year.year }}</td>
 			<td><a class="btn btn-success btn-right " href="{{url_for('resultsPDF', year=year.year)}}"><i class="fa fa-download"> </i> Bilan PDF </a></td>
-			<td>à venir</td>
+			<td><a class="btn btn-success btn-right " href="{{url_for('operationsCSV', year=year.year)}}"><i class="fa fa-download"> </i> Opérations format tableur </a></td>
 		</tr>
 		{% endfor %}
 	</tbody>

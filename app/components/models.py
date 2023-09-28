@@ -461,6 +461,7 @@ class vOperations(db.Model):
     type_operation = db.Column(db.String(50), nullable=False)
     operation_date = db.Column(db.Date, nullable=True)
     effective_date = db.Column(db.Date, nullable=False)
+    year = db.Column(db.Integer, nullable=True)
     amount = db.Column(db.Numeric(8,2), nullable=False)
     payment_method = db.Column(db.String(50), nullable=False)
     id_account = db.Column(db.Integer, nullable=False)

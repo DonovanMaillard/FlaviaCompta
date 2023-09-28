@@ -434,23 +434,27 @@ def operations():
     return render_template('operations/operations_list.html', Operations=Operations, type=None)
 
 # Export CSV
-@app.route('/operations/export_csv')
+@app.route('/operations/export_csv/<year>')
+@app.route('/operations/export_csv', defaults={'year': None})
 @login_required
-def operationsCSV():
+def operationsCSV(year=None):
     @stream_with_context
     def generate():
         data = StringIO()
         w = csv.writer(data)
 
         # write header
-        header=['Date_operation','Date_effet','Libelle','Detail','Montant','Moyen_de_paiement','Compte','Budget','Groupe_operation','Type','Categorie_fiscale','Categorie_parente','Justificatif','Date_creation','Derniere_modification']
+        header=['Date_operation','Date_effet','Exercice','Libelle','Detail','Montant','Moyen_de_paiement','Compte','Budget','Groupe_operation','Type','Categorie_fiscale','Categorie_parente','Justificatif','Date_creation','Derniere_modification']
         w.writerow(header)
         yield data.getvalue()
         data.seek(0)
         data.truncate(0)
 
         # write each item
-        Operations = vOperations.query.filter(vOperations.type_operation != 'Engagement').order_by(vOperations.effective_date.desc()).all()
+        if year :
+            Operations = vOperations.query.filter(vOperations.type_operation != 'Engagement').filter(vOperations.year == year).order_by(vOperations.effective_date.desc()).all()
+        else : 
+            Operations = vOperations.query.filter(vOperations.type_operation != 'Engagement').order_by(vOperations.effective_date.desc()).all()
         for operation in Operations:
             if operation.uploaded_file is None or operation.uploaded_file == '':
                 document_url=None
@@ -459,6 +463,7 @@ def operationsCSV():
             w.writerow((
                 operation.operation_date,  
                 operation.effective_date, 
+                operation.year,
                 operation.name_operation,
                 operation.detail_operation,
                 operation.amount,
