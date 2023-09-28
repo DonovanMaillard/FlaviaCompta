@@ -529,6 +529,19 @@ class vSynthesePayrollBudget(db.Model):
     justified_payroll = db.Column(db.Numeric(8,2), nullable=False)
 
 
+class vResultByYear(db.Model):
+
+    __tablename__ = "v_result_by_year"
+    __table_args__ = {"schema": "comptasso"}
+
+    year = db.Column(db.Integer,primary_key=True)
+    type_category = db.Column(db.String(255))
+    cd_category = db.Column(db.String(255),primary_key=True)
+    label = db.Column(db.String(255))
+    json = db.Column(db.Unicode)
+    amount = db.Column(db.Numeric(8,2))
+
+
 class vDocuments(db.Model):
 
     __tablename__ = "v_documents"

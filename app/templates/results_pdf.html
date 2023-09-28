@@ -1,16 +1,19 @@
 <html>
 <head>
 <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-<link rel="stylesheet" href="file:///Users/poleinvertebres/Desktop/ComptAsso/app/static/css/bootstrap/bootstrap.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="{{url_for('static', filename='custom/custom.css')}}">
 </head>
 
 
 <body>
-<h1> Bilan financier de l'exercice 2023</h1>
+<img src="https://comptasso.flavia-ape.fr/static/img/bandeau_pdf.png" style="width:100%;"/>
+
+<h1 style="text-align:center; margin-top:50px;"> Bilan financier de l'exercice {{ year }}</h1>
 
 <!-- Tableau principal - Dépenses et recettes -->
 <table class="table">
-    <thead style="{background-color:lightgrey;}">
+    <thead style="background-color:lightgrey;">
         <tr>
             <th>
                 <strong>CHARGES DIRECTES</strong>
@@ -22,29 +25,33 @@
      </thead>
 
 
-     <tbody>
-        <tr>
+     <tbody style="font-size:8px !important;">
+        <tr> 
         	<!-- Sous-table - dépenses -->
             <td>
 				<table class="table">
     				<thead>
-        				<tr>
+        				<tr style="background-color:lightgrey;">
             				<th>Charges - catégories fiscales</th>
             				<th>Montant</th>
         				</tr>
     				</thead>
 
     				<tbody>
-      					<tr>
-      						<!-- TODO : mettre en place 2 boucles for pour les catégories -->
-        					<td>Ma catégorie 1</td>
-        					<td>10€</td>
+                        {% for depense in depenses %}
+      					<tr style="background-color:lightskyblue; font-size:12px !important;">
+        					<td>{{depense.label}}</td>
+        					<td>{{depense.amount or '-'}} €</td>
       					</tr>
-      					<tr>
-      						<!-- TODO : mettre en place 2 boucles for pour les catégories -->
-        					<td>Ma catégorie 3</td>
-        					<td>110€</td>
-      					</tr>
+                        <!-- Boucle sous-catégories-->
+                            {%for child in depense.json %}
+                            <tr style="text-indent:20px; font-size:10px !important;">
+                                <td>{{child.category}}</td>
+                                <td>{{child.result or '-'}} €</td>
+                            </tr>
+                            {% endfor %}
+                        <!-- Fin de la boucle sous-catégories-->
+      					{% endfor %}
     				</tbody>
 				</table>
             </td>
@@ -53,42 +60,44 @@
             <td>
             	<table class="table">
     				<thead>
-        				<tr>
+        				<tr style="background-color:lightgrey;">
             				<th>Recettes - catégories fiscales</th>
             				<th>Montant</th>
         				</tr>
     				</thead>
 
     				<tbody>
-      					<tr>
-      						<!-- TODO : mettre en place 2 boucles for pour les catégories -->
-        					<td>Ma catégorie 2.1</td>
-        					<td>8</td>
-      					</tr>
-      					<tr>
-      						<!-- TODO : mettre en place 2 boucles for pour les catégories -->
-        					<td>Ma catégorie 2.2</td>
-        					<td>12€</td>
-      					</tr>
-    				</tbody>
+                        {% for recette in recettes %}
+                        <tr style="background-color:lightskyblue; font-size:12px !important;">
+                            <td>{{recette.label}}</td>
+                            <td>{{recette.amount or '-'}} €</td>
+                        </tr>
+                        <!-- Boucle sous-catégories-->
+                            {%for rchild in recette.json %}
+                            <tr style="text-indent:20px; font-size:10px !important;">
+                                <td>{{rchild.category}}</td>
+                                <td>{{rchild.result or '-'}} €</td>
+                            </tr>
+                            {% endfor %}
+                        <!-- Fin de la boucle sous-catégories-->
+                        {% endfor %}
+                    </tbody>
     			</table>
     		</td>
     	</tr>
-	</tbody>
 
-	<tfoot>
       	<tr>
         	<!-- footer dépenses -->
             <td>
 				<table class="table">
     				<tbody>
-        				<tr>
+        				<tr style="background-color:lightgrey; font-size:12px !important;">
             				<td><strong>Total des charges</strong></td>
-            				<td><strong> 120 € </strong></td>
+            				<td><strong> {{ depenses | sum(attribute='amount') }} € </strong></td>
         				</tr>
-      					<tr>
+      					<tr style="font-size:12px !important;">
         					<td>Excédent (bénéfice)</td>
-        					<td> - €</td>
+        					<td>{% if result>0 %} {{result}} € {% endif %}</td>
       					</tr>
     				</tbody>
 				</table>
@@ -98,24 +107,24 @@
             <td>
             	<table class="table">
     				<tbody>
-        				<tr>
+        				<tr style="background-color:lightgrey; font-size:12px !important;">
             				<td><strong>Total des recettes</strong></td>
-            				<td><strong> 20 € </strong></td>
+            				<td><strong> {{ recettes | sum(attribute='amount') }} € </strong></td>
         				</tr>
-      					<tr>
+      					<tr style="font-size:12px !important;">
         					<td>Insuffisance (déficit)</td>
-        					<td> 100 € </td>
+        					<td>{% if result<0 %} {{result}} € {% endif %}</td>
       					</tr>
     				</tbody>
     			</table>
     		</td>
     	</tr>
-    </tfoot>
+    </tbody>
 </table>
 
 
 
-<!-- Bénévolat -->
+<!-- Bénévolat 
 <table class="table">
     <thead>
         <tr>
@@ -128,7 +137,7 @@
 
      <tbody>
         <tr>
-        	<!-- Sous-table - Valorisation du bénévolat -->
+        	<!-- Sous-table - Valorisation du bénévolat 
             <td>
 				<table class="table">
     				<thead>
@@ -140,7 +149,7 @@
 
     				<tbody>
       					<tr>
-      						<!-- TODO : mettre en place 2 boucles for pour les catégories -->
+      						<!-- TODO : mettre en place 2 boucles for pour les catégories 
         					<td>Ma catégorie 1</td>
         					<td>10€</td>
       					</tr>
@@ -148,7 +157,7 @@
 				</table>
             </td>
 
-			<!-- Sous-table - Exploitation du bénévolat -->
+			<!-- Sous-table - Exploitation du bénévolat 
             <td>
             	<table class="table">
     				<thead>
@@ -160,7 +169,7 @@
 
     				<tbody>
       					<tr>
-      						<!-- TODO : mettre en place 2 boucles for pour les catégories -->
+      						<!-- TODO : mettre en place 2 boucles for pour les catégories 
         					<td>Ma catégorie 2</td>
         					<td>11€</td>
       					</tr>
@@ -170,9 +179,9 @@
     	</tr>
 	</tbody>
 </table>
-
-<div class="blockquote-footer">
-	Bilan généré le 21/12/2021
+-->
+<div class="blockquote-footer" style="bottom:10px;">
+	Bilan généré le {{ current_date }}
 </div>
 
 </body>

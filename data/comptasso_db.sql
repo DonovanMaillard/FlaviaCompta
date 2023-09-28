@@ -594,17 +594,18 @@ GROUP BY 1,2,3,4,5,6
 ORDER BY 1,2,4,5
 )
 SELECT DISTINCT 
-	d.YEAR,
-	d.type_category,
-	d.cd_category,
-	d.cd_category||'. '||d.LABEL,
-	jsonb_agg(child.json),
-	sum(child.sum)
+	d.YEAR AS year,
+	d.type_category AS type_category,
+	d.cd_category AS cd_category,
+	d.LABEL AS label,
+	jsonb_agg(child.json) AS json,
+	COALESCE(sum(child.sum),0) AS amount
 FROM details d
 JOIN details child ON d.cd_category::text=child.cd_broader::text
 WHERE d.LEVEL=1 AND child.YEAR=d.year
 GROUP BY 1,2,3,4
 );
+
 
 -----------------------------------
 --- CONTRAINTES ET FOREIGN KEYS ---

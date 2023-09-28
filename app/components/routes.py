@@ -1371,37 +1371,26 @@ def deleteVolunteering(id_work_value):
 
 
 
-###################
-### EXPORTS PDF ###
-###################
+#####################
+### RESULTATS PDF ###
+#####################
 
 # Export as pdf
-@app.route('/results/pdf')
+@app.route('/results/pdf/year/<year>')
 @login_required
-def resultsPDF():
-    html = render_template('results_pdf.html')
-    css = '../static/css/bootstrap/bootstrap.css'
+def resultsPDF(year):
+    recettes=vResultByYear.query.filter_by(year=year).filter_by(type_category='Recette').all()
+    depenses=vResultByYear.query.filter_by(year=year).filter_by(type_category='Dépense').all()
+    current_date=date.today()
+    result=sum([r.amount for r in recettes])+sum([d.amount for d in depenses])
+    filename='export_bilan_'+year
+    html = render_template('results_pdf.html',depenses=depenses, recettes=recettes, year=year, current_date=current_date, result=result)
     options = {"enable-local-file-access": None}
     pdf = pdfkit.from_string(html, False, options=options)
     response = make_response(pdf)
     response.headers["Content-Type"] = "application/pdf"
-    response.headers["Content-Disposition"] = "inline; filename=export_bilan.pdf"
+    response.headers["Content-Disposition"] = "inline; filename={}.pdf".format(filename)
     return response
-
-
-
-
-
-###############
-### RESULTS ###
-###############
-
-# Request results
-@app.route('/results')
-@login_required
-def results():
-    return render_template('results/results.html')
-
 
 
 ###########################
