@@ -1368,7 +1368,16 @@ def deleteVolunteering(id_work_value):
     db.session.commit()
     return redirect(url_for('volunteering'))
 
+#################
+### Resultats ###
+#################
 
+# Export as pdf
+@app.route('/results')
+@login_required
+def results():
+    years=db.session.query(vResultByYear.year).distinct()
+    return render_template('results/results.html', years=years)
 
 
 #####################
@@ -1396,10 +1405,4 @@ def resultsPDF(year):
 ###########################
 ### Frais kilométriques ###
 ###########################
-# Prévoir simplement un formulaire avec nombre de kilomètres + liste de barêmes (actifs ou non). 
-# Ajouter des champs "unit_cost" et "quantity" dans la t_operations
-# Renseigner ces champs + calculer le total dans les dépenses avec la catégorie fiscale dédiée
-# Prévoir des contraintes là dessus
-# Voir pour que le bénévolat vienne directement alimenter cette table avec le nombre de jours, le cout journalier, les catégories fiscales correspondantes
-# De cette manière seul le détail des masses salariales est traité à part.
-
+# Pour le moment,traité comme de simples dépenses
