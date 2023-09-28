@@ -1393,7 +1393,8 @@ def resultsPDF(year):
     current_date=date.today()
     result=sum([r.amount for r in recettes])+sum([d.amount for d in depenses])
     filename='export_bilan_'+year
-    html = render_template('results_pdf.html',depenses=depenses, recettes=recettes, year=year, current_date=current_date, result=result)
+    header_url=app.config['BASE_URL']+'/static/img/bandeau_pdf.png'
+    html = render_template('results_pdf.html',depenses=depenses, recettes=recettes, year=year, current_date=current_date, result=result, header_url=header_url)
     options = {"enable-local-file-access": None}
     pdf = pdfkit.from_string(html, False, options=options)
     response = make_response(pdf)

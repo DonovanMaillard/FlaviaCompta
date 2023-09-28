@@ -12,6 +12,7 @@ DEBUG=True
 # uploads parameters
 #UPLOAD_FOLDER = '/Users/poleinvertebres/Desktop/ComptAsso/app/static/uploads'
 BASE_DIR = "/path/to/app/"
+BASE_URL = "http://"
 
 
 #Todo = ALLOWED_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'zip', 'rar']
