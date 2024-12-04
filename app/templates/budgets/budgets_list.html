@@ -54,7 +54,8 @@
                     {% else %} <span class="badge table-badge alert-dark">Inactif</span>
                     {% endif %}
                   </td>
-                  <td>{{ Budget.name }}</td>
+                  <td>{{ Budget.name }}
+			<br><small style="color:grey">{{ Budget.type_budget }} - {{ Budget.funder }}</small></td>
                   <td>{{ Budget.date_max_expenditure }}</td>
                   <td>{{ Budget.budget_amount }}€ </td>
                   <td>--TODO--</td>
