@@ -42,40 +42,39 @@ WHERE d.LEVEL=1 AND child.YEAR=d.year
 GROUP BY 1,2,3,4
 );
 
+
 DROP VIEW IF EXISTS comptasso.v_operations;
 
-CREATE OR REPLACE VIEW comptasso.v_operations AS (
-	SELECT
-		op.id_operation AS id_operation,
-		op.id_grp_operation AS id_grp_operation,
-		op.name AS name_operation,
-		op.detail_operation AS detail_operation,
-		dot.id_type_operation AS id_type_operation,
-		dot.label AS type_operation,
-		op.operation_date AS operation_date,
-		op.effective_date AS effective_date,
-		extract('year' FROM op.effective_date)::integer AS year,
-		op.amount AS amount, -- Les débits sont stockés avec un nombre négatif, les crédits avec un nombre positif
-		dpm.label AS payment_method,
-		op.id_account AS id_account,
-		ac.name AS account_name,
-		ac.is_personnal AS personnal_account,
-		op.id_budget AS id_budget,
-		b.name AS budget_name,
-		cat.cd_category||'. '||cat.label AS category,
-		cat2.cd_category||'. ' ||cat2.label AS parent_category,
-		op.uploaded_file AS uploaded_file,
-		op.pointed AS pointed,
-		op.meta_create_date AS meta_crate_date,
-		op.meta_update_date AS meta_update_date
-	FROM comptasso.t_operations op
-	LEFT JOIN comptasso.dict_operation_types dot ON dot.id_type_operation=op.id_type_operation
-	LEFT JOIN comptasso.dict_payment_methods dpm ON dpm.id_payment_method=op.id_payment_method
-	LEFT JOIN comptasso.t_accounts ac ON ac.id_account=op.id_account
-	LEFT JOIN comptasso.t_budgets b ON b.id_budget=op.id_budget
-	LEFT JOIN comptasso.dict_categories cat ON cat.id_category=op.id_category
-	LEFT JOIN comptasso.dict_categories cat2 ON cat.cd_broader=cat2.cd_category
-	ORDER BY effective_date
-);
+CREATE OR REPLACE VIEW comptasso.v_operations
+AS SELECT op.id_operation,
+    op.id_grp_operation,
+    op.name AS name_operation,
+    op.detail_operation,
+    dot.id_type_operation,
+    dot.label AS type_operation,
+    op.operation_date,
+    op.effective_date,
+    date_part('year'::text, op.effective_date)::integer AS year,
+    op.amount,
+    dpm.label AS payment_method,
+    op.id_account,
+    ac.name AS account_name,
+    ac.is_personnal AS personnal_account,
+    op.id_budget,
+    b.name AS budget_name,
+    (cat.cd_category || '. '::text) || cat.label::text AS category,
+    (cat2.cd_category || '. '::text) || cat2.label::text AS parent_category,
+    op.uploaded_file,
+    op.pointed,
+    op.meta_create_date AS meta_create_date,
+    op.meta_update_date
+   FROM comptasso.t_operations op
+     LEFT JOIN comptasso.dict_operation_types dot ON dot.id_type_operation = op.id_type_operation
+     LEFT JOIN comptasso.dict_payment_methods dpm ON dpm.id_payment_method = op.id_payment_method
+     LEFT JOIN comptasso.t_accounts ac ON ac.id_account = op.id_account
+     LEFT JOIN comptasso.t_budgets b ON b.id_budget = op.id_budget
+     LEFT JOIN comptasso.dict_categories cat ON cat.id_category = op.id_category
+     LEFT JOIN comptasso.dict_categories cat2 ON cat.cd_broader = cat2.cd_category
+  ORDER BY op.effective_date;
 
 DROP TABLE IF EXISTS comptasso.dict_kilometric_scale;

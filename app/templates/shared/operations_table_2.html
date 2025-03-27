@@ -1,0 +1,134 @@
+<table id="operationsTable" class="table display">
+    <thead>
+        <tr>
+            <th width="10%">Date d'effet</th>
+            <th width="10%">Type</th>
+            <th width="25%">Libellé et catégorie</th>
+            <th width="20%">Compte</th>
+            <th width="20%">Budget</th>
+            <th width="10%">Montant</th>
+            <th width="5%">Actions</th>
+        </tr>
+    </thead>
+</table>
+
+<!-- Template de la modale de détail -->
+<div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Détail de l'opération</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body" id="detailModalBody">
+        <!-- contenu rempli dynamiquement -->
+        <p>Chargement...</p>
+      </div>
+      <div class="modal-footer" id="detailModalFooter">
+        <!-- date de création/modification ici -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Template de la modale de suppression -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Supprimer l'opération</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p id="deleteModalText"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <a id="confirmDeleteBtn" class="btn btn-danger"><i class="fa fa-trash"></i> Supprimer</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Alimenter dynamiquement les modales -->
+<script>
+  // Modale de suppression
+$('#operationsTable').on('click', '.btn-danger[data-bs-target="#deleteModal"]', function () {
+  const id_operation = $(this).data('id');
+  const name = $(this).data('name');
+  
+  $('#deleteModalText').text(`Souhaitez-vous vraiment supprimer l'opération : "${name}" ?`);
+  $('#confirmDeleteBtn').attr('href', `/operations/${id_operation}/delete`);
+});
+  // Modale de détail
+$('#operationsTable').on('click', '.btn-info[data-bs-target="#detailModal"]', function () {
+  const id = $(this).data('id');
+  const rowData = $('#operationsTable').DataTable().row($(this).closest('tr')).data();
+
+  // Formatage de date simple
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('fr-FR');
+  };
+
+  const detailHtml = `
+    <div class="row">
+      <div class="col-md-8">
+        <strong>Date d'effet :</strong> ${formatDate(rowData.effective_date)}<br>
+        <strong>Date d'opération :</strong> ${formatDate(rowData.operation_date)}<br>
+        <strong>Type d'opération :</strong> ${rowData.type_operation}<br><br>
+      </div>
+      <div class="col-md-4">
+        <strong>Montant :</strong>
+        <h3 style="color:red;">${parseFloat(rowData.amount).toFixed(2)} €</h3>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-12">
+        <strong>Libellé :</strong> ${rowData.name_operation}<br>
+        <strong>Détail :</strong> ${rowData.detail_operation || ''}<br>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-4">
+        <strong>Compte :</strong> ${rowData.account_name}<br><br>
+      </div>
+      <div class="col-md-4">
+        <strong>Moyen de paiement :</strong> ${rowData.payment_method || ''}<br><br>
+      </div>
+      <div class="col-md-4">
+        <strong>Budget :</strong> ${rowData.budget_name || ''}<br><br>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6">
+        <strong>Catégorie fiscale :</strong> ${rowData.category}
+      </div>
+      <div class="col-md-6">
+        <strong>Justificatif :</strong>
+        ${
+          rowData.uploaded_file
+            ? `<a href="/static/${rowData.uploaded_file}" target="_blank">voir ou télécharger le document</a>`
+            : 'Aucun'
+        }
+        <br><br>
+      </div>
+    </div>
+  `;
+
+  const footerHtml = `
+    <p style="color:grey;">
+      Créé le : ${formatDate(rowData.meta_create_date)}<br>
+      Dernière modification le : ${formatDate(rowData.meta_update_date)}
+    </p>
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+  `;
+
+  $('#detailModalBody').html(detailHtml);
+  $('#detailModalFooter').html(footerHtml);
+});
+</script>

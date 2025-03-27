@@ -6,31 +6,137 @@
 <div class="container">
 	<h1> Liste des opérations enregistrées </h1>
 
-	<div class="btn-group" role="group" aria-label="Button group with nested dropdown">
-	  <div class="btn-group" role="group">
-	    <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-	      Ajouter une opération
-	    </button>
-	    <ul class="dropdown-menu">
-	      <li><a class="dropdown-item" href="{{ url_for('addMovement', type_operation='Dépense') }}">Une dépense</a></li>
-	      <li><a class="dropdown-item" href="{{ url_for('addMovement', type_operation='Recette') }}">Une recette</a></li>
-	      <li><a class="dropdown-item" href="{{url_for('addTransfer', type_transfer = 'Internal')}}">Une régule entre comptes</a></li>
-	      <li><a class="dropdown-item" href="{{url_for('addTransfer', type_transfer='Refund')}}">Un remboursement de frais</a></li>
-	    </ul>
-	  </div>
-	</div>
+    <div class="btn-group" role="group" aria-label="Button group with nested dropdown">
+      <div class="btn-group" role="group">
+        <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+          Ajouter une opération
+        </button>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item" href="{{ url_for('addMovement', type_operation='Dépense') }}">Une dépense</a></li>
+          <li><a class="dropdown-item" href="{{ url_for('addMovement', type_operation='Recette') }}">Une recette</a></li>
+          <li><a class="dropdown-item" href="{{url_for('addTransfer', type_transfer = 'Internal')}}">Une régule entre comptes</a></li>
+          <li><a class="dropdown-item" href="{{url_for('addTransfer', type_transfer='Refund')}}">Un remboursement de frais</a></li>
+        </ul>
+      </div>
+    </div>
 
-<br><br><br>
-  <!-- Table des opérations -->
-  {% include 'shared/operations_table.html' %}
+    <br><br><br>
+
+    <div class="card">
+        <div class="card-header">
+            <h4>Recherche</h4>
+        </div>
+        <div class="card-body">
+            <input type="text" id="filterLibelle" placeholder="Libellé">
+            <input type="text" id="filterCategorie" placeholder="Catégorie">
+            <input type="number" id="filterMontant" placeholder="Montant">
+            <label for="filterDateApres">Après le</label>
+            <input type="date" id="filterDateApres">
+            <label for="filterDateAvant">Avant le</label>
+            <input type="date" id="filterDateAvant">
+            <button id="btnFiltrer" class="btn btn-info">Filtrer</button>
+        </div>
+    </div>
+	
+
+
+
+  <!-- Table des opérations (shared template)-->
+  {% include 'shared/operations_table_2.html' %}
 
 <a class="btn btn-success btn-right" href="{{ url_for('operationsCSV') }}"> <i class="fa fa-download"></i> Exporter toutes les opérations en csv </a>
 
 </div>
 
 <script>
-$(document).ready(function(){
-  $('[data-toggle="tooltip"]').tooltip();
+let table = $('#operationsTable').DataTable({
+    searching: false,
+    ordering: false,
+    serverSide: true,
+    processing: true,
+    ajax: {
+        url: '/api/operations',
+        data: function (d) {
+            return {
+                page: Math.floor(d.start / d.length) + 1,
+                per_page: d.length,
+                libelle: $('#filterLibelle').val(),
+                categorie: $('#filterCategorie').val(),
+                montant: $('#filterMontant').val(),
+                date_apres: $('#filterDateApres').val(),
+                date_avant: $('#filterDateAvant').val()
+            };
+        },
+        dataSrc: function(json) {
+            json.recordsTotal = json.total;
+            json.recordsFiltered = json.total;
+            return json.data;
+        }
+    },
+    columns: [
+        {
+            data: 'effective_date',
+            render: function(data, type, row) {
+                if (row.operation_date) {
+                    return `${row.effective_date}<br><small style="font-size:13px;"><em>Opération du : ${row.operation_date}</em></small>`;
+                } else {
+                    return `${row.effective_date}`;
+                }
+            }
+        },
+        { data: 'type_operation' },
+        { data: 'name_operation',
+        	render: function(data, type, row) {
+                if (row.uploaded_file) { 
+                    // S'il y a un justificatif, je l'affiche
+                    return `${row.name_operation} <a href="${row.uploaded_file}"> <i class="fa fa-file" title="Voir le justificatif" ></i> </a>
+                        <br><small style="font-size:13px;"><em>${row.category}</em></small>`;
+                } else {
+                    if (row.type_operation == 'Dépense') { // Si c'est une dépense sans justificatif, générer une alerte
+                        return `${row.name_operation} <i class="fa fa-warning" style="color:red;" title="Aucun justificatif fourni pour cette dépense"></i> 
+                        <br><small style="font-size:13px;"><em>${row.category}</em></small>`;
+                    } else { // Simplement afficher la ligne sans justificatif
+                        return `${row.name_operation}<br><small style="font-size:13px;"><em>${row.category}</em></small>`;
+                    }
+                }
+            }
+        },
+        { data: 'account_name' },
+        { data: 'budget_name' },
+        { data: 'amount',
+        render: function(data, type, row) {
+                const montant = parseFloat(data).toFixed(2); // Force 2 décimales
+
+                if (row.type_operation == 'Transaction interne') {
+                    if (row.amount>0) {
+                        return `<span style="background-color:#EBEAEA; border-radius: 5px; padding:5px;">+ ${montant} €</span>`;
+                    } else {
+                        return `<span style="background-color:#EBEAEA; border-radius: 5px; padding:5px;">${montant} €</span>`;
+                    }
+                } else if (row.type_operation == 'Recette') {
+                    return `<span style="background-color:#D9FCD4; border-radius: 5px; padding:5px;">+ ${montant} €</span>`;
+                } else {
+                    return `<span>${montant} €</span>`;
+                }
+            }
+        },
+        { data: null,
+            orderable: false,
+            render: function (data, type, row) {
+            return `
+              <div class="btn btn-group">
+                <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#detailModal" data-id="${row.id_operation}"><i class="fa fa-eye"></i></button>
+                <a class="btn btn-warning" href="/operations/edit/${row.id_operation}"><i class="fa fa-edit"></i></a>
+                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" data-id="${row.id_operation}" data-name="${row.name_operation}"><i class="fa fa-trash"></i></button>
+              </div>
+            `;
+          }
+        }
+    ]
+});
+
+$('#btnFiltrer').on('click', function () {
+    table.ajax.reload();
 });
 </script>
 {% endblock %}
