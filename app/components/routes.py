@@ -514,7 +514,7 @@ def get_api_operations():
 @login_required
 def operations():
     # All operations
-    return render_template('operations/operations_list.html', Operations=Operations, type=None)
+    return render_template('operations/operations_list.html', type=None)
 
 # Export CSV
 @app.route('/operations/export_csv/<year>')
