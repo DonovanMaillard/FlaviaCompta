@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, flash, get_flashed_messages, redirect, url_for, make_response, stream_with_context
+from flask import Flask, render_template, request, flash, get_flashed_messages, redirect, url_for, make_response, stream_with_context, jsonify
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.wrappers import Response
@@ -6,7 +6,7 @@ from io import StringIO, BytesIO
 from datetime import datetime, timedelta, date
 from flask_login import login_required, current_user, login_user, logout_user, LoginManager
 from calendar import monthrange
-from sqlalchemy import func
+from sqlalchemy import func, or_, and_
 from zipfile import ZipFile, ZipInfo
 
 
@@ -421,6 +421,90 @@ def deleteAction(id_budget, id_action_budget):
 ### OPERATIONS ###
 ##################
 
+
+@app.route("/api/operations", methods=["GET"])
+def get_api_operations():
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 10))
+
+    libelle = request.args.get("libelle", "")
+    montant = request.args.get("montant", type=float)
+    categorie = request.args.get("categorie", "")
+    date_apres = request.args.get("date_apres", type=str)
+    date_avant = request.args.get("date_avant", type=str)
+
+    query = vOperations.query
+
+    
+    if libelle:
+        like_pattern = f"%{libelle}%"
+        query = query.filter(or_(
+            vOperations.name_operation.ilike(like_pattern),
+            vOperations.detail_operation.ilike(like_pattern)
+        ))
+
+    if montant:
+        try:
+            montant = request.args.get("montant", "").replace(",", ".")
+            montant_float = float(montant)
+            query = query.filter(func.abs(vOperations.amount) == abs(montant_float))
+        except ValueError:
+            pass  # montant mal formé, on ignore le filtre
+
+    if categorie:
+        cat_pattern = f"%{categorie}%"
+        query = query.filter(or_(
+            vOperations.type_operation.ilike(cat_pattern),
+            vOperations.category.ilike(cat_pattern),
+            vOperations.parent_category.ilike(cat_pattern)
+        ))
+
+    if date_apres:
+        try:
+            date_apres_parsed = datetime.strptime(date_apres, "%Y-%m-%d").date()
+            query = query.filter(vOperations.effective_date >= date_apres_parsed)
+        except ValueError:
+            pass
+
+    if date_avant:
+        try:
+            date_avant_parsed = datetime.strptime(date_avant, "%Y-%m-%d").date()
+            query = query.filter(vOperations.effective_date <= date_avant_parsed)
+        except ValueError:
+            pass
+
+
+    total = query.count()
+
+    results = query.filter(vOperations.type_operation != 'Engagement').order_by(vOperations.effective_date.desc()).order_by(vOperations.id_operation.desc()).offset((page - 1) * per_page).limit(per_page).all()
+
+    data = [{
+        "id_operation": op.id_operation,
+        "effective_date": op.effective_date.strftime('%Y-%m-%d') if op.effective_date else "",
+        "operation_date": op.operation_date.strftime('%Y-%m-%d') if op.operation_date else "",
+        "name_operation": op.name_operation,
+        "detail_operation": op.detail_operation,
+        "type_operation": op.type_operation,
+        "category": op.category,
+        "parent_category": op.parent_category,
+        "id_budget": op.id_budget,
+        "budget_name": op.budget_name,
+        "id_account": op.id_account,
+        "account_name": op.account_name,
+        "payment_method": op.payment_method,
+        "amount": float(op.amount),
+        "uploaded_file": url_for('static', filename=op.uploaded_file) if op.uploaded_file else "",
+        "meta_create_date": op.meta_create_date,
+        "meta_update_date": op.meta_update_date
+    } for op in results]
+
+    return jsonify({
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "data": data
+    })
+
 #####################
 # Toutes opérations #
 #####################
@@ -430,7 +514,6 @@ def deleteAction(id_budget, id_action_budget):
 @login_required
 def operations():
     # All operations
-    Operations = vOperations.query.filter(vOperations.type_operation != 'Engagement').order_by(vOperations.effective_date.desc()).all()
     return render_template('operations/operations_list.html', Operations=Operations, type=None)
 
 # Export CSV

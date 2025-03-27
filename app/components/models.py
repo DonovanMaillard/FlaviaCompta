@@ -473,7 +473,7 @@ class vOperations(db.Model):
     parent_category = db.Column(db.String(50), nullable=False)
     uploaded_file = db.Column(db.String(255), nullable=True)
     pointed = db.Column(db.Boolean, nullable=True)
-    meta_crate_date = db.Column(db.DateTime(), nullable=True)
+    meta_create_date = db.Column(db.DateTime(), nullable=True)
     meta_update_date = db.Column(db.DateTime(), nullable=True)
 
 
