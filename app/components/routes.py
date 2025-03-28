@@ -423,6 +423,7 @@ def deleteAction(id_budget, id_action_budget):
 
 
 @app.route("/api/operations", methods=["GET"])
+@login_required
 def get_api_operations():
     page = int(request.args.get("page", 1))
     per_page = int(request.args.get("per_page", 10))
