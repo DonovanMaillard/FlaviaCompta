@@ -558,7 +558,7 @@ def operationsCSV(year=None):
                 operation.category,
                 operation.parent_category,
                 document_url,
-                operation.meta_crate_date,
+                operation.meta_create_date,
                 operation.meta_update_date
             ))
             yield data.getvalue()
