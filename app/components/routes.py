@@ -274,7 +274,6 @@ def detailBudget(id_budget):
 @login_required
 def addBudget():
     form = formBudget(request.form)
-    print(form)
     # Funders
     activeFunders = tFunders.query.filter_by(active=True)
     form.id_funder.choices = [('', '-- Sélectionnez un financeur --')] + [(activeFunder.id_funder, activeFunder.name) for activeFunder in activeFunders]
@@ -578,7 +577,6 @@ Fonction à développer pour télécharger des justificatifs en lots
 @login_required
 def getDocuments(id_account=None, id_budget=None, year=None):
     operations=tOperations.query.filter(tOperations.uploaded_file != None).all()
-    print(operations)
     if id_account:
         operations=operations.filter_by(id_account=id_account).all()
     if id_budget:
@@ -811,7 +809,6 @@ def updateTransfer(id_grp_operation):
     # Get choices and form
     if dictOperationTypes.query.get(credit.id_type_operation).label == 'Remboursement de frais' :
         type_operation = 'Refund'
-        print('refund')
         ToAccounts = tAccounts.query.filter_by(is_personnal=True).filter_by(active=True)
         id_type_operation = dictOperationTypes.query.filter_by(label = 'Remboursement de frais').one().id_type_operation
         id_category = dictCategories.query.filter_by(cd_category=910).one().id_category
@@ -1159,7 +1156,6 @@ def deleteFunder(id_funder):
 @login_required
 def documents():
     documents = vDocuments.query.order_by(vDocuments.meta_create_date.desc()).all()
-    print(documents)
     return render_template('admin/documents/documents_list.html', documents = documents )
 
 # Add document
