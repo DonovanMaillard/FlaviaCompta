@@ -358,15 +358,13 @@ class corPayrollBudget(db.Model):
     id_payroll = db.Column(db.Integer, nullable=False)
     id_budget = db.Column(db.Integer, nullable=False)
     nb_days_allocated = db.Column(db.Numeric(8,2), nullable=True)
-    fixed_cost = db.Column(db.Numeric(8,2), nullable=True)
     meta_create_date = db.Column(db.DateTime(), nullable=True)
     meta_update_date = db.Column(db.DateTime(), nullable=True)
 
-    def __init__ (self, id_payroll, id_budget, nb_days_allocated, fixed_cost):
+    def __init__ (self, id_payroll, id_budget, nb_days_allocated):
         self.id_payroll = id_payroll
         self.id_budget = id_budget
         self.nb_days_allocated = nb_days_allocated
-        self.fixed_cost = fixed_cost
 
 
 ##########
