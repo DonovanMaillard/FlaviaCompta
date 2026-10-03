@@ -262,12 +262,36 @@ def budgets():
 @app.route('/budgets/detail/<id_budget>', methods=['GET', 'POST'])
 @login_required
 def detailBudget(id_budget):
-    Budget = db.session.get(vBudgets, id_budget) #vBudgets.query.get(id_budget)
+    Budget = db.session.get(vBudgets, id_budget) 
     Actions = vActions.query.filter_by(id_budget=id_budget)
     Operations = vOperations.query.filter(vOperations.id_budget==id_budget, vOperations.type_operation != 'Engagement').order_by(vOperations.effective_date.desc()).all()
     Commitments = vOperations.query.filter(vOperations.id_budget==id_budget, vOperations.type_operation == 'Engagement').order_by(vOperations.effective_date.desc()).all()
     Payrolls = vSynthesePayrollBudget.query.filter_by(id_budget=id_budget).all()
-    return render_template('budgets/details_budget.html', Budget = Budget, Actions = Actions, Operations = Operations, Commitments = Commitments, Payrolls = Payrolls)
+    #Allocation d'un budget à chaque salarié
+    members = tMembers.query.filter_by(is_employed=True).order_by(tMembers.member_name).all()   # liste d'objets
+    names = {m.id_member: m.member_name for m in members}
+    form = formAllocatedBudget(request.form if request.method == 'POST' else None)
+    # GET : une ligne par membre, pré-remplie depuis le jsonb
+    if request.method == 'GET':
+        existants = Budget.draft_allocations or {}
+        for m in members:
+            value = existants.get(str(m.id_member))
+            form.rows.append_entry({
+                "id_member": m.id_member,
+                "allocated_amount": getDecimal(value) if value is not None else None,
+            })
+    # POST : annule et remplace le contenu du jsonb
+    if request.method == 'POST' and form.validate():
+        tBudget = db.session.get(tBudgets, id_budget)
+        tBudget.draft_allocations = {
+            str(l["id_member"]): str(l["allocated_amount"])
+            for l in form.rows.data
+            if l["allocated_amount"] is not None and l["id_member"] in names
+        }
+        db.session.commit()
+        flash("Attributions enregistrées.")
+        return redirect(url_for('detailBudget', id_budget=id_budget))
+    return render_template('budgets/details_budget.html', Budget = Budget, Actions = Actions, Operations = Operations, Commitments = Commitments, Payrolls = Payrolls, form=form, names=names)
 
 # Add budget
 @app.route('/budgets/add', methods=['GET', 'POST'])
@@ -296,48 +320,43 @@ def addBudget():
             getDecimal(request.form['payroll_limit']), 
             getDecimal(request.form['indirect_charges']), 
             request.form['comment'], 
+            bool(request.form.get('profit_bonus')),
             bool(request.form.get('active'))
         )
         db.session.add(Budget)
         db.session.commit()
         return redirect('/budgets')
-    return render_template('budgets/add_or_update_budget.html', form=form, activeFunders=activeFunders, TypesBudget=TypesBudget, Budget=None, active=None, allowed=None)
+    return render_template('budgets/add_or_update_budget.html', form=form, activeFunders=activeFunders, TypesBudget=TypesBudget, Budget=None, active=None, profit_bonus=False)
+
 
 # Edit budget
-@app.route('/budgets/edit/<id_budget>', methods=['GET', 'POST'])
+@app.route('/budgets/edit/<int:id_budget>', methods=['GET', 'POST'])
 @login_required
 def updateBudget(id_budget):
-    # pre-loaded form
-    Budget = db.session.get(tBudgets, id_budget) #tBudgets.query.get(id_budget)
-    form = formBudget(request.form, obj=Budget)
+    Budget = db.get_or_404(tBudgets, id_budget)
+    form = formBudget(request.form if request.method == 'POST' else None, obj=Budget)
+
     # Funders
     activeFunders = tFunders.query.filter_by(active=True)
-    form.id_funder.choices = [('', '-- Sélectionnez un financeur --')] + [(activeFunder.id_funder, activeFunder.name) for activeFunder in activeFunders]
-    form.id_funder.default = Budget.id_funder
+    form.id_funder.choices = [('', '-- Sélectionnez un financeur --')] + [(f.id_funder, f.name) for f in activeFunders]
     # Type budget
     TypesBudget = dictBudgetTypes.query.all()
-    form.id_type_budget.choices = [('', '-- Sélectionnez un type --')] + [(TypeBudget.id_type_budget, TypeBudget.label) for TypeBudget in TypesBudget]
-    form.id_type_budget.default = Budget.id_type_budget
+    form.id_type_budget.choices = [('', '-- Sélectionnez un type --')] + [(t.id_type_budget, t.label) for t in TypesBudget]
     # Activité
     Activities = tActivities.query.filter_by(active=True).all()
-    form.id_activity.choices = [('', '-- Sélectionnez une activité --')] + [(Activity.id_activity, Activity.label) for Activity in Activities]
-    form.id_activity.default = Budget.id_activity
+    form.id_activity.choices = [('', '-- Sélectionnez une activité --')] + [(a.id_activity, a.label) for a in Activities]
+
     if request.method == 'POST' and form.validate():
-        Budget.name = request.form['name'], 
-        Budget.reference = request.form['reference'], 
-        Budget.id_funder = getChoiceOrNone(request.form['id_funder']), 
-        Budget.id_type_budget = getChoiceOrNone(request.form['id_type_budget']),
-        Budget.id_activity = getChoiceOrNone(request.form['id_activity']), 
-        Budget.date_max_expenditure = request.form['date_max_expenditure'], 
-        Budget.date_return = request.form['date_return'], 
-        Budget.budget_amount = getDecimal(request.form['budget_amount']), 
-        Budget.payroll_limit = getDecimal(request.form['payroll_limit']), 
-        Budget.indirect_charges = getDecimal(request.form['indirect_charges']), 
-        Budget.comment = request.form['comment'], 
-        Budget.active = bool(request.form.get('active'))
+        form.populate_obj(Budget)
+        # Forcer le None dans les selects ignorés
+        Budget.id_funder = getChoiceOrNone(form.id_funder.data)
+        Budget.id_type_budget = getChoiceOrNone(form.id_type_budget.data)
+        Budget.id_activity = getChoiceOrNone(form.id_activity.data)
         db.session.commit()
         return redirect('/budgets')
-    return render_template('budgets/add_or_update_budget.html', form=form, Budget=Budget, active=Budget.active)
+
+    return render_template('budgets/add_or_update_budget.html', form=form, Budget=Budget)
+
 
 # Delete budget
 @app.route('/budgets/delete/<id_budget>', methods=['GET', 'POST'])
@@ -411,45 +430,6 @@ def deleteAction(id_budget, id_action_budget):
     db.session.commit()
     return redirect(url_for('detailBudget', id_budget=id_budget))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-######################
-# Cor budget members #
-######################
-@app.route('/budgets/detail/<id_budget>/corBudgetMember/add', methods=['GET', 'POST'])
-@login_required
-def addCorBudgetMember(id_budget):
-    form = formBudgetMember(request.form)
-    # Get budgets
-    Members =  tMembers.query.filter_by(is_employed=True)
-    form.id_member.choices = [(Members.id_member, Members.member_name) for Member in Members]
-    if request.method == 'POST' and form.validate():
-        # Insert data
-        budgetMember = corBudgetMember(
-            id_budget,
-            request.form['id_member'],  
-            getDecimal(request.form['amount'])
-            )
-        db.session.add(budgetMember)
-        db.session.commit()
-        return redirect(url_for('detailBudget', id_budget=id_budget))
-    return render_template('budgets/details_budget.html', form=form, Budgets=Budgets)
 
 ##################
 ### OPERATIONS ###

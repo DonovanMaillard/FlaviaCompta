@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
-from wtforms import Form, validators, BooleanField, StringField, TextAreaField, IntegerField, SelectField, DecimalField, PasswordField
+from wtforms import Form, FieldList, validators, FormField, BooleanField, StringField, TextAreaField, IntegerField, SelectField, DecimalField, PasswordField, HiddenField
 from flask_wtf.file import FileField, FileAllowed
+from wtforms.widgets import HiddenInput
 #from wtforms.fields.html5 import DateField
 from wtforms.fields import DateField
 from werkzeug.utils import secure_filename
@@ -41,8 +42,23 @@ class formBudget(Form):
     budget_amount = DecimalField('Montant du budget', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')],places=2)
     payroll_limit = DecimalField('Masse salariale éligible', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')],places=2)
     indirect_charges = DecimalField('Taux de charges indirectes', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')],places=2)
+    profit_bonus = BooleanField('Éligible aux primes d\'intéressement')
     comment = TextAreaField('Remarque', [validators.Length(min=0, max=255)], render_kw={"placeholder": "Remarque"})
     active = BooleanField('Actif') 
+
+
+class formAllocatedBudgetRow(Form):
+    id_member = IntegerField('id_member', widget=HiddenInput())
+    allocated_amount = DecimalField(
+        'Montant alloué',
+        [validators.Optional(), validators.NumberRange(min=0, message='Le montant doit être positif')],
+        places=2,
+    )
+
+
+class formAllocatedBudget(Form):
+    rows = FieldList(FormField(formAllocatedBudgetRow))
+
 
 class formAccount(Form):
     name = StringField('Nom du compte', [validators.Length(min=1, max=50, message='Doit faire entre 1 et 50 caractères'), validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], render_kw={"placeholder": "Nom du compte"})
