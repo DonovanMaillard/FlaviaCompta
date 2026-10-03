@@ -129,11 +129,14 @@ class formDocument(Form):
     uploaded_file = FileField('uploaded_file')
     keep_file = BooleanField('keep_file', default=True)
 
-# Todo
 class formPayrollBudget(Form):
     id_budget = SelectField('id_budget')
     nb_days_allocated = DecimalField('nb_days_allocated', places=2)
     fixed_cost = DecimalField('fixed_cost', validators=[validators.Optional()], places=2, render_kw={"placeholder": "Laisser vide pour un décompte au réel"})
+
+class formBudgetMember(Form):
+    id_member = SelectField('id_member',[validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner'),validators.NoneOf([''], message='Vous devez sélectionner un salarié')])
+    amount = DecimalField('amount', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], places=2)
 
 class formMember(Form):
     member_name = StringField('Nom du membre', [validators.Length(min=1, max=50, message='Doit faire entre 1 et 50 caractères'), validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], render_kw={"placeholder": "Nom du membre"})
