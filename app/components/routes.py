@@ -296,7 +296,6 @@ def addBudget():
             getDecimal(request.form['payroll_limit']), 
             getDecimal(request.form['indirect_charges']), 
             request.form['comment'], 
-            bool(request.form.get('allowed_fixed_cost')),
             bool(request.form.get('active'))
         )
         db.session.add(Budget)
@@ -335,11 +334,10 @@ def updateBudget(id_budget):
         Budget.payroll_limit = getDecimal(request.form['payroll_limit']), 
         Budget.indirect_charges = getDecimal(request.form['indirect_charges']), 
         Budget.comment = request.form['comment'], 
-        Budget.allowed_fixed_cost = bool(request.form.get('allowed_fixed_cost'))
         Budget.active = bool(request.form.get('active'))
         db.session.commit()
         return redirect('/budgets')
-    return render_template('budgets/add_or_update_budget.html', form=form, Budget=Budget, active=Budget.active, allowed=Budget.allowed_fixed_cost)
+    return render_template('budgets/add_or_update_budget.html', form=form, Budget=Budget, active=Budget.active)
 
 # Delete budget
 @app.route('/budgets/delete/<id_budget>', methods=['GET', 'POST'])
@@ -452,54 +450,6 @@ def addCorBudgetMember(id_budget):
         db.session.commit()
         return redirect(url_for('detailBudget', id_budget=id_budget))
     return render_template('budgets/details_budget.html', form=form, Budgets=Budgets)
-
-"""
-@app.route('/payrolls/<id_payroll>/cor_budget/<id_payroll_budget>/edit', methods=['GET', 'POST'])
-@login_required
-def updateCorPayrollBudget(id_payroll, id_payroll_budget):
-    cor = db.session.get(corPayrollBudget, id_payroll_budget) #corPayrollBudget.query.get(id_payroll_budget)
-    form = formPayrollBudget(request.form, obj=cor)
-    # Get budgets
-    Budgets = tBudgets.query.filter_by(active=True)
-    form.id_budget.choices = [('','Gestion associative & Autres activités')]+[(Budget.id_budget, Budget.name) for Budget in Budgets]
-    if request.method == 'POST' and form.validate():
-        if request.form['fixed_cost'] is None or request.form['fixed_cost']=='' :
-            fixed_cost=None
-        else :
-            fixed_cost=getDecimal(request.form['fixed_cost'])
-        cor.id_budget = getChoiceOrNone(request.form['id_budget'])
-        cor.nb_days_allocated = getDecimal(request.form['nb_days_allocated'])
-        cor.fixed_cost = fixed_cost
-        db.session.commit()
-        return redirect(url_for('detailPayroll', id_payroll=id_payroll))
-    return render_template('payrolls/add_or_update_allocation_payroll_budget.html', form=form, corPayrollBudget=cor, Budgets=Budgets)
-
-
-# Delete doc payroll budget
-@app.route('/payrolls/<id_payroll>/cor_budget/<id_payroll_budget>/delete', methods=['GET', 'POST'])
-@login_required
-def deleteCorPayrollBudget(id_payroll, id_payroll_budget):
-    cor = db.session.get(corPayrollBudget, id_payroll_budget) #corPayrollBudget.query.get(id_payroll_budget)
-    db.session.delete(cor)
-    db.session.commit()
-    return redirect(url_for('detailPayroll', id_payroll=id_payroll))
-
-"""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ##################
 ### OPERATIONS ###
@@ -1358,17 +1308,11 @@ def detailPayroll(id_payroll):
     Budgets = tBudgets.query.filter_by(active=True)
     form.id_budget.choices = [('','Gestion associative & Autres activités')]+[(Budget.id_budget, Budget.name) for Budget in Budgets]
     if request.method == 'POST' and form.validate():
-        # Allow None fixed cost
-        if request.form['fixed_cost'] is None or request.form['fixed_cost']=='' :
-            fixed_cost=None
-        else :
-            fixed_cost=getDecimal(request.form['fixed_cost'])
         # Insert data
         payrollBudget = corPayrollBudget(
             id_payroll,
             getChoiceOrNone(request.form['id_budget']),  
-            getDecimal(request.form['nb_days_allocated']), 
-            fixed_cost
+            getDecimal(request.form['nb_days_allocated'])
             )
         db.session.add(payrollBudget)
         db.session.commit()
@@ -1396,17 +1340,11 @@ def addCorPayrollBudget(id_payroll):
     Budgets = tBudgets.query.filter_by(active=True)
     form.id_budget.choices = [('','Gestion associative & Autres activités')]+[(Budget.id_budget, Budget.name) for Budget in Budgets]
     if request.method == 'POST' and form.validate():
-        # Allow None fixed cost
-        if request.form['fixed_cost'] is None or request.form['fixed_cost']=='' :
-            fixed_cost=None
-        else :
-            fixed_cost=getDecimal(request.form['fixed_cost'])
         # Insert data
         payrollBudget = corPayrollBudget(
             id_payroll,
             getChoiceOrNone(request.form['id_budget']),  
-            getDecimal(request.form['nb_days_allocated']), 
-            fixed_cost
+            getDecimal(request.form['nb_days_allocated'])
             )
         db.session.add(payrollBudget)
         db.session.commit()
@@ -1423,13 +1361,8 @@ def updateCorPayrollBudget(id_payroll, id_payroll_budget):
     Budgets = tBudgets.query.filter_by(active=True)
     form.id_budget.choices = [('','Gestion associative & Autres activités')]+[(Budget.id_budget, Budget.name) for Budget in Budgets]
     if request.method == 'POST' and form.validate():
-        if request.form['fixed_cost'] is None or request.form['fixed_cost']=='' :
-            fixed_cost=None
-        else :
-            fixed_cost=getDecimal(request.form['fixed_cost'])
         cor.id_budget = getChoiceOrNone(request.form['id_budget'])
         cor.nb_days_allocated = getDecimal(request.form['nb_days_allocated'])
-        cor.fixed_cost = fixed_cost
         db.session.commit()
         return redirect(url_for('detailPayroll', id_payroll=id_payroll))
     return render_template('payrolls/add_or_update_allocation_payroll_budget.html', form=form, corPayrollBudget=cor, Budgets=Budgets)

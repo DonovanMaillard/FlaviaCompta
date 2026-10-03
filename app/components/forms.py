@@ -42,7 +42,6 @@ class formBudget(Form):
     payroll_limit = DecimalField('Masse salariale éligible', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')],places=2)
     indirect_charges = DecimalField('Taux de charges indirectes', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')],places=2)
     comment = TextAreaField('Remarque', [validators.Length(min=0, max=255)], render_kw={"placeholder": "Remarque"})
-    allowed_fixed_cost = BooleanField('allowed_fixed_cost')
     active = BooleanField('Actif') 
 
 class formAccount(Form):
@@ -132,7 +131,6 @@ class formDocument(Form):
 class formPayrollBudget(Form):
     id_budget = SelectField('id_budget')
     nb_days_allocated = DecimalField('nb_days_allocated', places=2)
-    fixed_cost = DecimalField('fixed_cost', validators=[validators.Optional()], places=2, render_kw={"placeholder": "Laisser vide pour un décompte au réel"})
 
 class formBudgetMember(Form):
     id_member = SelectField('id_member',[validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner'),validators.NoneOf([''], message='Vous devez sélectionner un salarié')])

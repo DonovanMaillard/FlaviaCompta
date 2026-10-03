@@ -22,14 +22,6 @@
               <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
             {% endfor %}
           </div>
-          <div class="form-group col-md-3">
-            <label for = "fixed_cost"><strong>Cout forfaitaire (€/jour)*</strong></label><br>
-            {{ form.fixed_cost(class="form-control") }}
-            <small class="text-muted">Le séparateur de décimale doit être un point</small>
-            {% for error in form.fixed_cost.errors %} 
-              <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-            {% endfor %}
-          </div> 
           <div class="form-group col-md-1" style="margin:auto;">
             <input class="btn btn-success float-right"type = "submit" value = "Valider" />
           </div>
