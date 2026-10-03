@@ -40,7 +40,7 @@ login_manager.init_app(app)
 @login_manager.user_loader
 def load_user(id_user):
     # since the user_id is just the primary key of our user table, use it in the query for the user
-    return tUsers.query.get(int(id_user))
+    return db.session.get(tUsers, id_user)
 
 # Login
 @app.route('/login', methods=['GET','POST'])
@@ -179,7 +179,7 @@ def accounts(type):
 @app.route('/accounts/detail/<id_account>', methods=['GET', 'POST'])
 @login_required
 def detailAccount(id_account):
-    Account = vAccounts.query.get(id_account)
+    Account = db.session.get(vAccounts, id_account) #vAccounts.query.get(id_account)
     Operations = vOperations.query.filter(vOperations.id_account==id_account, vOperations.type_operation != 'Engagement').order_by(vOperations.effective_date.desc()).all()
     Commitments = vOperations.query.filter(vOperations.id_account==id_account, vOperations.type_operation == 'Engagement').order_by(vOperations.effective_date.desc()).all()
     return render_template('accounts/details_account.html', Account = Account, Operations = Operations, Commitments = Commitments )
@@ -216,7 +216,7 @@ def addAccount(type):
 @login_required
 def updateAccount(id_account):
   # pre-loaded form
-    Account = tAccounts.query.get(id_account)
+    Account = db.session.get(tAccounts, id_account)
     if Account.is_personnal:
         type = 'personnal'
     else :
@@ -236,10 +236,10 @@ def updateAccount(id_account):
     return render_template('accounts/add_or_update_account.html', form=form, Account=Account)
 
 # Delete account
-@app.route('/accounts/delete/<id_account>', methods=['GET', 'POST'])
+@app.route('/accounts/delete/<id_account>', methods=['GET','POST'])
 @login_required
 def deleteAccount(id_account):
-    current_account=tAccounts.query.get(id_account)
+    current_account=db.session.get(tAccounts, id_account)
     db.session.delete(current_account)
     db.session.commit()
     return redirect(url_for('accounts'))
@@ -262,7 +262,7 @@ def budgets():
 @app.route('/budgets/detail/<id_budget>', methods=['GET', 'POST'])
 @login_required
 def detailBudget(id_budget):
-    Budget = vBudgets.query.get(id_budget)
+    Budget = db.session.get(vBudgets, id_budget) #vBudgets.query.get(id_budget)
     Actions = vActions.query.filter_by(id_budget=id_budget)
     Operations = vOperations.query.filter(vOperations.id_budget==id_budget, vOperations.type_operation != 'Engagement').order_by(vOperations.effective_date.desc()).all()
     Commitments = vOperations.query.filter(vOperations.id_budget==id_budget, vOperations.type_operation == 'Engagement').order_by(vOperations.effective_date.desc()).all()
@@ -309,7 +309,7 @@ def addBudget():
 @login_required
 def updateBudget(id_budget):
     # pre-loaded form
-    Budget = tBudgets.query.get(id_budget)
+    Budget = db.session.get(tBudgets, id_budget) #tBudgets.query.get(id_budget)
     form = formBudget(request.form, obj=Budget)
     # Funders
     activeFunders = tFunders.query.filter_by(active=True)
@@ -345,7 +345,7 @@ def updateBudget(id_budget):
 @app.route('/budgets/delete/<id_budget>', methods=['GET', 'POST'])
 @login_required
 def deleteBudget(id_budget):
-    current_budget=tBudgets.query.get(id_budget)
+    current_budget=db.session.get(tBudgets, id_budget) #tBudgets.query.get(id_budget)
     db.session.delete(current_budget)
     db.session.commit()
     return redirect('/budgets')
@@ -383,14 +383,14 @@ def addAction(id_budget):
 @login_required
 def updateAction(id_budget, id_action_budget):
     # pre-loaded form
-    Action = corActionBudget.query.get(id_action_budget)
+    Action = db.session.get(corActionBudget, id_action_budget) #corActionBudget.query.get(id_action_budget)
     form = formAction(request.form, obj=Action)
     # Type Action
     TypesAction = dictBudgetActionTypes.query.all()
     form.id_budget_action_types.choices = [(TypeAction.id_budget_action_types, TypeAction.label) for TypeAction in TypesAction]
     form.id_budget_action_types.default = Action.id_budget_action_types
     # Budget
-    Budget = tBudgets.query.get(id_budget)
+    Budget = db.session.get(tBudgets, id_budget) #tBudgets.query.get(id_budget)
     # Charger le formulaire
     if request.method == 'POST' and form.validate():
         Action.id_budget_action_types = getChoiceOrNone(request.form['id_budget_action_types'])
@@ -408,10 +408,95 @@ def updateAction(id_budget, id_action_budget):
 @app.route('/budgets/detail/<id_budget>/deleteAction/<id_action_budget>', methods=['GET', 'POST'])
 @login_required
 def deleteAction(id_budget, id_action_budget):
-    current_action=corActionBudget.query.get(id_action_budget)
+    current_action=db.session.get(corActionBudget, id_action_budget) #corActionBudget.query.get(id_action_budget)
     db.session.delete(current_action)
     db.session.commit()
     return redirect(url_for('detailBudget', id_budget=id_budget))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+######################
+# Cor budget members #
+######################
+@app.route('/budgets/detail/<id_budget>/corBudgetMember/add', methods=['GET', 'POST'])
+@login_required
+def addCorBudgetMember(id_budget):
+    form = formBudgetMember(request.form)
+    # Get budgets
+    Members =  tMembers.query.filter_by(is_employed=True)
+    form.id_member.choices = [(Members.id_member, Members.member_name) for Member in Members]
+    if request.method == 'POST' and form.validate():
+        # Insert data
+        budgetMember = corBudgetMember(
+            id_budget,
+            request.form['id_member'],  
+            getDecimal(request.form['amount'])
+            )
+        db.session.add(budgetMember)
+        db.session.commit()
+        return redirect(url_for('detailBudget', id_budget=id_budget))
+    return render_template('budgets/details_budget.html', form=form, Budgets=Budgets)
+
+"""
+@app.route('/payrolls/<id_payroll>/cor_budget/<id_payroll_budget>/edit', methods=['GET', 'POST'])
+@login_required
+def updateCorPayrollBudget(id_payroll, id_payroll_budget):
+    cor = db.session.get(corPayrollBudget, id_payroll_budget) #corPayrollBudget.query.get(id_payroll_budget)
+    form = formPayrollBudget(request.form, obj=cor)
+    # Get budgets
+    Budgets = tBudgets.query.filter_by(active=True)
+    form.id_budget.choices = [('','Gestion associative & Autres activités')]+[(Budget.id_budget, Budget.name) for Budget in Budgets]
+    if request.method == 'POST' and form.validate():
+        if request.form['fixed_cost'] is None or request.form['fixed_cost']=='' :
+            fixed_cost=None
+        else :
+            fixed_cost=getDecimal(request.form['fixed_cost'])
+        cor.id_budget = getChoiceOrNone(request.form['id_budget'])
+        cor.nb_days_allocated = getDecimal(request.form['nb_days_allocated'])
+        cor.fixed_cost = fixed_cost
+        db.session.commit()
+        return redirect(url_for('detailPayroll', id_payroll=id_payroll))
+    return render_template('payrolls/add_or_update_allocation_payroll_budget.html', form=form, corPayrollBudget=cor, Budgets=Budgets)
+
+
+# Delete doc payroll budget
+@app.route('/payrolls/<id_payroll>/cor_budget/<id_payroll_budget>/delete', methods=['GET', 'POST'])
+@login_required
+def deleteCorPayrollBudget(id_payroll, id_payroll_budget):
+    cor = db.session.get(corPayrollBudget, id_payroll_budget) #corPayrollBudget.query.get(id_payroll_budget)
+    db.session.delete(cor)
+    db.session.commit()
+    return redirect(url_for('detailPayroll', id_payroll=id_payroll))
+
+"""
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -571,36 +656,12 @@ def operationsCSV(year=None):
     response.headers.set("Content-Disposition", "attachment", filename=datetime.now().strftime("%Y%m%d_%H-%M-%S")+"_export_operations.csv")
     return response
 
-'''
-Fonction à développer pour télécharger des justificatifs en lots
-@app.route('/operations/download_documents')
-@login_required
-def getDocuments(id_account=None, id_budget=None, year=None):
-    operations=tOperations.query.filter(tOperations.uploaded_file != None).all()
-    if id_account:
-        operations=operations.filter_by(id_account=id_account).all()
-    if id_budget:
-        operations=operations.filter_by(id_budget=id_budget).all()
-    if year:
-        operations=operations.filter(operations.effective_date.year==year).all()
-    # Create archive
-    memory_file = BytesIO()
-    with ZipFile(memory_file, 'w') as zf:
-        for operation in operations:
-            uploaded_file=app.config['BASE_DIR']+'app/static/'+operation.uploaded_file
-            data = ZipInfo(uploaded_file['fileName'])
-            data.date_time = time.localtime(time.time())[:6]
-            data.compress_type = ZIP_DEFLATED
-            zf.writestr(data, uploaded_file['fileData'])
-    memory_file.seek(0)
-    return send_file(memory_file, attachment_filename='justificatifs.zip', as_attachment=True)
-'''
-    
+
 # Suppression d'une opération ou de plusieurs opérations appariées
 @app.route('/operations/<id_operation>/delete', methods=['GET', 'POST'])
 @login_required
 def deleteMovement(id_operation): 
-    operation=tOperations.query.get(id_operation)
+    operation=db.session.get(tOperations, id_operation) #tOperations.query.get(id_operation)
     db.session.delete(operation)
     db.session.commit()
     return redirect(url_for('operations'))
@@ -676,7 +737,7 @@ def addMovement(type_operation): #movement = Dépense + Recette
 def updateMovement(id_operation): #movement = Dépense + Recette
     # Pre-load form data
     # pre-loaded form
-    Operation = tOperations.query.get(id_operation)
+    Operation = db.session.get(tOperations, id_operation) #tOperations.query.get(id_operation)
     type_operation = dictOperationTypes.query.filter_by(id_type_operation = Operation.id_type_operation).one().label
     #Get choices and form
     form = formMovement(request.form, obj=Operation)
@@ -935,7 +996,7 @@ def addCommitment():
 @login_required
 def updateCommitment(id_operation):
     # pre-loaded form
-    Operation = tOperations.query.get(id_operation)
+    Operation = db.session.get(tOperations, id_operation) #tOperations.query.get(id_operation)
     #Get choices and form
     id_type_operation = dictOperationTypes.query.filter_by(label = 'Engagement').one().id_type_operation
     form = formCommitment(request.form, obj=Operation)
@@ -976,7 +1037,7 @@ def updateCommitment(id_operation):
 @login_required
 def convertCommitment(id_operation):
     # pre-loaded form
-    Operation = tOperations.query.get(id_operation)
+    Operation = db.session.get(tOperations, id_operation) #tOperations.query.get(id_operation)
     #Get choices and form
     id_type_operation = dictOperationTypes.query.filter_by(label = 'Dépense').one().id_type_operation
     form = formMovement(request.form, obj=Operation)
@@ -1021,7 +1082,7 @@ def convertCommitment(id_operation):
 @app.route('/commitment/<id_operation>/delete', methods=['GET', 'POST'])
 @login_required
 def deleteCommitment(id_operation): 
-    operation=tOperations.query.get(id_operation)
+    operation= db.session.get(tOperations, id_operation) #tOperations.query.get(id_operation)
     db.session.delete(operation)
     db.session.commit()
     return redirect(url_for('commitments'))
@@ -1056,7 +1117,7 @@ def addMember():
 @app.route('/admin/member/edit/<id_member>', methods=['GET','POST'])
 @login_required
 def updateMember(id_member):
-    member = tMembers.query.get(id_member)
+    member = db.session.get(tMembers, id_member) #tMembers.query.get(id_member)
     form = formMember(request.form, obj=member)
     if request.method == 'POST' and form.validate():
         member.member_name = request.form['member_name']
@@ -1125,7 +1186,7 @@ def addFunder():
 @app.route('/funders/edit/<id_funder>', methods=['GET', 'POST'])
 @login_required
 def updateFunder(id_funder):
-    funder = tFunders.query.get(id_funder)
+    funder = db.session.get(tFunders, id_funder) #tFunders.query.get(id_funder)
     form = formFunder(request.form, obj=funder)
     if request.method == 'POST' and form.validate():
         funder.name=request.form['name']
@@ -1144,7 +1205,7 @@ def updateFunder(id_funder):
 @app.route('/funders/delete/<id_funder>', methods=['GET', 'POST'])
 @login_required
 def deleteFunder(id_funder):
-    current_funder=tFunders.query.get(id_funder)
+    current_funder=db.session.get(tFunders, id_funder) #tFunders.query.get(id_funder)
     db.session.delete(current_funder)
     db.session.commit()
     return redirect('/funders')
@@ -1186,7 +1247,7 @@ def addDocument():
 @login_required
 def updateDocument(id_document):
   # pre-loaded form
-    Document = tDocuments.query.get(id_document)
+    Document = db.session.get(tDocuments, id_document) #tDocuments.query.get(id_document)
     form = formDocument(request.form, obj=Document)
     # types
     DocumentTypes = dictDocumentType.query.all()
@@ -1206,7 +1267,7 @@ def updateDocument(id_document):
 @app.route('/documents/delete/<id_document>', methods=['GET', 'POST'])
 @login_required
 def deleteDocument(id_document):
-    current_document=tDocuments.query.get(id_document)
+    current_document= db.session.get(tDocuments, id_document) #tDocuments.query.get(id_document)
     db.session.delete(current_document)
     db.session.commit()
     return redirect('/documents')
@@ -1262,7 +1323,7 @@ def addPayroll():
 @app.route('/payrolls/edit/<id_payroll>', methods=['GET', 'POST'])
 @login_required
 def updatePayroll(id_payroll):
-    payroll = tPayrolls.query.get(id_payroll)
+    payroll = db.session.get(tPayrolls, id_payroll) #tPayrolls.query.get(id_payroll)
     form = formPayroll(request.form, obj=payroll)
     # Get employees
     Members = tMembers.query.filter_by(is_employed=True)
@@ -1290,15 +1351,35 @@ def updatePayroll(id_payroll):
 @app.route('/payrolls/detail/<id_payroll>', methods=['GET', 'POST'])
 @login_required
 def detailPayroll(id_payroll):
-    payroll = vPayrolls.query.get(id_payroll)
+    payroll = db.session.get(vPayrolls, id_payroll) #vPayrolls.query.get(id_payroll)
     corsPayrollBudget = vDecodeCorPayrollBudget.query.filter_by(id_payroll=id_payroll).order_by(vDecodeCorPayrollBudget.budget_name.desc()).all()
-    return render_template('payrolls/detail_payroll.html', payroll=payroll, corsPayrollBudget=corsPayrollBudget)
+    form = formPayrollBudget(request.form)
+    # Get budgets
+    Budgets = tBudgets.query.filter_by(active=True)
+    form.id_budget.choices = [('','Gestion associative & Autres activités')]+[(Budget.id_budget, Budget.name) for Budget in Budgets]
+    if request.method == 'POST' and form.validate():
+        # Allow None fixed cost
+        if request.form['fixed_cost'] is None or request.form['fixed_cost']=='' :
+            fixed_cost=None
+        else :
+            fixed_cost=getDecimal(request.form['fixed_cost'])
+        # Insert data
+        payrollBudget = corPayrollBudget(
+            id_payroll,
+            getChoiceOrNone(request.form['id_budget']),  
+            getDecimal(request.form['nb_days_allocated']), 
+            fixed_cost
+            )
+        db.session.add(payrollBudget)
+        db.session.commit()
+        return redirect(url_for('detailPayroll', id_payroll=id_payroll))
+    return render_template('payrolls/detail_payroll.html', payroll=payroll, corsPayrollBudget=corsPayrollBudget, form=form, payrollBudget=None, Budgets=Budgets)
 
 # Delete payroll
 @app.route('/payrolls/delete/<id_payroll>', methods=['GET', 'POST'])
 @login_required
 def deletePayroll(id_payroll):
-    current_payroll=tPayrolls.query.get(id_payroll)
+    current_payroll=db.session.get(tPayrolls, id_payroll) #tPayrolls.query.get(id_payroll)
     db.session.delete(current_payroll)
     db.session.commit()
     return redirect(url_for('payrolls'))
@@ -1336,7 +1417,7 @@ def addCorPayrollBudget(id_payroll):
 @app.route('/payrolls/<id_payroll>/cor_budget/<id_payroll_budget>/edit', methods=['GET', 'POST'])
 @login_required
 def updateCorPayrollBudget(id_payroll, id_payroll_budget):
-    cor = corPayrollBudget.query.get(id_payroll_budget)
+    cor = db.session.get(corPayrollBudget, id_payroll_budget) #corPayrollBudget.query.get(id_payroll_budget)
     form = formPayrollBudget(request.form, obj=cor)
     # Get budgets
     Budgets = tBudgets.query.filter_by(active=True)
@@ -1358,11 +1439,10 @@ def updateCorPayrollBudget(id_payroll, id_payroll_budget):
 @app.route('/payrolls/<id_payroll>/cor_budget/<id_payroll_budget>/delete', methods=['GET', 'POST'])
 @login_required
 def deleteCorPayrollBudget(id_payroll, id_payroll_budget):
-    cor = corPayrollBudget.query.get(id_payroll_budget)
+    cor = db.session.get(corPayrollBudget, id_payroll_budget) #corPayrollBudget.query.get(id_payroll_budget)
     db.session.delete(cor)
     db.session.commit()
     return redirect(url_for('detailPayroll', id_payroll=id_payroll))
-
 
 
 ######
@@ -1416,7 +1496,7 @@ def addVolunteering():
 @app.route('/employees/volunteering/edit/<id_work_value>', methods=['GET', 'POST'])
 @login_required
 def updateVolunteering(id_work_value):
-    volunteering = tPayrolls.query.get(id_work_value)
+    volunteering = db.session.get(tPayrolls, id_work_value) #tPayrolls.query.get(id_work_value)
     form = formVolunteering(request.form, obj=volunteering)
     # Get employees
     Members = tMembers.query.all()
@@ -1441,14 +1521,14 @@ def updateVolunteering(id_work_value):
 @app.route('/employees/volunteering/detail/<id_work_value>', methods=['GET', 'POST'])
 @login_required
 def detailVolunteering(id_work_value):
-    current_volunteering=vPayrolls.query.get(id_work_value)
+    current_volunteering=db.session.get(vPayrolls, id_work_value) #vPayrolls.query.get(id_work_value)
     return render_template('volunteering/detail_volunteering.html', volunteering=current_volunteering)
 
 # Delete volunteering
 @app.route('/employees/volunteering/delete/<id_work_value>', methods=['GET', 'POST'])
 @login_required
 def deleteVolunteering(id_work_value):
-    current_volunteering=tPayrolls.query.get(id_work_value)
+    current_volunteering=db.session.get(tPayrolls, id_work_value) #tPayrolls.query.get(id_work_value)
     db.session.delete(current_volunteering)
     db.session.commit()
     return redirect(url_for('volunteering'))
