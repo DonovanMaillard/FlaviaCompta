@@ -109,8 +109,12 @@
   <div class="nav nav-tabs" id="nav-tab" role="tablist">
     <button class="nav-link active" id="nav-operations-tab" data-bs-toggle="tab" data-bs-target="#nav-operations" type="button" role="tab" aria-controls="nav-operations" aria-selected="false">Opérations rattachées</button>
     <button class="nav-link" id="nav-commitments-tab" data-bs-toggle="tab" data-bs-target="#nav-commitments" type="button" role="tab" aria-controls="nav-commitments" aria-selected="false">Engagements en cours</button>
+    {% if Budget.type_budget =="Subvention" %}
     <button class="nav-link" id="nav-payrolls-tab" data-bs-toggle="tab" data-bs-target="#nav-payrolls" type="button"role="tab" aria-controls="nav-payrolls" aria-selected="true">Temps de personnel justifié</button>
-    <button class="nav-link" id="nav-cprofit-bonus-tab" data-bs-toggle="tab" data-bs-target="#nav-profitBonus" type="button"role="tab" aria-controls="nav-profitBonus" aria-selected="true">Répartition entre salariés</button>
+    {% endif %}
+    {% if Budget.profit_bonus %}
+    <button class="nav-link" id="nav-cprofit-bonus-tab" data-bs-toggle="tab" data-bs-target="#nav-profitBonus" type="button"role="tab" aria-controls="nav-profitBonus" aria-selected="true">Calcul de l'intéressement</button>
+    {% endif %}
     <button class="nav-link" id="nav-action-tab" data-bs-toggle="tab" data-bs-target="#nav-actions" type="button"role="tab" aria-controls="nav-actions" aria-selected="true">Suivi administratif</button>
   </div>
 </nav>
