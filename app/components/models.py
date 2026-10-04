@@ -435,6 +435,8 @@ class vBudgets(db.Model):
     last_action_date = db.Column(db.Date(), nullable=True)
     nb_operations = db.Column(db.Integer, nullable=False)
     draft_allocations = db.Column(JSONB, nullable=True)
+    profit_bonus = db.Column(db.Boolean, nullable=True)
+    date_closing = db.Column(db.Date(), nullable=True)
 
 
 class vAccounts(db.Model):
