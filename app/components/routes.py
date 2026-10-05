@@ -335,7 +335,6 @@ def addBudget():
 def updateBudget(id_budget):
     Budget = db.get_or_404(tBudgets, id_budget)
     form = formBudget(request.form if request.method == 'POST' else None, obj=Budget)
-
     # Funders
     activeFunders = tFunders.query.filter_by(active=True)
     form.id_funder.choices = [('', '-- Sélectionnez un financeur --')] + [(f.id_funder, f.name) for f in activeFunders]
@@ -356,6 +355,16 @@ def updateBudget(id_budget):
         return redirect('/budgets')
 
     return render_template('budgets/add_or_update_budget.html', form=form, Budget=Budget)
+
+
+# Delete budget
+@app.route('/budgets/close/<id_budget>', methods=['GET', 'POST'])
+@login_required
+def closeBudget(id_budget):
+    Budget=db.session.get(tBudgets, id_budget)
+    
+    db.session.commit()
+    return redirect('/budgets')
 
 
 # Delete budget
@@ -609,7 +618,7 @@ def addMovement(type_operation): #movement = Dépense + Recette
     id_type_operation = dictOperationTypes.query.filter_by(label = type_operation).one().id_type_operation
     form = formMovement(request.form)
     # Get accounts
-    if type_operation=='Recette':
+    if type_operation=='Recette': 
         Accounts = tAccounts.query.filter_by(is_personnal=False).filter_by(active=True)
     else :
         Accounts = tAccounts.query.filter_by(active=True)
@@ -617,7 +626,7 @@ def addMovement(type_operation): #movement = Dépense + Recette
     # accounts
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
     # Budget
-    activeBudgets = tBudgets.query.filter_by(active=True)
+    activeBudgets = tBudgets.query.filter_by(date_closing=None)
     form.id_budget.choices = [('', '-- Sélectionnez un budget --')] + [(activeBudget.id_budget, activeBudget.name) for activeBudget in activeBudgets]
     # Category
     Categories = dictCategories.query.filter(dictCategories.id_type_operation == id_type_operation, dictCategories.seizable == True).order_by(dictCategories.cd_category).all()
@@ -681,7 +690,7 @@ def updateMovement(id_operation): #movement = Dépense + Recette
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
     form.id_account.default=Operation.id_account
     # Budget
-    activeBudgets = tBudgets.query.filter_by(active=True)
+    activeBudgets = tBudgets.query.filter_by(date_closing=None)
     form.id_budget.choices = [('', '-- Sélectionnez un budget --')] + [(activeBudget.id_budget, activeBudget.name) for activeBudget in activeBudgets]
     form.id_budget.default=Operation.id_budget
     # Category
@@ -891,7 +900,7 @@ def addCommitment():
     Accounts = tAccounts.query.filter_by(is_personnal=False).filter_by(active=True)
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
     # Budget
-    activeBudgets = tBudgets.query.filter_by(active=True)
+    activeBudgets = tBudgets.query.filter_by(date_closing=None)
     form.id_budget.choices = [('', '-- Sélectionnez un budget --')] + [(activeBudget.id_budget, activeBudget.name) for activeBudget in activeBudgets]
     # Category
     id_type_depenses = dictOperationTypes.query.filter_by(label = 'Dépense').one().id_type_operation
@@ -936,7 +945,7 @@ def updateCommitment(id_operation):
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
     form.id_account.default=Operation.id_account
     # Budget
-    activeBudgets = tBudgets.query.filter_by(active=True)
+    activeBudgets = tBudgets.query.filter_by(date_closing=None)
     form.id_budget.choices = [('', '-- Sélectionnez un budget --')] + [(activeBudget.id_budget, activeBudget.name) for activeBudget in activeBudgets]
     form.id_budget.default=Operation.id_budget
     # Category
@@ -977,7 +986,7 @@ def convertCommitment(id_operation):
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
     form.id_account.default=Operation.id_account
     # Budget
-    activeBudgets = tBudgets.query.filter_by(active=True)
+    activeBudgets = tBudgets.query.filter_by(date_closing=None)
     form.id_budget.choices = [('', '-- Sélectionnez un budget --')] + [(activeBudget.id_budget, activeBudget.name) for activeBudget in activeBudgets]
     form.id_budget.default=Operation.id_budget
     # Category
@@ -1285,7 +1294,7 @@ def detailPayroll(id_payroll):
     corsPayrollBudget = vDecodeCorPayrollBudget.query.filter_by(id_payroll=id_payroll).order_by(vDecodeCorPayrollBudget.budget_name.desc()).all()
     form = formPayrollBudget(request.form)
     # Get budgets
-    Budgets = tBudgets.query.filter_by(active=True)
+    Budgets = tBudgets.query.filter_by(date_closing=None)
     form.id_budget.choices = [('','Gestion associative & Autres activités')]+[(Budget.id_budget, Budget.name) for Budget in Budgets]
     if request.method == 'POST' and form.validate():
         # Insert data
@@ -1317,7 +1326,7 @@ def deletePayroll(id_payroll):
 def addCorPayrollBudget(id_payroll):
     form = formPayrollBudget(request.form)
     # Get budgets
-    Budgets = tBudgets.query.filter_by(active=True)
+    Budgets = tBudgets.query.filter_by(date_closing=None)
     form.id_budget.choices = [('','Gestion associative & Autres activités')]+[(Budget.id_budget, Budget.name) for Budget in Budgets]
     if request.method == 'POST' and form.validate():
         # Insert data
@@ -1338,7 +1347,7 @@ def updateCorPayrollBudget(id_payroll, id_payroll_budget):
     cor = db.session.get(corPayrollBudget, id_payroll_budget) #corPayrollBudget.query.get(id_payroll_budget)
     form = formPayrollBudget(request.form, obj=cor)
     # Get budgets
-    Budgets = tBudgets.query.filter_by(active=True)
+    Budgets = tBudgets.query.filter_by(date_closing=None)
     form.id_budget.choices = [('','Gestion associative & Autres activités')]+[(Budget.id_budget, Budget.name) for Budget in Budgets]
     if request.method == 'POST' and form.validate():
         cor.id_budget = getChoiceOrNone(request.form['id_budget'])

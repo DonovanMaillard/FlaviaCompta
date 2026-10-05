@@ -73,11 +73,14 @@
         </div>
         <br><br>
         <div class="btn-group">
-          <a class="btn btn-warning" href="{{ url_for('updateBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-edit"></i> Modifier</a>
-          {% if Budget.nb_operations == 0 %}
-            <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"> <i class="fa fa-trash"></i> Supprimer </a>
+          {% if not Budget.date_closing %}
+            <a class="btn btn-warning" href="{{ url_for('updateBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-edit"></i> Modifier</a>
+            {% if Budget.nb_operations == 0 %}
+              <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"> <i class="fa fa-trash"></i> Supprimer </a>
+            {% endif %}
+            <a class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#closeModal"> <i class="fa fa-lock"></i> Clôturer </a>
           {% else %}
-            <a class="btn btn-danger disabled"> <i class="fa fa-ban"></i> Opérations liées </a>
+            <a class="btn btn-dark disabled"> <i class="fa fa-lock"></i> Clôturé le {{ Budget.date_closing }} </a>
           {% endif %}
         </div>
     </div>
@@ -103,6 +106,66 @@
       </div>
     </div>
     <!-- end modal -->
+
+    <!-- Close Modal -->
+                <div class="modal fade" id="closeModal" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
+                  <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="closeModalLabel">Clôturer la ligne budgétaire</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+
+                        <div class="alert alert-danger" role="alert">
+                          <h4 class="alert-heading">Attention !</h4>
+                          <p>Vous vous apprêtez à clôturer la ligne budgétaire <strong>"{{ Budget.name }}"</strong>.</p>
+                          <hr>
+                          <p class="mb-0"><strong>Cette action est irréversible.</strong></p>
+                        </div>
+
+                        <div class="alert alert-secondary" role="alert">
+                          <div class="row">
+                            <div class="col-md-6">
+                              <strong>Montant prévisionnel du budget : </strong>{{ Budget.budget_amount }}€
+                            </div>
+                            <div class="col-md-6">
+                              <strong>Montant perçu : </strong>{{ Budget.received_amount }}€
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Alerte sur le calcul de l'intéressement -->
+                          {% if Budget.profit_bonus %}
+                          <div class="card">
+                            <h5 class="card-header">Calcul de l'intéressement</h5>
+                            <div class="card-body">
+                              <p class="card-text">Ce budget entre dans le calcul de l'intéressement des salariés. En clôturant ce budget, les primes seront définitivement calculées sur la base de la répartition suivante :</p>
+                              {% include 'budgets/profit_bonus.html' %}
+                            </div>
+                          </div>
+                          {% endif %}
+
+                        <!-- Masses salariales justifiées sur subventions -->
+                          {% if Budget.type_budget =="Subvention" %}
+                          <div class="card">
+                            <h5 class="card-header">Masses salariales justifiées</h5>
+                            <div class="card-body">
+                              <p class="card-text">Les masses salariales justifiées sur ce projet sont les suivantes :</p>
+                              {% include 'budgets/details_payrolls.html' %}
+                            </div>
+                          </div>
+                          {% endif %}
+                          
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <a class="btn btn-dark" href="{{ url_for('closeBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-lock"></i> <strong>Clôturer le budget</strong></a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            <!-- end modal -->
 
 
 <nav>
