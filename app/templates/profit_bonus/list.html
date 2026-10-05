@@ -28,7 +28,7 @@
 </form>
 
 <div class="btn btn-group">
-    <a class="btn btn-success" id="download-csv" title="Télécharger au format csv" href="{{ url_for('download_profit_bonus') }}">Télécharger</a>
+    <a class="btn btn-success" id="download-csv" title="Télécharger au format csv" href="{{ url_for('profit_bonus.download_profit_bonus') }}">Télécharger</a>
 </div>
 
 <table class="table table-striped">
@@ -92,7 +92,7 @@
     params.set('page', state.page);
     params.set('per_page', state.perPage);
 
-    var response = await fetch('{{ url_for("get_api_profit_bonus") }}?' + params.toString());
+    var response = await fetch('{{ url_for("profit_bonus.get_api_profit_bonus") }}?' + params.toString());
     if (!response.ok) { tbody.innerHTML = '<tr><td colspan="6">Erreur de chargement.</td></tr>'; return; }
     var json = await response.json();
     state.total = json.total;
@@ -138,7 +138,7 @@
         if (!params.get(k)) params.delete(k);
     });
 
-    this.href = '{{ url_for("download_profit_bonus") }}?' + params.toString();
+    this.href = '{{ url_for("profit_bonus.download_profit_bonus") }}?' + params.toString();
 });
 
 </script>
