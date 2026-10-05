@@ -91,14 +91,14 @@
                   <li><h6 class="dropdown-header"><i class="fa fa-eye"></i> Consulter et gérer</h6></li>
                   <li><hr class="dropdown-divider"></li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('accounts')}}">Mes comptes bancaires</a>
+                    <a class="dropdown-item" href="{{url_for('accounts.accounts')}}">Mes comptes bancaires</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('budgets')}}">Mes lignes budgétaires</a>
+                    <a class="dropdown-item" href="{{url_for('budgets.budgets')}}">Mes lignes budgétaires</a>
                   </li>
                    <br/>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('accounts', type='personnal')}}">Notes de frais des personnels</a>
+                    <a class="dropdown-item" href="{{url_for('accounts.accounts', type='personnal')}}">Notes de frais des personnels</a>
                   </li>
                   <br/>
                   <li><h6 class="dropdown-header"><i class="fa fa-users"></i> Bilans financiers</h6></li>
@@ -134,7 +134,7 @@
                     <a class="dropdown-item" href="{{ url_for('members') }}">Membres</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('funders')}}">Financeurs</a>
+                    <a class="dropdown-item" href="{{url_for('funders.funders')}}">Financeurs</a>
                   </li>
                   <li>
                     <a class="dropdown-item" href="{{url_for('activities')}}">Activités</a>
@@ -164,7 +164,7 @@
           </div>
           <!-- Disconnect -->
           <div class="nav-item d-flex">
-            <a class="nav-link" href="{{ url_for('logout') }}" title="Se déconnecter"><i class='fa-solid fa-sign-out'></i>Se déconnecter</a>
+            <a class="nav-link" href="{{ url_for('auth.logout') }}" title="Se déconnecter"><i class='fa-solid fa-sign-out'></i>Se déconnecter</a>
           </div>
       </div>
 </header>

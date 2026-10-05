@@ -20,7 +20,7 @@
         <td>
           <div>
             <div class="btn btn-group">
-              <a class="btn btn-warning" href="{{ url_for('updateAction', id_budget=Budget.id_budget, id_action_budget=Action.id_action_budget) }}"> <i class="fa fa-edit"></i> </a>
+              <a class="btn btn-warning" href="{{ url_for('budgets_actions.updateAction', id_budget=Budget.id_budget, id_action_budget=Action.id_action_budget) }}"> <i class="fa fa-edit"></i> </a>
               <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteActionModal{{Action.id_action_budget}}"> <i class="fa fa-trash"></i> </a>
             </div>
           </div>
@@ -39,7 +39,7 @@
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-              <a class="btn btn-danger" href="{{ url_for('deleteAction', id_budget=Budget.id_budget, id_action_budget=Action.id_action_budget) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
+              <a class="btn btn-danger" href="{{ url_for('budgets_actions.deleteAction', id_budget=Budget.id_budget, id_action_budget=Action.id_action_budget) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
             </div>
           </div>
         </div>
@@ -50,6 +50,6 @@
     </tbody>
   </table>
   
-  <a class="btn btn-success" href="{{ url_for('addAction', id_budget=Budget.id_budget) }}"> <i class="fa fa-plus"></i> Ajouter une action </a>        
+  <a class="btn btn-success" href="{{ url_for('budgets_actions.addAction', id_budget=Budget.id_budget) }}"> <i class="fa fa-plus"></i> Ajouter une action </a>        
 
 </div>

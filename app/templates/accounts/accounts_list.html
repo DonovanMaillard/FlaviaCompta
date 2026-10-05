@@ -13,9 +13,9 @@
     <div class="row">
       <div style="margin-bottom:50px;">
         {% if Type == 'personnal' %}
-          <a class="btn btn-success btn-right " href="{{url_for('addAccount', type='personnal')}}"><i class="fa fa-plus"> </i> Ajouter une note de frais</a>
+          <a class="btn btn-success btn-right " href="{{url_for('accounts.addAccount', type='personnal')}}"><i class="fa fa-plus"> </i> Ajouter une note de frais</a>
         {% else %}
-          <a class="btn btn-success btn-right " href="{{url_for('addAccount')}}"><i class="fa fa-plus"></i> Ajouter un nouveau compte</a>
+          <a class="btn btn-success btn-right " href="{{url_for('accounts.addAccount')}}"><i class="fa fa-plus"></i> Ajouter un nouveau compte</a>
         {% endif %}
       </div>
     </div>
@@ -67,8 +67,8 @@
           </div>
           <div class="col-md-3">
             <div class="btn btn-group">
-              <a class="btn btn-info" href="{{ url_for('detailAccount', id_account=Account.id_account) }}"> <i class="fa fa-eye"></i> </a>
-              <a class="btn btn-warning" href="{{ url_for('updateAccount', id_account=Account.id_account) }}"> <i class="fa fa-edit"></i> </a>
+              <a class="btn btn-info" href="{{ url_for('accounts.detailAccount', id_account=Account.id_account) }}"> <i class="fa fa-eye"></i> </a>
+              <a class="btn btn-warning" href="{{ url_for('accounts.updateAccount', id_account=Account.id_account) }}"> <i class="fa fa-edit"></i> </a>
               {% if Account.nb_operations == 0 %}
               <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{Account.id_account}}"> <i class="fa fa-trash"></i> </a>
               {% else %}
@@ -93,7 +93,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-            <a class="btn btn-danger" href="{{ url_for('deleteAccount', id_account=Account.id_account) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
+            <a class="btn btn-danger" href="{{ url_for('accounts.deleteAccount', id_account=Account.id_account) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
           </div>
         </div>
       </div>

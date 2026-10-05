@@ -32,7 +32,7 @@
           </div>
         </div>
         <div class="btn-group">
-          <a class="btn btn-warning" href="{{ url_for('updateFunder', id_funder=Funder.id_funder) }}"> <i class="fa fa-edit"></i> Modifier</a>
+          <a class="btn btn-warning" href="{{ url_for('funders.updateFunder', id_funder=Funder.id_funder) }}"> <i class="fa fa-edit"></i> Modifier</a>
           <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"> <i class="fa fa-trash"></i> Supprimer </a>        
         </div>
       </div>
@@ -51,7 +51,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            <a class="btn btn-danger" href="{{ url_for('deleteFunder', id_funder=Funder.id_funder) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
+            <a class="btn btn-danger" href="{{ url_for('funders.deleteFunder', id_funder=Funder.id_funder) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
           </div>
         </div>
       </div>
@@ -66,7 +66,7 @@
         </div>
         <div class="card-body">
           <div class="btn btn-group">
-            <a class="btn btn-info" href="{{ url_for('budgets') }}"> <i class="fa fa-list"></i> Aller aux budgets</a>
+            <a class="btn btn-info" href="{{ url_for('budgets.budgets') }}"> <i class="fa fa-list"></i> Aller aux budgets</a>
           </div>
         </div>
       </div>
@@ -83,8 +83,8 @@
             <div class="card">
               <div class="card-header">
                 <h5>{{ Budget.name }}
-                  {% if Budget.active %} <span class="badge badge-right alert-success">Actif</span>
-                  {% else %} <span class="badge badge-right alert-dark">Inactif</span>
+                  {% if not Budget.date_closing %} <span class="badge badge-right alert-success">Actif</span>
+                  {% else %} <span class="badge badge-right alert-dark">Clôturé le {{ Budget.date_closing }}</span>
                   {% endif %}
                 </h5>
               </div>
@@ -101,7 +101,7 @@
                   </div>
                 </div>
                 <div class="btn btn-group">
-                    <a class="btn btn-info" href="{{ url_for('detailBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-eye"></i> </a>
+                    <a class="btn btn-info" href="{{ url_for('budgets.detailBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-eye"></i> </a>
                 </div>
               </div>
             </div>

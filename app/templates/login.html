@@ -42,7 +42,7 @@
 
             <div>
             <input class="btn btn-primary float-right" type = "submit" value = "Se connecter" />
-            <a href="{{ url_for('signup') }}">Faire une demande de compte</a>
+            <a href="{{ url_for('auth.signup') }}">Faire une demande de compte</a>
             </div>
 
               {% with messages = get_flashed_messages() %}

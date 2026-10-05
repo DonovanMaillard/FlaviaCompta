@@ -57,7 +57,7 @@
           {% if Account.bank_url %}
             <a class="btn btn-info" href="{{ Account.bank_url }}" title="Accéder au portail de connexion du compte"> <i class="fa fa-external-link"></i> Site de la banque</a>
           {% endif %}
-          <a class="btn btn-warning" href="{{ url_for('updateAccount', id_account=Account.id_account) }}"> <i class="fa fa-edit"></i> Modifier</a>
+          <a class="btn btn-warning" href="{{ url_for('accounts.updateAccount', id_account=Account.id_account) }}"> <i class="fa fa-edit"></i> Modifier</a>
           {% if Account.nb_operations == 0 %}
             <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"> <i class="fa fa-trash"></i> Supprimer </a>
           {% else %}
@@ -86,7 +86,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            <a class="btn btn-danger" href="{{ url_for('deleteAccount', id_account=Account.id_account) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
+            <a class="btn btn-danger" href="{{ url_for('accounts.deleteAccount', id_account=Account.id_account) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
           </div>
         </div>
       </div>

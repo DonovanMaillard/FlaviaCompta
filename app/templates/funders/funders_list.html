@@ -5,7 +5,7 @@
 <div class="container">
 	<h1> Liste des financeurs </h1>
 
-      <a class="btn btn-success btn-right " href="{{ url_for('addFunder') }}"><i class="fa fa-plus"></i> Ajouter un nouveau financeur</a>
+      <a class="btn btn-success btn-right " href="{{ url_for('funders.addFunder') }}"><i class="fa fa-plus"></i> Ajouter un nouveau financeur</a>
       <br><br>
       
       <table class="table table-striped">
@@ -29,8 +29,8 @@
                   <td>
                   	<div>
                         <div class="btn btn-group">
-                           <a class="btn btn-info" href="{{ url_for('detailFunder', id_funder=Funder.id_funder) }}"> <i class="fa fa-eye"></i> </a>
-                           <a class="btn btn-warning" href="{{ url_for('updateFunder', id_funder=Funder.id_funder) }}"> <i class="fa fa-edit"></i> </a>
+                           <a class="btn btn-info" href="{{ url_for('funders.detailFunder', id_funder=Funder.id_funder) }}"> <i class="fa fa-eye"></i> </a>
+                           <a class="btn btn-warning" href="{{ url_for('funders.updateFunder', id_funder=Funder.id_funder) }}"> <i class="fa fa-edit"></i> </a>
                            <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{Funder.id_funder}}"> <i class="fa fa-trash"></i> </a>
                         </div>
                   	</div>
@@ -49,7 +49,7 @@
                       </div>
                       <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <a class="btn btn-danger" href="{{ url_for('deleteFunder', id_funder=Funder.id_funder) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
+                        <a class="btn btn-danger" href="{{ url_for('funders.deleteFunder', id_funder=Funder.id_funder) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
                       </div>
                     </div>
                   </div>

@@ -74,7 +74,7 @@
         <br><br>
         <div class="btn-group">
           {% if not Budget.date_closing %}
-            <a class="btn btn-warning" href="{{ url_for('updateBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-edit"></i> Modifier</a>
+            <a class="btn btn-warning" href="{{ url_for('budgets.updateBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-edit"></i> Modifier</a>
             {% if Budget.nb_operations == 0 %}
               <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"> <i class="fa fa-trash"></i> Supprimer </a>
             {% endif %}
@@ -100,7 +100,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-            <a class="btn btn-danger" href="{{ url_for('deleteBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
+            <a class="btn btn-danger" href="{{ url_for('budgets.deleteBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
           </div>
         </div>
       </div>
@@ -160,7 +160,7 @@
                       </div>
                       <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <a class="btn btn-dark" href="{{ url_for('closeBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-lock"></i> <strong>Clôturer le budget</strong></a>
+                        <a class="btn btn-dark" href="{{ url_for('budgets.closeBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-lock"></i> <strong>Clôturer le budget</strong></a>
                       </div>
                     </div>
                   </div>
