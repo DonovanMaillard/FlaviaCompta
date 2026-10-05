@@ -8,6 +8,7 @@ from flask_login import login_required, current_user, login_user, logout_user, L
 from calendar import monthrange
 from sqlalchemy import func, or_, and_
 from zipfile import ZipFile, ZipInfo
+from decimal import Decimal
 
 
 #import logging
@@ -160,6 +161,242 @@ def features():
 def tutorial():
     return render_template('about/tutorial.html')
 
+##########
+## APIS ##
+##########
+
+@app.route("/api/operations", methods=["GET"])
+@login_required
+def get_api_operations():
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 10))
+
+    libelle = request.args.get("libelle", "")
+    montant = request.args.get("montant", type=float)
+    categorie = request.args.get("categorie", "")
+    date_apres = request.args.get("date_apres", type=str)
+    date_avant = request.args.get("date_avant", type=str)
+
+    query = vOperations.query
+
+    
+    if libelle:
+        like_pattern = f"%{libelle}%"
+        query = query.filter(or_(
+            vOperations.name_operation.ilike(like_pattern),
+            vOperations.detail_operation.ilike(like_pattern)
+        ))
+
+    if montant:
+        try:
+            montant = request.args.get("montant", "").replace(",", ".")
+            montant_float = float(montant)
+            query = query.filter(func.abs(vOperations.amount) == abs(montant_float))
+        except ValueError:
+            pass  # montant mal formé, on ignore le filtre
+
+    if categorie:
+        cat_pattern = f"%{categorie}%"
+        query = query.filter(or_(
+            vOperations.type_operation.ilike(cat_pattern),
+            vOperations.category.ilike(cat_pattern),
+            vOperations.parent_category.ilike(cat_pattern)
+        ))
+
+    if date_apres:
+        try:
+            date_apres_parsed = datetime.strptime(date_apres, "%Y-%m-%d").date()
+            query = query.filter(vOperations.effective_date >= date_apres_parsed)
+        except ValueError:
+            pass
+
+    if date_avant:
+        try:
+            date_avant_parsed = datetime.strptime(date_avant, "%Y-%m-%d").date()
+            query = query.filter(vOperations.effective_date <= date_avant_parsed)
+        except ValueError:
+            pass
+
+
+    total = query.count()
+
+    results = query.filter(vOperations.type_operation != 'Engagement').order_by(vOperations.effective_date.desc()).order_by(vOperations.id_operation.desc()).offset((page - 1) * per_page).limit(per_page).all()
+
+    data = [{
+        "id_operation": op.id_operation,
+        "effective_date": op.effective_date.strftime('%Y-%m-%d') if op.effective_date else "",
+        "operation_date": op.operation_date.strftime('%Y-%m-%d') if op.operation_date else "",
+        "name_operation": op.name_operation,
+        "detail_operation": op.detail_operation,
+        "type_operation": op.type_operation,
+        "category": op.category,
+        "parent_category": op.parent_category,
+        "id_budget": op.id_budget,
+        "budget_name": op.budget_name,
+        "id_account": op.id_account,
+        "account_name": op.account_name,
+        "payment_method": op.payment_method,
+        "amount": float(op.amount),
+        "uploaded_file": url_for('static', filename=op.uploaded_file) if op.uploaded_file else "",
+        "meta_create_date": op.meta_create_date,
+        "meta_update_date": op.meta_update_date
+    } for op in results]
+
+    return jsonify({
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "data": data
+    })
+
+
+def search_profit_bonus():
+    query = vProfitBonus.query
+
+    id_member = request.args.get("id_member", "")
+    id_budget = request.args.get("id_budget", "")
+    date_apres = request.args.get("date_apres", type=str)
+    date_avant = request.args.get("date_avant", type=str)
+
+    if id_member:
+        query = query.filter(
+            vProfitBonus.id_member == id_member
+        )
+
+    if id_budget:
+        query = query.filter(
+            vProfitBonus.id_budget == id_budget
+        )
+
+    if date_apres:
+        try:
+            date_apres_parsed = datetime.strptime(
+                date_apres, "%Y-%m-%d"
+            ).date()
+
+            query = query.filter(
+                vProfitBonus.meta_create_date >= date_apres_parsed
+            )
+        except ValueError:
+            pass
+
+    if date_avant:
+        try:
+            date_avant_parsed = datetime.strptime(date_avant, "%Y-%m-%d").date()
+
+            query = query.filter(vProfitBonus.meta_create_date < date_avant_parsed + timedelta(days=1))
+        except ValueError:
+            pass
+
+    return query
+
+@app.route("/api/profit_bonus", methods=["GET"])
+@login_required
+def get_api_profit_bonus():
+
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 10))
+
+    query = search_profit_bonus()
+
+    total = query.count()
+
+    total_bonus = query.with_entities(
+        func.coalesce(
+            func.sum(vProfitBonus.profit_bonus_amount),
+            0
+        )
+    ).scalar()
+
+    results = (
+        query
+        .order_by(vProfitBonus.meta_create_date.desc())
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+        .all()
+    )
+
+    data = [{
+        "id_pb": pb.id_pb,
+        "id_budget": pb.id_budget,
+        "budget_name": pb.name,
+        "budget_amount": pb.budget_amount,
+        "budget_received_amount": pb.received_amount,
+        "budget_date_closing": pb.date_closing,
+        "id_member": pb.id_member,
+        "member_name": pb.member_name,
+        "allocated_amount": pb.allocated_amount,
+        "profit_percent": pb.profit_percent,
+        "profit_bonus_amount": pb.profit_bonus_amount,
+        "meta_create_date": pb.meta_create_date,
+        "meta_update_date": pb.meta_update_date
+    } for pb in results]
+
+    return jsonify({
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "data": data,
+        "total_profit_bonus": str(total_bonus)
+    })
+
+@app.route("/profit_bonus/download", methods=["GET"])
+@login_required
+def download_profit_bonus():
+
+    query = search_profit_bonus()
+
+    results = (
+        query
+        .order_by(vProfitBonus.meta_create_date.desc())
+        .all()
+    )
+
+    output = StringIO()
+
+    writer = csv.writer(output)
+
+    writer.writerow([
+        "ID",
+        "Budget",
+        "Montant previsionnel budget",
+        "Recettes reelles",
+        "Date de clôture",
+        "Salarié",
+        "Montant attribué",
+        "Pourcentage",
+        "Prime acquise",
+        "Date calcul intéressement",
+        "Date modification"
+    ])
+
+    for pb in results:
+        writer.writerow([
+            pb.id_pb,
+            pb.name,
+            pb.budget_amount,
+            pb.received_amount,
+            pb.date_closing,
+            pb.member_name,
+            pb.allocated_amount,
+            pb.profit_percent,
+            pb.profit_bonus_amount,
+            pb.meta_create_date,
+            pb.meta_update_date
+        ])
+
+    output.seek(0)
+
+    return Response(
+        output,
+        mimetype="text/csv",
+        headers={
+            "Content-Disposition":
+                "attachment; filename=profit_bonus.csv"
+        }
+    )
+
+
 ################
 ### ACCOUNTS ###
 ################
@@ -262,12 +499,36 @@ def budgets():
 @app.route('/budgets/detail/<id_budget>', methods=['GET', 'POST'])
 @login_required
 def detailBudget(id_budget):
-    Budget = db.session.get(vBudgets, id_budget) #vBudgets.query.get(id_budget)
+    Budget = db.session.get(vBudgets, id_budget) 
     Actions = vActions.query.filter_by(id_budget=id_budget)
     Operations = vOperations.query.filter(vOperations.id_budget==id_budget, vOperations.type_operation != 'Engagement').order_by(vOperations.effective_date.desc()).all()
     Commitments = vOperations.query.filter(vOperations.id_budget==id_budget, vOperations.type_operation == 'Engagement').order_by(vOperations.effective_date.desc()).all()
     Payrolls = vSynthesePayrollBudget.query.filter_by(id_budget=id_budget).all()
-    return render_template('budgets/details_budget.html', Budget = Budget, Actions = Actions, Operations = Operations, Commitments = Commitments, Payrolls = Payrolls)
+    #Allocation d'un budget à chaque salarié
+    members = tMembers.query.filter_by(is_employed=True).order_by(tMembers.member_name).all()   # liste d'objets
+    names = {m.id_member: m.member_name for m in members}
+    form = formAllocatedBudget(request.form if request.method == 'POST' else None)
+    # GET : une ligne par membre, pré-remplie depuis le jsonb
+    if request.method == 'GET':
+        existants = Budget.draft_allocations or {}
+        for m in members:
+            value = existants.get(str(m.id_member))
+            form.rows.append_entry({
+                "id_member": m.id_member,
+                "allocated_amount": getDecimal(value) if value is not None else None,
+            })
+    # POST : annule et remplace le contenu du jsonb
+    if request.method == 'POST' and form.validate():
+        tBudget = db.session.get(tBudgets, id_budget)
+        tBudget.draft_allocations = {
+            str(l["id_member"]): str(l["allocated_amount"])
+            for l in form.rows.data
+            if l["allocated_amount"] is not None and l["id_member"] in names
+        }
+        db.session.commit()
+        flash("Attributions enregistrées.")
+        return redirect(url_for('detailBudget', id_budget=id_budget))
+    return render_template('budgets/details_budget.html', Budget = Budget, Actions = Actions, Operations = Operations, Commitments = Commitments, Payrolls = Payrolls, form=form, names=names)
 
 # Add budget
 @app.route('/budgets/add', methods=['GET', 'POST'])
@@ -296,50 +557,68 @@ def addBudget():
             getDecimal(request.form['payroll_limit']), 
             getDecimal(request.form['indirect_charges']), 
             request.form['comment'], 
-            bool(request.form.get('allowed_fixed_cost')),
+            bool(request.form.get('profit_bonus')),
             bool(request.form.get('active'))
         )
         db.session.add(Budget)
         db.session.commit()
         return redirect('/budgets')
-    return render_template('budgets/add_or_update_budget.html', form=form, activeFunders=activeFunders, TypesBudget=TypesBudget, Budget=None, active=None, allowed=None)
+    return render_template('budgets/add_or_update_budget.html', form=form, activeFunders=activeFunders, TypesBudget=TypesBudget, Budget=None, active=None, profit_bonus=False)
+
 
 # Edit budget
-@app.route('/budgets/edit/<id_budget>', methods=['GET', 'POST'])
+@app.route('/budgets/edit/<int:id_budget>', methods=['GET', 'POST'])
 @login_required
 def updateBudget(id_budget):
-    # pre-loaded form
-    Budget = db.session.get(tBudgets, id_budget) #tBudgets.query.get(id_budget)
-    form = formBudget(request.form, obj=Budget)
+    Budget = db.get_or_404(tBudgets, id_budget)
+    form = formBudget(request.form if request.method == 'POST' else None, obj=Budget)
     # Funders
     activeFunders = tFunders.query.filter_by(active=True)
-    form.id_funder.choices = [('', '-- Sélectionnez un financeur --')] + [(activeFunder.id_funder, activeFunder.name) for activeFunder in activeFunders]
-    form.id_funder.default = Budget.id_funder
+    form.id_funder.choices = [('', '-- Sélectionnez un financeur --')] + [(f.id_funder, f.name) for f in activeFunders]
     # Type budget
     TypesBudget = dictBudgetTypes.query.all()
-    form.id_type_budget.choices = [('', '-- Sélectionnez un type --')] + [(TypeBudget.id_type_budget, TypeBudget.label) for TypeBudget in TypesBudget]
-    form.id_type_budget.default = Budget.id_type_budget
+    form.id_type_budget.choices = [('', '-- Sélectionnez un type --')] + [(t.id_type_budget, t.label) for t in TypesBudget]
     # Activité
     Activities = tActivities.query.filter_by(active=True).all()
-    form.id_activity.choices = [('', '-- Sélectionnez une activité --')] + [(Activity.id_activity, Activity.label) for Activity in Activities]
-    form.id_activity.default = Budget.id_activity
+    form.id_activity.choices = [('', '-- Sélectionnez une activité --')] + [(a.id_activity, a.label) for a in Activities]
+
     if request.method == 'POST' and form.validate():
-        Budget.name = request.form['name'], 
-        Budget.reference = request.form['reference'], 
-        Budget.id_funder = getChoiceOrNone(request.form['id_funder']), 
-        Budget.id_type_budget = getChoiceOrNone(request.form['id_type_budget']),
-        Budget.id_activity = getChoiceOrNone(request.form['id_activity']), 
-        Budget.date_max_expenditure = request.form['date_max_expenditure'], 
-        Budget.date_return = request.form['date_return'], 
-        Budget.budget_amount = getDecimal(request.form['budget_amount']), 
-        Budget.payroll_limit = getDecimal(request.form['payroll_limit']), 
-        Budget.indirect_charges = getDecimal(request.form['indirect_charges']), 
-        Budget.comment = request.form['comment'], 
-        Budget.allowed_fixed_cost = bool(request.form.get('allowed_fixed_cost'))
-        Budget.active = bool(request.form.get('active'))
+        form.populate_obj(Budget)
+        # Forcer le None dans les selects ignorés
+        Budget.id_funder = getChoiceOrNone(form.id_funder.data)
+        Budget.id_type_budget = getChoiceOrNone(form.id_type_budget.data)
+        Budget.id_activity = getChoiceOrNone(form.id_activity.data)
         db.session.commit()
         return redirect('/budgets')
-    return render_template('budgets/add_or_update_budget.html', form=form, Budget=Budget, active=Budget.active, allowed=Budget.allowed_fixed_cost)
+
+    return render_template('budgets/add_or_update_budget.html', form=form, Budget=Budget)
+
+
+# Close budget
+@app.route('/budgets/close/<id_budget>', methods=['GET', 'POST'])
+@login_required
+def closeBudget(id_budget):
+    # Add closing date to budget
+    Budget=db.session.get(tBudgets, id_budget)
+    Budget.date_closing = func.current_date()
+    if Budget.profit_bonus :
+        # Add profit_bonus to tProfitBonus
+        profit_bonus_ratio=Decimal(str(app.config['PROFIT_BONUS_RATIO']))
+        print(profit_bonus_ratio)
+        for id_member, allocated_amount in (Budget.draft_allocations or {}).items():
+                allocated_amount = Decimal(allocated_amount)
+                if allocated_amount == 0:
+                    continue
+                db.session.add(tProfitBonus(
+                    id_budget=id_budget,
+                    id_member=int(id_member),
+                    allocated_amount=allocated_amount,
+                    profit_percent=profit_bonus_ratio,
+                    profit_bonus_amount =allocated_amount*profit_bonus_ratio
+                ))
+        db.session.commit()
+    return redirect('/budgets')
+
 
 # Delete budget
 @app.route('/budgets/delete/<id_budget>', methods=['GET', 'POST'])
@@ -414,181 +693,6 @@ def deleteAction(id_budget, id_action_budget):
     return redirect(url_for('detailBudget', id_budget=id_budget))
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-######################
-# Cor budget members #
-######################
-@app.route('/budgets/detail/<id_budget>/corBudgetMember/add', methods=['GET', 'POST'])
-@login_required
-def addCorBudgetMember(id_budget):
-    form = formBudgetMember(request.form)
-    # Get budgets
-    Members =  tMembers.query.filter_by(is_employed=True)
-    form.id_member.choices = [(Members.id_member, Members.member_name) for Member in Members]
-    if request.method == 'POST' and form.validate():
-        # Insert data
-        budgetMember = corBudgetMember(
-            id_budget,
-            request.form['id_member'],  
-            getDecimal(request.form['amount'])
-            )
-        db.session.add(budgetMember)
-        db.session.commit()
-        return redirect(url_for('detailBudget', id_budget=id_budget))
-    return render_template('budgets/details_budget.html', form=form, Budgets=Budgets)
-
-"""
-@app.route('/payrolls/<id_payroll>/cor_budget/<id_payroll_budget>/edit', methods=['GET', 'POST'])
-@login_required
-def updateCorPayrollBudget(id_payroll, id_payroll_budget):
-    cor = db.session.get(corPayrollBudget, id_payroll_budget) #corPayrollBudget.query.get(id_payroll_budget)
-    form = formPayrollBudget(request.form, obj=cor)
-    # Get budgets
-    Budgets = tBudgets.query.filter_by(active=True)
-    form.id_budget.choices = [('','Gestion associative & Autres activités')]+[(Budget.id_budget, Budget.name) for Budget in Budgets]
-    if request.method == 'POST' and form.validate():
-        if request.form['fixed_cost'] is None or request.form['fixed_cost']=='' :
-            fixed_cost=None
-        else :
-            fixed_cost=getDecimal(request.form['fixed_cost'])
-        cor.id_budget = getChoiceOrNone(request.form['id_budget'])
-        cor.nb_days_allocated = getDecimal(request.form['nb_days_allocated'])
-        cor.fixed_cost = fixed_cost
-        db.session.commit()
-        return redirect(url_for('detailPayroll', id_payroll=id_payroll))
-    return render_template('payrolls/add_or_update_allocation_payroll_budget.html', form=form, corPayrollBudget=cor, Budgets=Budgets)
-
-
-# Delete doc payroll budget
-@app.route('/payrolls/<id_payroll>/cor_budget/<id_payroll_budget>/delete', methods=['GET', 'POST'])
-@login_required
-def deleteCorPayrollBudget(id_payroll, id_payroll_budget):
-    cor = db.session.get(corPayrollBudget, id_payroll_budget) #corPayrollBudget.query.get(id_payroll_budget)
-    db.session.delete(cor)
-    db.session.commit()
-    return redirect(url_for('detailPayroll', id_payroll=id_payroll))
-
-"""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-##################
-### OPERATIONS ###
-##################
-
-
-@app.route("/api/operations", methods=["GET"])
-@login_required
-def get_api_operations():
-    page = int(request.args.get("page", 1))
-    per_page = int(request.args.get("per_page", 10))
-
-    libelle = request.args.get("libelle", "")
-    montant = request.args.get("montant", type=float)
-    categorie = request.args.get("categorie", "")
-    date_apres = request.args.get("date_apres", type=str)
-    date_avant = request.args.get("date_avant", type=str)
-
-    query = vOperations.query
-
-    
-    if libelle:
-        like_pattern = f"%{libelle}%"
-        query = query.filter(or_(
-            vOperations.name_operation.ilike(like_pattern),
-            vOperations.detail_operation.ilike(like_pattern)
-        ))
-
-    if montant:
-        try:
-            montant = request.args.get("montant", "").replace(",", ".")
-            montant_float = float(montant)
-            query = query.filter(func.abs(vOperations.amount) == abs(montant_float))
-        except ValueError:
-            pass  # montant mal formé, on ignore le filtre
-
-    if categorie:
-        cat_pattern = f"%{categorie}%"
-        query = query.filter(or_(
-            vOperations.type_operation.ilike(cat_pattern),
-            vOperations.category.ilike(cat_pattern),
-            vOperations.parent_category.ilike(cat_pattern)
-        ))
-
-    if date_apres:
-        try:
-            date_apres_parsed = datetime.strptime(date_apres, "%Y-%m-%d").date()
-            query = query.filter(vOperations.effective_date >= date_apres_parsed)
-        except ValueError:
-            pass
-
-    if date_avant:
-        try:
-            date_avant_parsed = datetime.strptime(date_avant, "%Y-%m-%d").date()
-            query = query.filter(vOperations.effective_date <= date_avant_parsed)
-        except ValueError:
-            pass
-
-
-    total = query.count()
-
-    results = query.filter(vOperations.type_operation != 'Engagement').order_by(vOperations.effective_date.desc()).order_by(vOperations.id_operation.desc()).offset((page - 1) * per_page).limit(per_page).all()
-
-    data = [{
-        "id_operation": op.id_operation,
-        "effective_date": op.effective_date.strftime('%Y-%m-%d') if op.effective_date else "",
-        "operation_date": op.operation_date.strftime('%Y-%m-%d') if op.operation_date else "",
-        "name_operation": op.name_operation,
-        "detail_operation": op.detail_operation,
-        "type_operation": op.type_operation,
-        "category": op.category,
-        "parent_category": op.parent_category,
-        "id_budget": op.id_budget,
-        "budget_name": op.budget_name,
-        "id_account": op.id_account,
-        "account_name": op.account_name,
-        "payment_method": op.payment_method,
-        "amount": float(op.amount),
-        "uploaded_file": url_for('static', filename=op.uploaded_file) if op.uploaded_file else "",
-        "meta_create_date": op.meta_create_date,
-        "meta_update_date": op.meta_update_date
-    } for op in results]
-
-    return jsonify({
-        "total": total,
-        "page": page,
-        "per_page": per_page,
-        "data": data
-    })
 
 #####################
 # Toutes opérations #
@@ -679,7 +783,7 @@ def addMovement(type_operation): #movement = Dépense + Recette
     id_type_operation = dictOperationTypes.query.filter_by(label = type_operation).one().id_type_operation
     form = formMovement(request.form)
     # Get accounts
-    if type_operation=='Recette':
+    if type_operation=='Recette': 
         Accounts = tAccounts.query.filter_by(is_personnal=False).filter_by(active=True)
     else :
         Accounts = tAccounts.query.filter_by(active=True)
@@ -687,7 +791,7 @@ def addMovement(type_operation): #movement = Dépense + Recette
     # accounts
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
     # Budget
-    activeBudgets = tBudgets.query.filter_by(active=True)
+    activeBudgets = tBudgets.query.filter_by(date_closing=None)
     form.id_budget.choices = [('', '-- Sélectionnez un budget --')] + [(activeBudget.id_budget, activeBudget.name) for activeBudget in activeBudgets]
     # Category
     Categories = dictCategories.query.filter(dictCategories.id_type_operation == id_type_operation, dictCategories.seizable == True).order_by(dictCategories.cd_category).all()
@@ -751,7 +855,7 @@ def updateMovement(id_operation): #movement = Dépense + Recette
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
     form.id_account.default=Operation.id_account
     # Budget
-    activeBudgets = tBudgets.query.filter_by(active=True)
+    activeBudgets = tBudgets.query.filter_by(date_closing=None)
     form.id_budget.choices = [('', '-- Sélectionnez un budget --')] + [(activeBudget.id_budget, activeBudget.name) for activeBudget in activeBudgets]
     form.id_budget.default=Operation.id_budget
     # Category
@@ -961,7 +1065,7 @@ def addCommitment():
     Accounts = tAccounts.query.filter_by(is_personnal=False).filter_by(active=True)
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
     # Budget
-    activeBudgets = tBudgets.query.filter_by(active=True)
+    activeBudgets = tBudgets.query.filter_by(date_closing=None)
     form.id_budget.choices = [('', '-- Sélectionnez un budget --')] + [(activeBudget.id_budget, activeBudget.name) for activeBudget in activeBudgets]
     # Category
     id_type_depenses = dictOperationTypes.query.filter_by(label = 'Dépense').one().id_type_operation
@@ -1006,7 +1110,7 @@ def updateCommitment(id_operation):
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
     form.id_account.default=Operation.id_account
     # Budget
-    activeBudgets = tBudgets.query.filter_by(active=True)
+    activeBudgets = tBudgets.query.filter_by(date_closing=None)
     form.id_budget.choices = [('', '-- Sélectionnez un budget --')] + [(activeBudget.id_budget, activeBudget.name) for activeBudget in activeBudgets]
     form.id_budget.default=Operation.id_budget
     # Category
@@ -1047,7 +1151,7 @@ def convertCommitment(id_operation):
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
     form.id_account.default=Operation.id_account
     # Budget
-    activeBudgets = tBudgets.query.filter_by(active=True)
+    activeBudgets = tBudgets.query.filter_by(date_closing=None)
     form.id_budget.choices = [('', '-- Sélectionnez un budget --')] + [(activeBudget.id_budget, activeBudget.name) for activeBudget in activeBudgets]
     form.id_budget.default=Operation.id_budget
     # Category
@@ -1355,20 +1459,14 @@ def detailPayroll(id_payroll):
     corsPayrollBudget = vDecodeCorPayrollBudget.query.filter_by(id_payroll=id_payroll).order_by(vDecodeCorPayrollBudget.budget_name.desc()).all()
     form = formPayrollBudget(request.form)
     # Get budgets
-    Budgets = tBudgets.query.filter_by(active=True)
+    Budgets = tBudgets.query.filter_by(date_closing=None)
     form.id_budget.choices = [('','Gestion associative & Autres activités')]+[(Budget.id_budget, Budget.name) for Budget in Budgets]
     if request.method == 'POST' and form.validate():
-        # Allow None fixed cost
-        if request.form['fixed_cost'] is None or request.form['fixed_cost']=='' :
-            fixed_cost=None
-        else :
-            fixed_cost=getDecimal(request.form['fixed_cost'])
         # Insert data
         payrollBudget = corPayrollBudget(
             id_payroll,
             getChoiceOrNone(request.form['id_budget']),  
-            getDecimal(request.form['nb_days_allocated']), 
-            fixed_cost
+            getDecimal(request.form['nb_days_allocated'])
             )
         db.session.add(payrollBudget)
         db.session.commit()
@@ -1393,20 +1491,14 @@ def deletePayroll(id_payroll):
 def addCorPayrollBudget(id_payroll):
     form = formPayrollBudget(request.form)
     # Get budgets
-    Budgets = tBudgets.query.filter_by(active=True)
+    Budgets = tBudgets.query.filter_by(date_closing=None)
     form.id_budget.choices = [('','Gestion associative & Autres activités')]+[(Budget.id_budget, Budget.name) for Budget in Budgets]
     if request.method == 'POST' and form.validate():
-        # Allow None fixed cost
-        if request.form['fixed_cost'] is None or request.form['fixed_cost']=='' :
-            fixed_cost=None
-        else :
-            fixed_cost=getDecimal(request.form['fixed_cost'])
         # Insert data
         payrollBudget = corPayrollBudget(
             id_payroll,
             getChoiceOrNone(request.form['id_budget']),  
-            getDecimal(request.form['nb_days_allocated']), 
-            fixed_cost
+            getDecimal(request.form['nb_days_allocated'])
             )
         db.session.add(payrollBudget)
         db.session.commit()
@@ -1420,16 +1512,11 @@ def updateCorPayrollBudget(id_payroll, id_payroll_budget):
     cor = db.session.get(corPayrollBudget, id_payroll_budget) #corPayrollBudget.query.get(id_payroll_budget)
     form = formPayrollBudget(request.form, obj=cor)
     # Get budgets
-    Budgets = tBudgets.query.filter_by(active=True)
+    Budgets = tBudgets.query.filter_by(date_closing=None)
     form.id_budget.choices = [('','Gestion associative & Autres activités')]+[(Budget.id_budget, Budget.name) for Budget in Budgets]
     if request.method == 'POST' and form.validate():
-        if request.form['fixed_cost'] is None or request.form['fixed_cost']=='' :
-            fixed_cost=None
-        else :
-            fixed_cost=getDecimal(request.form['fixed_cost'])
         cor.id_budget = getChoiceOrNone(request.form['id_budget'])
         cor.nb_days_allocated = getDecimal(request.form['nb_days_allocated'])
-        cor.fixed_cost = fixed_cost
         db.session.commit()
         return redirect(url_for('detailPayroll', id_payroll=id_payroll))
     return render_template('payrolls/add_or_update_allocation_payroll_budget.html', form=form, corPayrollBudget=cor, Budgets=Budgets)
@@ -1445,6 +1532,17 @@ def deleteCorPayrollBudget(id_payroll, id_payroll_budget):
     return redirect(url_for('detailPayroll', id_payroll=id_payroll))
 
 
+## Intéressement
+@app.route('/profit_bonus', methods=['GET'])
+@login_required
+def profitBonus():
+    budgets = db.session.query(vProfitBonus.id_budget, vProfitBonus.name).distinct().order_by(vProfitBonus.name).all()
+    members = db.session.query(tMembers.id_member, tMembers.member_name).filter_by(is_employed=True).distinct().order_by(tMembers.member_name).all()
+    #All profit bonus
+    return render_template('profit_bonus/list.html', budgets=budgets, members=members)
+
+
+"""
 ######
 # Volunteering
 
@@ -1532,6 +1630,9 @@ def deleteVolunteering(id_work_value):
     db.session.delete(current_volunteering)
     db.session.commit()
     return redirect(url_for('volunteering'))
+"""
+
+
 
 #################
 ### Resultats ###

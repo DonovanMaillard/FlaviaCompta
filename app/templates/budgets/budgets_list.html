@@ -50,8 +50,8 @@
             {% for Budget in Budgets %}
                <tr>
                   <td>
-                    {% if Budget.active %} <span class="badge table-badge alert-success">Actif</span>
-                    {% else %} <span class="badge table-badge alert-dark">Inactif</span>
+                    {% if Budget.date_closing %} <span class="badge table-badge alert-dark"> <i class="fa-solid fa-lock"></i> Clôturé</span>
+                    {% else %} <span class="badge table-badge alert-success">Actif</span>
                     {% endif %}
                   </td>
                   <td>{{ Budget.name }}
@@ -64,12 +64,13 @@
                   <td>
                     <div>
                         <div class="btn btn-group">
-                          <a class="btn btn-info" href="{{ url_for('detailBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-eye"></i> </a>
-                          <a class="btn btn-warning" href="{{ url_for('updateBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-edit"></i> </a>
-                          {% if Budget.nb_operations == 0 %}
-                            <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{Budget.id_budget}}"> <i class="fa fa-trash"></i> </a>
-                          {% else %}
-                            <a class="btn btn-danger disabled"> <i class="fa fa-ban"></i> </a>
+                          <a class="btn btn-info" title="Voir le détail" href="{{ url_for('detailBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-eye"></i> </a>
+                          {% if not Budget.date_closing %}
+                            <a class="btn btn-warning" title="Modifier" href="{{ url_for('updateBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-edit"></i> </a>
+                            {% if Budget.nb_operations == 0 %}
+                              <a class="btn btn-danger" title="Supprimer le budget" data-bs-toggle="modal" data-bs-target="#deleteModal{{Budget.id_budget}}"> <i class="fa fa-trash"></i> </a>
+                            {% endif %}
+                            <a class="btn btn-dark" title="Clôturer" href="{{ url_for('detailBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-lock"></i> </a>
                           {% endif %}
                         </div>
                     </div>
@@ -80,7 +81,7 @@
                   <div class="modal-dialog">
                     <div class="modal-content">
                       <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLabel">Supprimer la ligne budgétaire</h5>
+                        <h5 class="modal-title" id="deleteModalLabel">Supprimer la ligne budgétaire</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                       </div>
                       <div class="modal-body">
@@ -94,6 +95,8 @@
                   </div>
                 </div>
             <!-- end modal -->
+
+            
             {% endfor %}
          </tbody>
       </table>

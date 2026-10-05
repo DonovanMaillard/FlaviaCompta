@@ -98,8 +98,8 @@
             {% endfor %}
           </div> 
           <div class="form-group col-md-4">
-            {{ form.allowed_fixed_cost(class="form-check-input", checked=allowed) }}
-            <label for = "allowed_fixed_cost">Décompte du temps de travail au forfait autorisé</label>
+            {{ form.profit_bonus(class="form-check-input") }}
+            <label for = "profit_bonus">Éligible au calcul de l'intéressement</label>
           </div>
         </div>
         <label for = "comment">Remarque</label><br>
@@ -109,7 +109,7 @@
             {% endfor %}
         <br>
         <label for = "active">Actif</label>
-            {{ form.active(class="form-check-input", checked=active) }}
+            {{ form.active(class="form-check-input") }}
         <br><br>
         <input class="btn btn-primary float-right" type = "submit" value = "Enregistrer" />
       </form>

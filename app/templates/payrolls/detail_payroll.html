@@ -96,7 +96,6 @@
                   <tr>
                     <th>Budget</th>
                     <th>Temps alloué</th>
-                    <th>Coût appliqué</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -105,7 +104,6 @@
                   <tr>
                      <td> {{ cor.budget_name or 'Gestion associative & Autres activités' }} </td>
                      <td> {{ cor.nb_days_allocated }} j </td>
-                     <td> {% if not cor.fixed_cost %} <em>décompté au réel</em> {% else %} {{ cor.fixed_cost }}€ {% endif %} </td>
                      <td>
                         <div class="btn-group">
                           <a class="btn btn-warning" href="{{ url_for('updateCorPayrollBudget', id_payroll=payroll.id_payroll, id_payroll_budget=cor.id_payroll_budget) }}"> <i class="fa fa-edit"></i></a>
@@ -154,15 +152,6 @@
                           <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
                         {% endfor %}
                       </div>
-                    </td>
-                    <td>
-                      <div class="form-group">
-                        {{ form.fixed_cost(class="form-control") }}
-                        <small class="text-muted">Le séparateur de décimale doit être un point</small>
-                        {% for error in form.fixed_cost.errors %} 
-                          <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-                        {% endfor %}
-                      </div> 
                     </td>
                     <td>
                       <div class="form-group" style="margin:auto;">
