@@ -1,0 +1,145 @@
+{% extends "main.html" %}
+
+{% block content %}
+
+<div class="container">
+<h2>Calcul de l'intéressement</h2>
+
+<form id="filters" class="row g-2 mb-3">
+  <div class="col-md-3">
+    <select name="id_member" class="form-select">
+      <option value="">Tous les salariés</option>
+      {% for m in members %}
+        <option value="{{ m.id_member }}">{{ m.member_name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <select name="id_budget" class="form-select">
+      <option value="">Tous les budgets</option>
+      {% for b in budgets %}
+        <option value="{{ b.id_budget }}">{{ b.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2"><input type="date" name="date_apres" class="form-control" title="Créé après le">Après le</div>
+  <div class="col-md-2"><input type="date" name="date_avant" class="form-control" title="Créé avant le">Avant le</div>
+  <div class="col-md-2"><button type="reset" id="reset" class="btn btn-secondary w-100">Réinitialiser</button></div>
+</form>
+
+<div class="btn btn-group">
+    <a class="btn btn-success" id="download-csv" title="Télécharger au format csv" href="{{ url_for('download_profit_bonus') }}">Télécharger</a>
+</div>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Budget</th>
+      <th>Salarié</th>
+      <th class="text-end">Montant du projet</th>
+      <th class="text-end">Dont alloué au salarié</th>
+      <th class="text-end">Taux d'intéressement appliqué</th>
+      <th class="text-end">Montant de l'intéressement acquis</th>
+      <th>Date d'effet</th>
+    </tr>
+  </thead>
+  <tbody id="results"></tbody>
+  <tfoot>
+  <tr class="fw-bold">
+    <td colspan="4" class="text-end">Montant de l'intéressement pour la période</td>
+    <td class="text-end" id="total-bonus"></td>
+    <td></td>
+  </tr>
+</tfoot>
+
+</table>
+
+<div class="d-flex justify-content-between align-items-center">
+  <span id="count" class="text-muted"></span>
+  <div>
+    <button id="prev" class="btn btn-outline-secondary btn-sm">Précédent</button>
+    <span id="page-info" class="mx-2"></span>
+    <button id="next" class="btn btn-outline-secondary btn-sm">Suivant</button>
+  </div>
+</div>
+</div>
+
+<script>
+  var state = { page: 1, perPage: 10, total: 0 };
+  var form = document.getElementById('filters');
+  var tbody = document.getElementById('results');
+
+  function fmtMoney(v) {
+    return v === null || v === undefined ? '' :
+      Number(v).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+  }
+  function fmtDate(v) {
+    if (!v) return '';
+    var d = new Date(v);
+    return isNaN(d) ? v : d.toLocaleDateString('fr-FR');
+  }
+  function cell(text, cls) {
+    var td = document.createElement('td');
+    td.textContent = text;            // textContent : pas d'injection HTML
+    if (cls) td.className = cls;
+    return td;
+  }
+
+  async function load() {
+    var params = new URLSearchParams(new FormData(form));
+    // on retire les filtres vides
+    Array.from(params.keys()).forEach(function (k) { if (!params.get(k)) params.delete(k); });
+    params.set('page', state.page);
+    params.set('per_page', state.perPage);
+
+    var response = await fetch('{{ url_for("get_api_profit_bonus") }}?' + params.toString());
+    if (!response.ok) { tbody.innerHTML = '<tr><td colspan="6">Erreur de chargement.</td></tr>'; return; }
+    var json = await response.json();
+    state.total = json.total;
+    document.getElementById('total-bonus').textContent = fmtMoney(json.total_profit_bonus);
+
+    tbody.innerHTML = '';
+    if (!json.data.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-muted">Aucun résultat.</td></tr>';
+    }
+    json.data.forEach(function (r) {
+      var tr = document.createElement('tr');
+      tr.appendChild(cell(r.budget_name));
+      tr.appendChild(cell(r.member_name));
+      tr.appendChild(cell(fmtMoney(r.budget_amount), 'text-end'));
+      tr.appendChild(cell(fmtMoney(r.allocated_amount), 'text-end'));
+      tr.appendChild(cell(r.profit_percent == null ? '' : Number(r.profit_percent).toFixed(2), 'text-end'));
+      tr.appendChild(cell(fmtMoney(r.profit_bonus_amount), 'text-end'));
+      tr.appendChild(cell(fmtDate(r.budget_date_closing)));
+      tbody.appendChild(tr);
+    });
+
+    var pages = Math.max(1, Math.ceil(state.total / state.perPage));
+    document.getElementById('count').textContent = state.total + ' résultat(s)';
+    document.getElementById('page-info').textContent = 'Page ' + state.page + ' / ' + pages;
+    document.getElementById('prev').disabled = state.page <= 1;
+    document.getElementById('next').disabled = state.page >= pages;
+  }
+
+  form.addEventListener('change', function () { state.page = 1; load(); });
+  document.getElementById('reset').addEventListener('click', function () {
+    setTimeout(function () { state.page = 1; load(); }, 0);   // après la réinitialisation du formulaire
+  });
+  document.getElementById('prev').addEventListener('click', function () { state.page--; load(); });
+  document.getElementById('next').addEventListener('click', function () { state.page++; load(); });
+
+  load();
+
+  document.getElementById('download-csv').addEventListener('click', function () {
+    var params = new URLSearchParams(new FormData(form));
+
+    // On retire les filtres vides
+    Array.from(params.keys()).forEach(function (k) {
+        if (!params.get(k)) params.delete(k);
+    });
+
+    this.href = '{{ url_for("download_profit_bonus") }}?' + params.toString();
+});
+
+</script>
+{% endblock %}

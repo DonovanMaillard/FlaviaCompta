@@ -574,4 +574,25 @@ class vDocuments(db.Model):
     digitiser = db.Column(db.Unicode, nullable=True)
     meta_create_date = db.Column(db.DateTime(), nullable=True)
     meta_update_date = db.Column(db.DateTime(), nullable=True)
+
+
+class vProfitBonus(db.Model):
+
+    __tablename__ = "v_profit_bonus"
+    __table_args__ = {"schema": "comptasso"}
+
+    id_pb = db.Column(db.Integer,primary_key=True)
+    id_budget = db.Column(db.Integer)
+    name = db.Column(db.String(255), nullable=False)
+    budget_amount = db.Column(db.Numeric(12,2))
+    received_amount = db.Column(db.Numeric(12,2))
+    date_closing = db.Column(db.Date(), nullable=True)
+    id_member = db.Column(db.Integer)
+    member_name = db.Column(db.String(255), nullable=False)
+    allocated_amount = db.Column(db.Numeric(12,2))
+    profit_percent = db.Column(db.Numeric(12,2))
+    profit_bonus_amount = db.Column(db.Numeric(12,2))
+    meta_create_date = db.Column(db.DateTime(), nullable=True)
+    meta_update_date = db.Column(db.DateTime(), nullable=True)
+
     

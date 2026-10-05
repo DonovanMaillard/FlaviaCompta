@@ -8,6 +8,7 @@ from flask_login import login_required, current_user, login_user, logout_user, L
 from calendar import monthrange
 from sqlalchemy import func, or_, and_
 from zipfile import ZipFile, ZipInfo
+from decimal import Decimal
 
 
 #import logging
@@ -159,6 +160,242 @@ def features():
 @login_required
 def tutorial():
     return render_template('about/tutorial.html')
+
+##########
+## APIS ##
+##########
+
+@app.route("/api/operations", methods=["GET"])
+@login_required
+def get_api_operations():
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 10))
+
+    libelle = request.args.get("libelle", "")
+    montant = request.args.get("montant", type=float)
+    categorie = request.args.get("categorie", "")
+    date_apres = request.args.get("date_apres", type=str)
+    date_avant = request.args.get("date_avant", type=str)
+
+    query = vOperations.query
+
+    
+    if libelle:
+        like_pattern = f"%{libelle}%"
+        query = query.filter(or_(
+            vOperations.name_operation.ilike(like_pattern),
+            vOperations.detail_operation.ilike(like_pattern)
+        ))
+
+    if montant:
+        try:
+            montant = request.args.get("montant", "").replace(",", ".")
+            montant_float = float(montant)
+            query = query.filter(func.abs(vOperations.amount) == abs(montant_float))
+        except ValueError:
+            pass  # montant mal formé, on ignore le filtre
+
+    if categorie:
+        cat_pattern = f"%{categorie}%"
+        query = query.filter(or_(
+            vOperations.type_operation.ilike(cat_pattern),
+            vOperations.category.ilike(cat_pattern),
+            vOperations.parent_category.ilike(cat_pattern)
+        ))
+
+    if date_apres:
+        try:
+            date_apres_parsed = datetime.strptime(date_apres, "%Y-%m-%d").date()
+            query = query.filter(vOperations.effective_date >= date_apres_parsed)
+        except ValueError:
+            pass
+
+    if date_avant:
+        try:
+            date_avant_parsed = datetime.strptime(date_avant, "%Y-%m-%d").date()
+            query = query.filter(vOperations.effective_date <= date_avant_parsed)
+        except ValueError:
+            pass
+
+
+    total = query.count()
+
+    results = query.filter(vOperations.type_operation != 'Engagement').order_by(vOperations.effective_date.desc()).order_by(vOperations.id_operation.desc()).offset((page - 1) * per_page).limit(per_page).all()
+
+    data = [{
+        "id_operation": op.id_operation,
+        "effective_date": op.effective_date.strftime('%Y-%m-%d') if op.effective_date else "",
+        "operation_date": op.operation_date.strftime('%Y-%m-%d') if op.operation_date else "",
+        "name_operation": op.name_operation,
+        "detail_operation": op.detail_operation,
+        "type_operation": op.type_operation,
+        "category": op.category,
+        "parent_category": op.parent_category,
+        "id_budget": op.id_budget,
+        "budget_name": op.budget_name,
+        "id_account": op.id_account,
+        "account_name": op.account_name,
+        "payment_method": op.payment_method,
+        "amount": float(op.amount),
+        "uploaded_file": url_for('static', filename=op.uploaded_file) if op.uploaded_file else "",
+        "meta_create_date": op.meta_create_date,
+        "meta_update_date": op.meta_update_date
+    } for op in results]
+
+    return jsonify({
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "data": data
+    })
+
+
+def search_profit_bonus():
+    query = vProfitBonus.query
+
+    id_member = request.args.get("id_member", "")
+    id_budget = request.args.get("id_budget", "")
+    date_apres = request.args.get("date_apres", type=str)
+    date_avant = request.args.get("date_avant", type=str)
+
+    if id_member:
+        query = query.filter(
+            vProfitBonus.id_member == id_member
+        )
+
+    if id_budget:
+        query = query.filter(
+            vProfitBonus.id_budget == id_budget
+        )
+
+    if date_apres:
+        try:
+            date_apres_parsed = datetime.strptime(
+                date_apres, "%Y-%m-%d"
+            ).date()
+
+            query = query.filter(
+                vProfitBonus.meta_create_date >= date_apres_parsed
+            )
+        except ValueError:
+            pass
+
+    if date_avant:
+        try:
+            date_avant_parsed = datetime.strptime(date_avant, "%Y-%m-%d").date()
+
+            query = query.filter(vProfitBonus.meta_create_date < date_avant_parsed + timedelta(days=1))
+        except ValueError:
+            pass
+
+    return query
+
+@app.route("/api/profit_bonus", methods=["GET"])
+@login_required
+def get_api_profit_bonus():
+
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 10))
+
+    query = search_profit_bonus()
+
+    total = query.count()
+
+    total_bonus = query.with_entities(
+        func.coalesce(
+            func.sum(vProfitBonus.profit_bonus_amount),
+            0
+        )
+    ).scalar()
+
+    results = (
+        query
+        .order_by(vProfitBonus.meta_create_date.desc())
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+        .all()
+    )
+
+    data = [{
+        "id_pb": pb.id_pb,
+        "id_budget": pb.id_budget,
+        "budget_name": pb.name,
+        "budget_amount": pb.budget_amount,
+        "budget_received_amount": pb.received_amount,
+        "budget_date_closing": pb.date_closing,
+        "id_member": pb.id_member,
+        "member_name": pb.member_name,
+        "allocated_amount": pb.allocated_amount,
+        "profit_percent": pb.profit_percent,
+        "profit_bonus_amount": pb.profit_bonus_amount,
+        "meta_create_date": pb.meta_create_date,
+        "meta_update_date": pb.meta_update_date
+    } for pb in results]
+
+    return jsonify({
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "data": data,
+        "total_profit_bonus": str(total_bonus)
+    })
+
+@app.route("/profit_bonus/download", methods=["GET"])
+@login_required
+def download_profit_bonus():
+
+    query = search_profit_bonus()
+
+    results = (
+        query
+        .order_by(vProfitBonus.meta_create_date.desc())
+        .all()
+    )
+
+    output = StringIO()
+
+    writer = csv.writer(output)
+
+    writer.writerow([
+        "ID",
+        "Budget",
+        "Montant previsionnel budget",
+        "Recettes reelles",
+        "Date de clôture",
+        "Salarié",
+        "Montant attribué",
+        "Pourcentage",
+        "Prime acquise",
+        "Date calcul intéressement",
+        "Date modification"
+    ])
+
+    for pb in results:
+        writer.writerow([
+            pb.id_pb,
+            pb.name,
+            pb.budget_amount,
+            pb.received_amount,
+            pb.date_closing,
+            pb.member_name,
+            pb.allocated_amount,
+            pb.profit_percent,
+            pb.profit_bonus_amount,
+            pb.meta_create_date,
+            pb.meta_update_date
+        ])
+
+    output.seek(0)
+
+    return Response(
+        output,
+        mimetype="text/csv",
+        headers={
+            "Content-Disposition":
+                "attachment; filename=profit_bonus.csv"
+        }
+    )
+
 
 ################
 ### ACCOUNTS ###
@@ -357,13 +594,29 @@ def updateBudget(id_budget):
     return render_template('budgets/add_or_update_budget.html', form=form, Budget=Budget)
 
 
-# Delete budget
+# Close budget
 @app.route('/budgets/close/<id_budget>', methods=['GET', 'POST'])
 @login_required
 def closeBudget(id_budget):
+    # Add closing date to budget
     Budget=db.session.get(tBudgets, id_budget)
-    
-    db.session.commit()
+    Budget.date_closing = func.current_date()
+    if Budget.profit_bonus :
+        # Add profit_bonus to tProfitBonus
+        profit_bonus_ratio=Decimal(str(app.config['PROFIT_BONUS_RATIO']))
+        print(profit_bonus_ratio)
+        for id_member, allocated_amount in (Budget.draft_allocations or {}).items():
+                allocated_amount = Decimal(allocated_amount)
+                if allocated_amount == 0:
+                    continue
+                db.session.add(tProfitBonus(
+                    id_budget=id_budget,
+                    id_member=int(id_member),
+                    allocated_amount=allocated_amount,
+                    profit_percent=profit_bonus_ratio,
+                    profit_bonus_amount =allocated_amount*profit_bonus_ratio
+                ))
+        db.session.commit()
     return redirect('/budgets')
 
 
@@ -440,94 +693,6 @@ def deleteAction(id_budget, id_action_budget):
     return redirect(url_for('detailBudget', id_budget=id_budget))
 
 
-##################
-### OPERATIONS ###
-##################
-
-
-@app.route("/api/operations", methods=["GET"])
-@login_required
-def get_api_operations():
-    page = int(request.args.get("page", 1))
-    per_page = int(request.args.get("per_page", 10))
-
-    libelle = request.args.get("libelle", "")
-    montant = request.args.get("montant", type=float)
-    categorie = request.args.get("categorie", "")
-    date_apres = request.args.get("date_apres", type=str)
-    date_avant = request.args.get("date_avant", type=str)
-
-    query = vOperations.query
-
-    
-    if libelle:
-        like_pattern = f"%{libelle}%"
-        query = query.filter(or_(
-            vOperations.name_operation.ilike(like_pattern),
-            vOperations.detail_operation.ilike(like_pattern)
-        ))
-
-    if montant:
-        try:
-            montant = request.args.get("montant", "").replace(",", ".")
-            montant_float = float(montant)
-            query = query.filter(func.abs(vOperations.amount) == abs(montant_float))
-        except ValueError:
-            pass  # montant mal formé, on ignore le filtre
-
-    if categorie:
-        cat_pattern = f"%{categorie}%"
-        query = query.filter(or_(
-            vOperations.type_operation.ilike(cat_pattern),
-            vOperations.category.ilike(cat_pattern),
-            vOperations.parent_category.ilike(cat_pattern)
-        ))
-
-    if date_apres:
-        try:
-            date_apres_parsed = datetime.strptime(date_apres, "%Y-%m-%d").date()
-            query = query.filter(vOperations.effective_date >= date_apres_parsed)
-        except ValueError:
-            pass
-
-    if date_avant:
-        try:
-            date_avant_parsed = datetime.strptime(date_avant, "%Y-%m-%d").date()
-            query = query.filter(vOperations.effective_date <= date_avant_parsed)
-        except ValueError:
-            pass
-
-
-    total = query.count()
-
-    results = query.filter(vOperations.type_operation != 'Engagement').order_by(vOperations.effective_date.desc()).order_by(vOperations.id_operation.desc()).offset((page - 1) * per_page).limit(per_page).all()
-
-    data = [{
-        "id_operation": op.id_operation,
-        "effective_date": op.effective_date.strftime('%Y-%m-%d') if op.effective_date else "",
-        "operation_date": op.operation_date.strftime('%Y-%m-%d') if op.operation_date else "",
-        "name_operation": op.name_operation,
-        "detail_operation": op.detail_operation,
-        "type_operation": op.type_operation,
-        "category": op.category,
-        "parent_category": op.parent_category,
-        "id_budget": op.id_budget,
-        "budget_name": op.budget_name,
-        "id_account": op.id_account,
-        "account_name": op.account_name,
-        "payment_method": op.payment_method,
-        "amount": float(op.amount),
-        "uploaded_file": url_for('static', filename=op.uploaded_file) if op.uploaded_file else "",
-        "meta_create_date": op.meta_create_date,
-        "meta_update_date": op.meta_update_date
-    } for op in results]
-
-    return jsonify({
-        "total": total,
-        "page": page,
-        "per_page": per_page,
-        "data": data
-    })
 
 #####################
 # Toutes opérations #
@@ -1367,6 +1532,17 @@ def deleteCorPayrollBudget(id_payroll, id_payroll_budget):
     return redirect(url_for('detailPayroll', id_payroll=id_payroll))
 
 
+## Intéressement
+@app.route('/profit_bonus', methods=['GET'])
+@login_required
+def profitBonus():
+    budgets = db.session.query(vProfitBonus.id_budget, vProfitBonus.name).distinct().order_by(vProfitBonus.name).all()
+    members = db.session.query(tMembers.id_member, tMembers.member_name).filter_by(is_employed=True).distinct().order_by(tMembers.member_name).all()
+    #All profit bonus
+    return render_template('profit_bonus/list.html', budgets=budgets, members=members)
+
+
+"""
 ######
 # Volunteering
 
@@ -1454,6 +1630,9 @@ def deleteVolunteering(id_work_value):
     db.session.delete(current_volunteering)
     db.session.commit()
     return redirect(url_for('volunteering'))
+"""
+
+
 
 #################
 ### Resultats ###
