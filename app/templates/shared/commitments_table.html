@@ -34,8 +34,8 @@
                     <div>
                         <div class="btn btn-group">
                           <a class="btn btn-info" title="Consulter le détail" data-bs-toggle="modal" data-bs-target="#detailModal{{Commitment.id_operation}}"> <i class="fa fa-eye"></i> </a>
-                          <a class="btn btn-warning" title="Modifier l'engagement" href="{{ url_for('updateCommitment', id_operation=Commitment.id_operation) }}"> <i class="fa fa-edit"></i> </a>
-                          <a class="btn btn-success" title="Convertir en dépense" href="{{ url_for('convertCommitment', id_operation=Commitment.id_operation) }}"> <i class="fa fa-exchange"></i> </a>
+                          <a class="btn btn-warning" title="Modifier l'engagement" href="{{ url_for('commitments.updateCommitment', id_operation=Commitment.id_operation) }}"> <i class="fa fa-edit"></i> </a>
+                          <a class="btn btn-success" title="Convertir en dépense" href="{{ url_for('commitments.convertCommitment', id_operation=Commitment.id_operation) }}"> <i class="fa fa-exchange"></i> </a>
                           <a class="btn btn-danger" title="Supprimer" data-bs-toggle="modal" data-bs-target="#deleteModal{{Commitment.id_operation}}"> <i class="fa fa-trash"></i> </a>
                         </div>
                     </div>
@@ -129,7 +129,7 @@
                       </div>
                       <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <a class="btn btn-danger" href="{{ url_for('deleteCommitment', id_operation=Commitment.id_operation) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
+                        <a class="btn btn-danger" href="{{ url_for('commitments.deleteCommitment', id_operation=Commitment.id_operation) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
                       </div>
                     </div>
                   </div>

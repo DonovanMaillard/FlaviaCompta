@@ -4,7 +4,7 @@
 <div class="container">
 	<h1> Documents de l'association</h1>
 
-  <a class="btn btn-success btn-right " href="{{ url_for('addDocument') }}"><i class="fa fa-plus"></i> Ajouter un nouveau document</a>
+  <a class="btn btn-success btn-right " href="{{ url_for('documents.addDocument') }}"><i class="fa fa-plus"></i> Ajouter un nouveau document</a>
 
   <br><br>
 
@@ -36,7 +36,7 @@
                         <div class="btn btn-group">
                           <a class="btn btn-info" data-bs-toggle="modal" data-bs-target="#infoModal{{document.id_document}}"> <i class="fa fa-eye"></i> </a>
                           <a class="btn btn-success" href=" {{ url_for('static', filename=document.uploaded_file) }}" target="_blank"> <i class="fa fa-download"></i> </a>
-                          <a class="btn btn-warning" href="{{ url_for('updateDocument', id_document=document.id_document) }}"> <i class="fa fa-edit"></i> </a>
+                          <a class="btn btn-warning" href="{{ url_for('documents.updateDocument', id_document=document.id_document) }}"> <i class="fa fa-edit"></i> </a>
                           <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{document.id_document}}"> <i class="fa fa-trash"></i> </a>
                         </div>
                   	</div>
@@ -99,7 +99,7 @@
                       </div>
                       <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <a class="btn btn-danger" href="{{ url_for('deleteDocument', id_document=document.id_document) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
+                        <a class="btn btn-danger" href="{{ url_for('documents.deleteDocument', id_document=document.id_document) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
                       </div>
                     </div>
                   </div>

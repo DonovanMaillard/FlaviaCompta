@@ -22,5 +22,45 @@ from ..forms import *
 
 utils_bp = Blueprint("utils",__name__)
 
+#############
+### UTILS ###
+#############
+
 # Init login manager
 login_manager = LoginManager()
+
+#def allowed_file(filename):
+#    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
+# Todo : clean decimal inputs
+def getDecimal(input, allow_none=False):
+    if input is None or input=='' :
+        decimal=0.00
+    else :
+        decimal=abs(float(str(input).replace(',','.')))
+    return decimal
+
+
+def getChoiceOrNone(input):
+    if input =='' or input is None:
+        choice=None
+    else:
+        choice=input
+    return choice
+
+
+def getFileUrl(input):
+    f = request.files.get(input)
+    if f :
+        filename = uuid.uuid4().hex[:10]+'_'+secure_filename(f.filename)
+        f.save(app.config['BASE_DIR']+'app/static/uploads/'+filename)
+        file_url='uploads/'+filename
+    else :
+        file_url=None
+    return file_url
+
+
+
+def format_datetime(value):
+    format="dd-MM-y"
+    return babel.dates.format_datetime(value, format)

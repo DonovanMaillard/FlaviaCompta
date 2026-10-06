@@ -58,7 +58,7 @@
                     <a class="dropdown-item" href="{{url_for('operations')}}">Toutes les opérations</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('commitments')}}">Tous les engagements</a>
+                    <a class="dropdown-item" href="{{url_for('commitments.commitments')}}">Tous les engagements</a>
                   </li>
                   <br/>
                   <li><h6 class="dropdown-header"><i class="fa fa-edit"></i>Saisir une opération</h6></li>
@@ -70,16 +70,16 @@
                     <a class="dropdown-item" href="{{url_for('addMovement', type_operation = 'Dépense')}}">Une dépense</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('addCommitment')}}">Un engagement</a>
+                    <a class="dropdown-item" href="{{url_for('commitments.addCommitment')}}">Un engagement</a>
                   </li>
                   <br/>
                   <li><h6 class="dropdown-header"><i class="fa fa-edit"></i>Saisir une régule</h6></li>
                   <li><hr class="dropdown-divider"></li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('addTransfer', type_transfer='Internal')}}">Régule entre comptes</a>
+                    <a class="dropdown-item" href="{{url_for('transfers.addTransfer', type_transfer='Internal')}}">Régule entre comptes</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('addTransfer', type_transfer='Refund')}}">Remboursement de frais</a>
+                    <a class="dropdown-item" href="{{url_for('transfers.addTransfer', type_transfer='Refund')}}">Remboursement de frais</a>
                   </li>
                 </ul>
               </li>
@@ -143,7 +143,7 @@
                     <a class="dropdown-item" href="{{url_for('categories')}}">Catégories fiscales</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('documents')}}">Documents</a>
+                    <a class="dropdown-item" href="{{url_for('documents.documents')}}">Documents</a>
                   </li>
                 </ul>
               </li>

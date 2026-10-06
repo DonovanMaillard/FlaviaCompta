@@ -14,8 +14,8 @@
         <ul class="dropdown-menu">
           <li><a class="dropdown-item" href="{{ url_for('addMovement', type_operation='Dépense') }}">Une dépense</a></li>
           <li><a class="dropdown-item" href="{{ url_for('addMovement', type_operation='Recette') }}">Une recette</a></li>
-          <li><a class="dropdown-item" href="{{url_for('addTransfer', type_transfer = 'Internal')}}">Une régule entre comptes</a></li>
-          <li><a class="dropdown-item" href="{{url_for('addTransfer', type_transfer='Refund')}}">Un remboursement de frais</a></li>
+          <li><a class="dropdown-item" href="{{url_for('transfers.addTransfer', type_transfer = 'Internal')}}">Une régule entre comptes</a></li>
+          <li><a class="dropdown-item" href="{{url_for('transfers.addTransfer', type_transfer='Refund')}}">Un remboursement de frais</a></li>
         </ul>
       </div>
     </div>

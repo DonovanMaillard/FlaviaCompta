@@ -4,3 +4,6 @@ from .budgets import budgets_bp
 from .budgets_actions import budgets_actions_bp
 from .accounts import accounts_bp
 from .funders import funders_bp
+from .documents import documents_bp
+from .commitments import commitments_bp
+from .transfers import transfers_bp
