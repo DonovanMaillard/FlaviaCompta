@@ -7,3 +7,7 @@ from .funders import funders_bp
 from .documents import documents_bp
 from .commitments import commitments_bp
 from .transfers import transfers_bp
+from .results import results_bp
+from .payrolls import payrolls_bp
+from .operations import operations_bp
+from .utils import utils_bp

@@ -20,164 +20,40 @@ from ..init_db import db
 from ..models import *
 from ..forms import *
 
-profit_bonus_bp = Blueprint("profit_bonus",__name__,url_prefix="/profit_bonus")
+results_bp = Blueprint("results",__name__,url_prefix="/results")
 
 
-# Filtering function for API & Downloads
-def search_profit_bonus():
-    query = vProfitBonus.query
 
-    id_member = request.args.get("id_member", "")
-    id_budget = request.args.get("id_budget", "")
-    date_apres = request.args.get("date_apres", type=str)
-    date_avant = request.args.get("date_avant", type=str)
+#################
+### Resultats ###
+#################
 
-    if id_member:
-        query = query.filter(
-            vProfitBonus.id_member == id_member
-        )
-
-    if id_budget:
-        query = query.filter(
-            vProfitBonus.id_budget == id_budget
-        )
-
-    if date_apres:
-        try:
-            date_apres_parsed = datetime.strptime(
-                date_apres, "%Y-%m-%d"
-            ).date()
-
-            query = query.filter(
-                vProfitBonus.meta_create_date >= date_apres_parsed
-            )
-        except ValueError:
-            pass
-
-    if date_avant:
-        try:
-            date_avant_parsed = datetime.strptime(date_avant, "%Y-%m-%d").date()
-
-            query = query.filter(vProfitBonus.meta_create_date < date_avant_parsed + timedelta(days=1))
-        except ValueError:
-            pass
-
-    return query
-
-# API
-@profit_bonus_bp.route("/api", methods=["GET"])
+# Export as pdf
+@results_bp.route('/')
 @login_required
-def get_api_profit_bonus():
+def results():
+    years=db.session.query(vResultByYear.year).distinct()
+    return render_template('results/results.html', years=years)
 
-    page = int(request.args.get("page", 1))
-    per_page = int(request.args.get("per_page", 10))
 
-    query = search_profit_bonus()
+#####################
+### RESULTATS PDF ###
+#####################
 
-    total = query.count()
-
-    total_bonus = query.with_entities(
-        func.coalesce(
-            func.sum(vProfitBonus.profit_bonus_amount),
-            0
-        )
-    ).scalar()
-
-    results = (
-        query
-        .order_by(vProfitBonus.meta_create_date.desc())
-        .offset((page - 1) * per_page)
-        .limit(per_page)
-        .all()
-    )
-
-    data = [{
-        "id_pb": pb.id_pb,
-        "id_budget": pb.id_budget,
-        "budget_name": pb.name,
-        "budget_amount": pb.budget_amount,
-        "budget_received_amount": pb.received_amount,
-        "budget_date_closing": pb.date_closing,
-        "id_member": pb.id_member,
-        "member_name": pb.member_name,
-        "allocated_amount": pb.allocated_amount,
-        "profit_percent": pb.profit_percent,
-        "profit_bonus_amount": pb.profit_bonus_amount,
-        "meta_create_date": pb.meta_create_date,
-        "meta_update_date": pb.meta_update_date
-    } for pb in results]
-
-    return jsonify({
-        "total": total,
-        "page": page,
-        "per_page": per_page,
-        "data": data,
-        "total_profit_bonus": str(total_bonus)
-    })
-
-# Download
-@profit_bonus_bp.route("/download", methods=["GET"])
+# Export as pdf
+@results_bp.route('/pdf/year/<year>')
 @login_required
-def download_profit_bonus():
-
-    query = search_profit_bonus()
-
-    results = (
-        query
-        .order_by(vProfitBonus.meta_create_date.desc())
-        .all()
-    )
-
-    output = StringIO()
-
-    writer = csv.writer(output)
-
-    writer.writerow([
-        "ID",
-        "Budget",
-        "Montant previsionnel budget",
-        "Recettes reelles",
-        "Date de clôture",
-        "Salarié",
-        "Montant attribué",
-        "Pourcentage",
-        "Prime acquise",
-        "Date calcul intéressement",
-        "Date modification"
-    ])
-
-    for pb in results:
-        writer.writerow([
-            pb.id_pb,
-            pb.name,
-            pb.budget_amount,
-            pb.received_amount,
-            pb.date_closing,
-            pb.member_name,
-            pb.allocated_amount,
-            pb.profit_percent,
-            pb.profit_bonus_amount,
-            pb.meta_create_date,
-            pb.meta_update_date
-        ])
-
-    output.seek(0)
-
-    return Response(
-        output,
-        mimetype="text/csv",
-        headers={
-            "Content-Disposition":
-                "attachment; filename=profit_bonus.csv"
-        }
-    )
-
-# Page
-## Intéressement
-@profit_bonus_bp.route('/', methods=['GET'])
-@login_required
-def profitBonus():
-    budgets = db.session.query(vProfitBonus.id_budget, vProfitBonus.name).distinct().order_by(vProfitBonus.name).all()
-    members = db.session.query(tMembers.id_member, tMembers.member_name).filter_by(is_employed=True).distinct().order_by(tMembers.member_name).all()
-    #All profit bonus
-    return render_template('profit_bonus/list.html', budgets=budgets, members=members)
+def resultsPDF(year):
+    recettes=vResultByYear.query.filter_by(year=year).filter_by(type_category='Recette').all()
+    depenses=vResultByYear.query.filter_by(year=year).filter_by(type_category='Dépense').all()
+    current_date=date.today()
+    result=sum([r.amount for r in recettes])+sum([d.amount for d in depenses])
+    filename='export_bilan_'+year
+    header_url=app.config['BASE_URL']+'/static/img/bandeau_pdf.png'
+    html = render_template('results/results_pdf.html',depenses=depenses, recettes=recettes, year=year, current_date=current_date, result=result, header_url=header_url)
+    options = {"enable-local-file-access": None}
+    pdf = pdfkit.from_string(html, False, options=options)
+    response = make_response(pdf)
+    response.headers["Content-Type"] = "application/pdf"
+    response.headers["Content-Disposition"] = "inline; filename={}.pdf".format(filename)
+    return response

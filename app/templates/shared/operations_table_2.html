@@ -1,3 +1,7 @@
+<!--{# Variables facultatives, à définir avec {% set %} avant l'include :
+   operations_filters_form : id du formulaire de recherche (ex. 'filters')
+   operations_fixed_params : filtres imposés (ex. {'id_budget': Budget.id_budget}) #}-->
+
 <table id="operationsTable" class="table display">
     <thead>
         <tr>
@@ -12,7 +16,7 @@
     </thead>
 </table>
 
-<!-- Template de la modale de détail -->
+<!-- Modale de détail -->
 <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
@@ -20,18 +24,13 @@
         <h5 class="modal-title">Détail de l'opération</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
       </div>
-      <div class="modal-body" id="detailModalBody">
-        <!-- contenu rempli dynamiquement -->
-        <p>Chargement...</p>
-      </div>
-      <div class="modal-footer" id="detailModalFooter">
-        <!-- date de création/modification ici -->
-      </div>
+      <div class="modal-body" id="detailModalBody"><p>Chargement...</p></div>
+      <div class="modal-footer" id="detailModalFooter"></div>
     </div>
   </div>
 </div>
 
-<!-- Template de la modale de suppression -->
+<!-- Modale de suppression -->
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -39,96 +38,175 @@
         <h5 class="modal-title">Supprimer l'opération</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body">
-        <p id="deleteModalText"></p>
-      </div>
+      <div class="modal-body"><p id="deleteModalText"></p></div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        <a id="confirmDeleteBtn" class="btn btn-danger"><i class="fa fa-trash"></i> Supprimer</a>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <form id="deleteForm" method="post" class="d-inline">
+          <button type="submit" class="btn btn-danger"><i class="fa fa-trash"></i> Supprimer</button>
+        </form>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Alimenter dynamiquement les modales -->
 <script>
-  // Modale de suppression
-$('#operationsTable').on('click', '.btn-danger[data-bs-target="#deleteModal"]', function () {
-  const id_operation = $(this).data('id');
-  const name = $(this).data('name');
-  
-  $('#deleteModalText').text(`Souhaitez-vous vraiment supprimer l'opération : "${name}" ?`);
-  $('#confirmDeleteBtn').attr('href', `/operations/${id_operation}/delete`);
-});
-  // Modale de détail
-$('#operationsTable').on('click', '.btn-info[data-bs-target="#detailModal"]', function () {
-  const id = $(this).data('id');
-  const rowData = $('#operationsTable').DataTable().row($(this).closest('tr')).data();
+(function () {
+  const editUrlTemplate   = "{{ url_for('operations.updateMovement', id_operation='__ID__') }}";
+  const deleteUrlTemplate = "{{ url_for('operations.deleteMovement', id_operation='__ID__') }}";
+  const fixedParams = {{ (operations_fixed_params or {})|tojson }};
+  const filtersForm = {% if operations_filters_form %}document.getElementById({{ operations_filters_form|tojson }}){% else %}null{% endif %};
 
-  // Formatage de date simple
-  const formatDate = (dateStr) => {
+  // Échappe le texte saisi par les utilisateurs avant de l'insérer dans du HTML
+  function esc(value) {
+    return $('<div>').text(value ?? '').html();
+  }
+  function formatDate(dateStr) {
     if (!dateStr) return '';
     const d = new Date(dateStr);
-    return d.toLocaleDateString('fr-FR');
-  };
+    return isNaN(d) ? dateStr : d.toLocaleDateString('fr-FR');
+  }
 
-  const detailHtml = `
-    <div class="row">
-      <div class="col-md-8">
-        <strong>Date d'effet :</strong> ${formatDate(rowData.effective_date)}<br>
-        <strong>Date d'opération :</strong> ${formatDate(rowData.operation_date)}<br>
-        <strong>Type d'opération :</strong> ${rowData.type_operation}<br><br>
-      </div>
-      <div class="col-md-4">
-        <strong>Montant :</strong>
-        <h3 style="color:red;">${parseFloat(rowData.amount).toFixed(2)} €</h3>
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="col-md-12">
-        <strong>Libellé :</strong> ${rowData.name_operation}<br>
-        <strong>Détail :</strong> ${rowData.detail_operation || ''}<br>
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="col-md-4">
-        <strong>Compte :</strong> ${rowData.account_name}<br><br>
-      </div>
-      <div class="col-md-4">
-        <strong>Moyen de paiement :</strong> ${rowData.payment_method || ''}<br><br>
-      </div>
-      <div class="col-md-4">
-        <strong>Budget :</strong> ${rowData.budget_name || ''}<br><br>
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="col-md-6">
-        <strong>Catégorie fiscale :</strong> ${rowData.category}
-      </div>
-      <div class="col-md-6">
-        <strong>Justificatif :</strong>
-        ${
-          rowData.uploaded_file
-            ? `<a href="/static/${rowData.uploaded_file}" target="_blank">voir ou télécharger le document</a>`
-            : 'Aucun'
+  const table = $('#operationsTable').DataTable({
+    searching: false,
+    ordering: false,
+    serverSide: true,
+    processing: true,
+    ajax: {
+      url: "{{ url_for('operations.get_api_operations') }}",
+      data: function (d) {
+        const form = filtersForm ? Object.fromEntries(new FormData(filtersForm)) : {};
+        return Object.assign(
+          { page: Math.floor(d.start / d.length) + 1, per_page: d.length },
+          form,
+          fixedParams            // les filtres imposés l'emportent sur ceux du formulaire
+        );
+      },
+      dataSrc: function (json) {
+        json.recordsTotal = json.total;
+        json.recordsFiltered = json.total;
+        return json.data;
+      }
+    },
+    columns: [
+      {
+        data: 'effective_date',
+        render: function (data, type, row) {
+          if (row.operation_date) {
+            return `${row.effective_date}<br><small style="font-size:13px;"><em>Opération du : ${row.operation_date}</em></small>`;
+          }
+          return `${row.effective_date}`;
         }
-        <br><br>
+      },
+      { data: 'type_operation' },
+      {
+        data: 'name_operation',
+        render: function (data, type, row) {
+          const name = esc(row.name_operation);
+          const category = `<br><small style="font-size:13px;"><em>${esc(row.category)}</em></small>`;
+          if (row.uploaded_file) {
+            return `${name} <a href="${row.uploaded_file}"><i class="fa fa-file" title="Voir le justificatif"></i></a>${category}`;
+          }
+          if (row.type_operation == 'Dépense') {
+            return `${name} <i class="fa fa-warning" style="color:red;" title="Aucun justificatif fourni pour cette dépense"></i>${category}`;
+          }
+          return `${name}${category}`;
+        }
+      },
+      { data: 'account_name' },
+      { data: 'budget_name' },
+      {
+        data: 'amount',
+        render: function (data, type, row) {
+          const montant = parseFloat(data).toFixed(2);
+          if (row.type_operation == 'Transaction interne') {
+            const sign = row.amount > 0 ? '+ ' : '';
+            return `<span style="background-color:#EBEAEA; border-radius: 5px; padding:5px;">${sign}${montant} €</span>`;
+          } else if (row.type_operation == 'Recette') {
+            return `<span style="background-color:#D9FCD4; border-radius: 5px; padding:5px;">+ ${montant} €</span>`;
+          }
+          return `<span>${montant} €</span>`;
+        }
+      },
+      {
+        data: null,
+        orderable: false,
+        render: function (data, type, row) {
+          const editUrl = editUrlTemplate.replace('__ID__', row.id_operation);
+          return `
+            <div class="btn btn-group">
+              <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#detailModal" data-id="${row.id_operation}"><i class="fa fa-eye"></i></button>
+              <a class="btn btn-warning" href="${editUrl}"><i class="fa fa-edit"></i></a>
+              <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" data-id="${row.id_operation}" data-name="${esc(row.name_operation)}"><i class="fa fa-trash"></i></button>
+            </div>`;
+        }
+      }
+    ]
+  });
+
+  // --- Filtres : rechargement automatique ---
+  if (filtersForm) {
+    filtersForm.addEventListener('change', function () { table.ajax.reload(); });
+    filtersForm.addEventListener('submit', function (e) { e.preventDefault(); table.ajax.reload(); });
+    filtersForm.addEventListener('reset', function () { setTimeout(function () { table.ajax.reload(); }, 0); });
+  }
+
+  // --- Modale de suppression ---
+  $('#operationsTable').on('click', '.btn-danger[data-bs-target="#deleteModal"]', function () {
+    const id = $(this).data('id');
+    const name = $(this).data('name');
+    $('#deleteModalText').text(`Souhaitez-vous vraiment supprimer l'opération : "${name}" ?`);
+    $('#deleteForm').attr('action', deleteUrlTemplate.replace('__ID__', id));
+  });
+
+  // --- Modale de détail ---
+  $('#operationsTable').on('click', '.btn-info[data-bs-target="#detailModal"]', function () {
+    const rowData = table.row($(this).closest('tr')).data();
+    const amount = parseFloat(rowData.amount);
+    const amountColor = amount < 0 ? 'red' : 'green';
+
+    const detailHtml = `
+      <div class="row">
+        <div class="col-md-8">
+          <strong>Date d'effet :</strong> ${formatDate(rowData.effective_date)}<br>
+          <strong>Date d'opération :</strong> ${formatDate(rowData.operation_date)}<br>
+          <strong>Type d'opération :</strong> ${esc(rowData.type_operation)}<br><br>
+        </div>
+        <div class="col-md-4">
+          <strong>Montant :</strong>
+          <h3 style="color:${amountColor};">${amount.toFixed(2)} €</h3>
+        </div>
       </div>
-    </div>
-  `;
+      <div class="row">
+        <div class="col-md-12">
+          <strong>Libellé :</strong> ${esc(rowData.name_operation)}<br>
+          <strong>Détail :</strong> ${esc(rowData.detail_operation)}<br>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-4"><strong>Compte :</strong> ${esc(rowData.account_name)}<br><br></div>
+        <div class="col-md-4"><strong>Moyen de paiement :</strong> ${esc(rowData.payment_method)}<br><br></div>
+        <div class="col-md-4"><strong>Budget :</strong> ${esc(rowData.budget_name)}<br><br></div>
+      </div>
+      <div class="row">
+        <div class="col-md-6"><strong>Catégorie fiscale :</strong> ${esc(rowData.category)}</div>
+        <div class="col-md-6">
+          <strong>Justificatif :</strong>
+          ${rowData.uploaded_file
+            ? `<a href="${rowData.uploaded_file}" target="_blank">voir ou télécharger le document</a>`
+            : 'Aucun'}
+          <br><br>
+        </div>
+      </div>`;
 
-  const footerHtml = `
-    <p style="color:grey;">
-      Créé le : ${formatDate(rowData.meta_create_date)}<br>
-      Dernière modification le : ${formatDate(rowData.meta_update_date)}
-    </p>
-    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-  `;
+    const footerHtml = `
+      <p style="color:grey;">
+        Créé le : ${formatDate(rowData.meta_create_date)}<br>
+        Dernière modification le : ${formatDate(rowData.meta_update_date)}
+      </p>
+      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>`;
 
-  $('#detailModalBody').html(detailHtml);
-  $('#detailModalFooter').html(footerHtml);
-});
+    $('#detailModalBody').html(detailHtml);
+    $('#detailModalFooter').html(footerHtml);
+  });
+})();
 </script>

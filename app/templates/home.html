@@ -35,13 +35,13 @@
     <div class="card-body">
       <div class="row">
         <div class="col-md-4 d-grid">
-          <a class="btn btn-warning btn-lg home-btn" href="{{url_for('addMovement', type_operation = 'Dépense')}}" > <i class="fa fa-sign-out"></i> Dépense</a>
+          <a class="btn btn-warning btn-lg home-btn" href="{{url_for('operations.addMovement', type_operation = 'Dépense')}}" > <i class="fa fa-sign-out"></i> Dépense</a>
         </div>
         <div class="col-md-4 d-grid">
           <a class="btn btn-warning btn-lg home-btn" href="{{url_for('commitments.commitments')}}"> <i class="fa fa-lock"></i> Engagement <br>(devis validé)</a>
         </div>
         <div class="col-md-4 d-grid">
-          <a class="btn btn-success btn-lg home-btn" href="{{url_for('addMovement', type_operation = 'Recette')}}"> <i class="fa fa-sign-in"></i> Recette</a>
+          <a class="btn btn-success btn-lg home-btn" href="{{url_for('operations.addMovement', type_operation = 'Recette')}}"> <i class="fa fa-sign-in"></i> Recette</a>
         </div>
         
         <div class="col-md-4 d-grid">
