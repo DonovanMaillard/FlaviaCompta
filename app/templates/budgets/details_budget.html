@@ -187,6 +187,7 @@
   <!-- Tab Opérations -->
   <div class="tab-pane fade show active" id="nav-operations" role="tabpanel" aria-labelledby="nav-profile-tab">
     <!-- Table des opérations -->
+    {% set operations_fixed_params = {'id_budget': Budget.id_budget} %}
     {% include 'shared/operations_table.html' %}
   </div>
   <!-- Fin de la tab opérations-->

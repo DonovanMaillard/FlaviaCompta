@@ -28,7 +28,7 @@
           <select id="id_account" name="id_account" class="form-select">
             <option value="">Tous les comptes</option>
             {% for a in accounts %}
-              <option value="{{ a.id_account }}">{{ a.name }}</option>
+              <option value="{{ a.id_account }}">{{ a.account_name }}</option>
             {% endfor %}
           </select>
         </div>
@@ -36,8 +36,9 @@
           <label class="form-label" for="id_budget">Budget</label>
           <select id="id_budget" name="id_budget" class="form-select">
             <option value="">Tous les budgets</option>
+            <option value="none">Aucun budget</option>
             {% for b in budgets %}
-              <option value="{{ b.id_budget }}">{{ b.name }}</option>
+              <option value="{{ b.id_budget }}">{{ b.budget_name }}</option>
             {% endfor %}
           </select>
         </div>
@@ -73,13 +74,9 @@
     </div>
   </div>
 
-  {# Table + modales + script (voir shared/operations_table_2.html) #}
   {% set operations_filters_form = 'filters' %}
-  {% include 'shared/operations_table_2.html' %}
+  {% include 'shared/operations_table.html' %}
 
-  <a class="btn btn-success btn-right" href="{{ url_for('operations.operationsCSV') }}">
-    <i class="fa fa-download"></i> Exporter toutes les opérations en csv
-  </a>
 </div>
 
 {% endblock %}

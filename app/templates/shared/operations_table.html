@@ -1,155 +1,230 @@
-<table class="table table-striped small-datatable" id="operations">
-         <thead>
-            <tr>
-               <th>Date opération</th>
-               <th>Catégorie</th>
-               <th>Libellé</th>
-               <th>Compte bancaire</th>
-               <th>Ligne budgétaire</th>
-               <th>Montant</th>
-               <th>Action</th>
-            </tr>
-         </thead>
-         
-         <tbody>
-            {% for Operation in Operations %}
-               <tr>
-                  <td> {{ Operation.effective_date|format_datetime }} </td>
-                  <td> {{ Operation.type_operation }} <i class="fa fa-question-circle" title="{{ Operation.category }}"></i></td>
-                  <td> {{ Operation.name_operation }} 
-                      {% if Operation.uploaded_file != '' and Operation.uploaded_file is not none %}
-                        <a href=" {{ url_for('static', filename=Operation.uploaded_file) }}"> <i class="fa fa-file" title="Voir le justificatif" ></i> </a>
-                      {% elif Operation.type_operation == 'Dépense' and (Operation.uploaded_file != '' or Operation.uploaded_file is not none) %}
-                        <i class="fa fa-warning" style="color:red;" title="Aucun justificatif fourni pour cette dépense"></i>
-                      {% endif %} 
-                  </td>
-                  <td> {{ Operation.account_name }} </td>
-                  <td> {{ Operation.budget_name or '' }} </td>
-                  <td> 
-                  	{% if not Operation.amount or Operation.amount > 0 %}
-                      <p> {{ Operation.amount }}€ </p>
-                    {% else %}
-                      <p style="color:red;">{{ Operation.amount }}€ </p>
-                    {% endif %}
-                  </td>
-                  <td>
-                    <div>
-                        <div class="btn btn-group">
-                          <a class="btn btn-info" data-bs-toggle="modal" data-bs-target="#detailModal{{Operation.id_operation}}"> <i class="fa fa-eye"></i> </a>
-                          {% if Operation.type_operation == 'Transaction interne' or Operation.type_operation == 'Remboursement de frais' %}
-                            <a class="btn btn-warning" href="{{ url_for('updateTransfer', id_grp_operation=Operation.id_grp_operation) }}"> <i class="fa fa-edit"></i> </a>
-                          {% else %}
-                            <a class="btn btn-warning" href="{{ url_for('updateMovement', id_operation=Operation.id_operation) }}"> <i class="fa fa-edit"></i> </a>
-                          {% endif %}
-                          <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{Operation.id_operation}}"> <i class="fa fa-trash"></i> </a>
-                        </div>
-                    </div>
-               </tr>
+<!--{# Variables facultatives, à définir avec {% set %} avant l'include :
+   operations_filters_form : id du formulaire de recherche (ex. 'filters')
+   operations_fixed_params : filtres imposés (ex. {'id_budget': Budget.id_budget}) #}-->
 
-            
-            <!-- Detail Modal -->
-                <div class="modal fade" id="detailModal{{Operation.id_operation}}" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
-                  <div class="modal-dialog modal-xl">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <h5 class="modal-title" id="detailModalLabel">Détail de l'opération</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                      </div>
-                      <div class="modal-body">
-                        <div class="row">
-                          <div class="col-md-8"> 
-                            <strong>Date d'opération : </strong>{{ Operation.operation_date|format_datetime or '' }}
-                            <br>
-                            <strong>Date d'effet : </strong>{{ Operation.effective_date|format_datetime or '' }}
-                            <br>
-                            <strong>Type d'opération : </strong>{{ Operation.type_operation }}
-                            <br>
-                            <br>
-                          </div>
-                          <div class="col-md-4">
-                            <strong>Montant : </strong> 
-                                <h3 style="color:red;">{{ Operation.amount }}€ </h3>
-                        </div>
-                        <div class="row">
-                          <div class="col-md-12">
-                            <strong>Libellé : </strong>{{ Operation.name_operation }} 
-                               <br>
-                            <strong>Détail : </strong>{{ Operation.detail_operation or ''}}
-                          </div>
-                        </div>
-                        <div class="row">
-                          <div class="col-md-4"> 
-                            <strong>Compte : </strong>{{ Operation.account_name }}
-                            <br>
-                            <br>
-                          </div>
-                          <div class="col-md-4">
-                            <strong>Moyen de paiement : </strong> {{ Operation.payment_method or ''}}
-                            <br>
-                            <br>
-                          </div>
-                          <div class="col-md-4">
-                            <strong>Budget : </strong>{{ Operation.budget_name or '' }}
-                            <br>
-                            <br>
-                          </div>
-                        </div>
-                        <div class="row">
-                          <div class="col-md-6">
-                            <strong>Catégorie fiscale : </strong>{{ Operation.category }}
-                          </div>
-                          <div class="col-md-6">
-                            <strong>Justificatif : </strong>
-                              {% if not Operation.uploaded_file %}
-                                Aucun
-                              {% else %}
-                                <a href=" {{ url_for('static', filename=Operation.uploaded_file) }}" target="_blank">voir ou télécharger le document</a>
-                              {% endif %}
-                            <br>
-                            <br>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="modal-footer">
-                            <p style="color:grey;">Créé le : {{ Operation.meta_create_date or ''}}<br>
-                            Dernière modification le : {{ Operation.meta_update_date or ''}}</p>
-                        </div>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            <!-- end modal -->
+<table id="operationsTable" class="table display">
+    <thead>
+        <tr>
+            <th width="10%">Date d'effet</th>
+            <th width="10%">Type</th>
+            <th width="25%">Libellé et catégorie</th>
+            <th width="20%">Compte</th>
+            <th width="20%">Budget</th>
+            <th width="10%">Montant</th>
+            <th width="5%">Actions</th>
+        </tr>
+    </thead>
+</table>
 
+<a class="btn btn-success btn-right" id="download-csv" href="{{ url_for('operations.download_operations') }}">
+  <i class="fa fa-download"></i> Exporter en csv
+</a>
 
-            <!-- Delete Modal -->
-                <div class="modal fade" id="deleteModal{{Operation.id_operation}}" tabindex="0" aria-labelledby="ModalLabel" aria-hidden="true">
-                  <div class="modal-dialog">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <h5 class="modal-title" id="deleteModalLabel">Supprimer l'opération</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                      </div>
-                      <div class="modal-body">
-                          <p> Souhaitez-vous vraiment supprimer l'opération : <strong>"{{ Operation.name_operation }}" </strong> ?</p>
-                          {% if Operation.type_operation == 'Transaction interne' or Operation.type_operation == 'Remboursement de frais' %} 
-                          <p style="color:red"> Attention, la modification ou la suppression d'un transfert entre comptes ou d'un remboursement de frais affecte à la fois l'opération de débit sur le compte source, et l'opération de crédit appariée sur le compte cible. <br>
-                          Êtes-vous sûr de vouloir modifier les deux opérations de débit et de crédit liées au transfert ou au remboursement de frais <strong>"{{ Operation.name_operation }}" </strong> ? </p>
-                          {% endif %}
-                      </div>
-                      <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                        {% if Operation.type_operation == 'Transaction interne' or Operation.type_operation == 'Remboursement de frais' %}
-                          <a class="btn btn-danger" href="{{ url_for('deleteTransfer', id_grp_operation=Operation.id_grp_operation) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
-                        {% else %}
-                          <a class="btn btn-danger" href="{{ url_for('deleteMovement', id_operation=Operation.id_operation) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
-                        {% endif %}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-            <!-- end modal -->
-            {% endfor %}
-         </tbody>
-      </table>
+<!-- Modale de détail -->
+<div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Détail de l'opération</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body" id="detailModalBody"><p>Chargement...</p></div>
+      <div class="modal-footer" id="detailModalFooter"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modale de suppression -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Supprimer l'opération</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body"><p id="deleteModalText"></p></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <form id="deleteForm" method="post" class="d-inline">
+          <button type="submit" class="btn btn-danger"><i class="fa fa-trash"></i> Supprimer</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const editUrlTemplate   = "{{ url_for('operations.updateMovement', id_operation='__ID__') }}";
+  const deleteUrlTemplate = "{{ url_for('operations.deleteMovement', id_operation='__ID__') }}";
+  const fixedParams = {{ (operations_fixed_params or {})|tojson }};
+  const filtersForm = {% if operations_filters_form %}document.getElementById({{ operations_filters_form|tojson }}){% else %}null{% endif %};
+
+  // Échappe le texte saisi par les utilisateurs avant de l'insérer dans du HTML
+  function esc(value) {
+    return $('<div>').text(value ?? '').html();
+  }
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return isNaN(d) ? dateStr : d.toLocaleDateString('fr-FR');
+  }
+
+  const table = $('#operationsTable').DataTable({
+    searching: false,
+    ordering: false,
+    serverSide: true,
+    processing: true,
+    ajax: {
+      url: "{{ url_for('operations.get_api_operations') }}",
+      data: function (d) {
+        const form = filtersForm ? Object.fromEntries(new FormData(filtersForm)) : {};
+        return Object.assign(
+          { page: Math.floor(d.start / d.length) + 1, per_page: d.length },
+          form,
+          fixedParams            // les filtres imposés l'emportent sur ceux du formulaire
+        );
+      },
+      dataSrc: function (json) {
+        json.recordsTotal = json.total;
+        json.recordsFiltered = json.total;
+        return json.data;
+      }
+    },
+    columns: [
+      {
+        data: 'effective_date',
+        render: function (data, type, row) {
+          if (row.operation_date) {
+            return `${row.effective_date}<br><small style="font-size:13px;"><em>Opération du : ${row.operation_date}</em></small>`;
+          }
+          return `${row.effective_date}`;
+        }
+      },
+      { data: 'type_operation' },
+      {
+        data: 'name_operation',
+        render: function (data, type, row) {
+          const name = esc(row.name_operation);
+          const category = `<br><small style="font-size:13px;"><em>${esc(row.category)}</em></small>`;
+          if (row.uploaded_file) {
+            return `${name} <a href="${row.uploaded_file}"><i class="fa fa-file" title="Voir le justificatif"></i></a>${category}`;
+          }
+          if (row.type_operation == 'Dépense') {
+            return `${name} <i class="fa fa-warning" style="color:red;" title="Aucun justificatif fourni pour cette dépense"></i>${category}`;
+          }
+          return `${name}${category}`;
+        }
+      },
+      { data: 'account_name' },
+      { data: 'budget_name' },
+      {
+        data: 'amount',
+        render: function (data, type, row) {
+          const montant = parseFloat(data).toFixed(2);
+          if (row.type_operation == 'Transaction interne') {
+            const sign = row.amount > 0 ? '+ ' : '';
+            return `<span style="background-color:#EBEAEA; border-radius: 5px; padding:5px;">${sign}${montant} €</span>`;
+          } else if (row.type_operation == 'Recette') {
+            return `<span style="background-color:#D9FCD4; border-radius: 5px; padding:5px;">+ ${montant} €</span>`;
+          }
+          return `<span>${montant} €</span>`;
+        }
+      },
+      {
+        data: null,
+        orderable: false,
+        render: function (data, type, row) {
+          const editUrl = editUrlTemplate.replace('__ID__', row.id_operation);
+          return `
+            <div class="btn btn-group">
+              <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#detailModal" data-id="${row.id_operation}"><i class="fa fa-eye"></i></button>
+              <a class="btn btn-warning" href="${editUrl}"><i class="fa fa-edit"></i></a>
+              <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" data-id="${row.id_operation}" data-name="${esc(row.name_operation)}"><i class="fa fa-trash"></i></button>
+            </div>`;
+        }
+      }
+    ]
+  });
+
+  // --- Filtres : rechargement automatique ---
+  if (filtersForm) {
+    filtersForm.addEventListener('change', function () { table.ajax.reload(); });
+    filtersForm.addEventListener('submit', function (e) { e.preventDefault(); table.ajax.reload(); });
+    filtersForm.addEventListener('reset', function () { setTimeout(function () { table.ajax.reload(); }, 0); });
+  }
+
+  // --- Modale de suppression ---
+  $('#operationsTable').on('click', '.btn-danger[data-bs-target="#deleteModal"]', function () {
+    const id = $(this).data('id');
+    const name = $(this).data('name');
+    $('#deleteModalText').text(`Souhaitez-vous vraiment supprimer l'opération : "${name}" ?`);
+    $('#deleteForm').attr('action', deleteUrlTemplate.replace('__ID__', id));
+  });
+
+  // --- Modale de détail ---
+  $('#operationsTable').on('click', '.btn-info[data-bs-target="#detailModal"]', function () {
+    const rowData = table.row($(this).closest('tr')).data();
+    const amount = parseFloat(rowData.amount);
+    const amountColor = amount < 0 ? 'red' : 'green';
+
+    const detailHtml = `
+      <div class="row">
+        <div class="col-md-8">
+          <strong>Date d'effet :</strong> ${formatDate(rowData.effective_date)}<br>
+          <strong>Date d'opération :</strong> ${formatDate(rowData.operation_date)}<br>
+          <strong>Type d'opération :</strong> ${esc(rowData.type_operation)}<br><br>
+        </div>
+        <div class="col-md-4">
+          <strong>Montant :</strong>
+          <h3 style="color:${amountColor};">${amount.toFixed(2)} €</h3>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <strong>Libellé :</strong> ${esc(rowData.name_operation)}<br>
+          <strong>Détail :</strong> ${esc(rowData.detail_operation)}<br>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-4"><strong>Compte :</strong> ${esc(rowData.account_name)}<br><br></div>
+        <div class="col-md-4"><strong>Moyen de paiement :</strong> ${esc(rowData.payment_method)}<br><br></div>
+        <div class="col-md-4"><strong>Budget :</strong> ${esc(rowData.budget_name)}<br><br></div>
+      </div>
+      <div class="row">
+        <div class="col-md-6"><strong>Catégorie fiscale :</strong> ${esc(rowData.category)}</div>
+        <div class="col-md-6">
+          <strong>Justificatif :</strong>
+          ${rowData.uploaded_file
+            ? `<a href="${rowData.uploaded_file}" target="_blank">voir ou télécharger le document</a>`
+            : 'Aucun'}
+          <br><br>
+        </div>
+      </div>`;
+
+    const footerHtml = `
+      <p style="color:grey;">
+        Créé le : ${formatDate(rowData.meta_create_date)}<br>
+        Dernière modification le : ${formatDate(rowData.meta_update_date)}
+      </p>
+      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>`;
+
+    $('#detailModalBody').html(detailHtml);
+    $('#detailModalFooter').html(footerHtml);
+  });
+
+  // Export CSV des lignes filtrées
+  document.getElementById('download-csv').addEventListener('click', function () {
+    var params = new URLSearchParams(filtersForm ? new FormData(filtersForm) : []);
+    Object.entries(fixedParams).forEach(function ([k, v]) { params.set(k, v); });
+
+    // On retire les filtres vides
+    Array.from(params.keys()).forEach(function (k) {
+        if (!params.get(k)) params.delete(k);
+    });
+
+    this.href = '{{ url_for("operations.download_operations") }}' + (params.toString() ? '?' + params.toString() : '');
+  });
+
+})();
+</script>

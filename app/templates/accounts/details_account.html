@@ -104,7 +104,8 @@
 <div class="tab-content" id="nav-tabContent">
 
   <!-- Actions tab -->
-  <div class="tab-pane fade show active" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab">  
+  <div class="tab-pane fade show active" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab"> 
+    {% set operations_fixed_params = {'id_account': Account.id_account} %}
     {% include 'shared/operations_table.html' %}
   </div>
 

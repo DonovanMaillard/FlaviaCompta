@@ -29,7 +29,7 @@ operations_bp = Blueprint("operations",__name__,url_prefix="/operations")
 
 # Filtering function for API & Downloads
 def search_operations():
-    query = vOperations.query
+    query = vOperations.query.filter(vOperations.type_operation != 'Engagement')
 
     libelle = request.args.get("libelle", "")
     id_budget = request.args.get("id_budget", "")
@@ -47,10 +47,10 @@ def search_operations():
             vOperations.detail_operation.ilike(like_pattern)
         ))
 
-    if id_budget:
-        query = query.filter(
-            vOperations.id_budget == id_budget
-        )
+    if id_budget == "none":
+        query = query.filter(vOperations.id_budget.is_(None))
+    elif id_budget:
+        query = query.filter(vOperations.id_budget == id_budget)
 
     if id_account:
         query = query.filter(
@@ -103,7 +103,7 @@ def get_api_operations():
 
     total = query.count()
 
-    results = query.filter(vOperations.type_operation != 'Engagement').order_by(vOperations.effective_date.desc()).order_by(vOperations.id_operation.desc()).offset((page - 1) * per_page).limit(per_page).all()
+    results = query.order_by(vOperations.effective_date.desc()).order_by(vOperations.id_operation.desc()).offset((page - 1) * per_page).limit(per_page).all()
 
     data = [{
         "id_operation": op.id_operation,
@@ -119,7 +119,7 @@ def get_api_operations():
         "id_account": op.id_account,
         "account_name": op.account_name,
         "payment_method": op.payment_method,
-        "amount": float(op.amount),
+        "amount": Decimal(op.amount),
         "uploaded_file": url_for('static', filename=op.uploaded_file) if op.uploaded_file else "",
         "meta_create_date": op.meta_create_date,
         "meta_update_date": op.meta_update_date
@@ -133,6 +133,72 @@ def get_api_operations():
     })
 
 
+# Download
+@operations_bp.route("/download", methods=["GET"])
+@login_required
+def download_operations():
+
+    query = search_operations()
+
+    results = (
+        query
+        .order_by(vOperations.effective_date.desc())
+        .all()
+    )
+
+    output = StringIO()
+
+    writer = csv.writer(output)
+
+    writer.writerow([
+        "id_operation",
+        "date_effet",
+        "date_operation",
+        "libelle",
+        "detail",
+        "type_operation",
+        "categorie",
+        "categorie_parent",
+        "budget",
+        "compte",
+        "methode_paiement",
+        "montant",
+        "justificatif",
+        "saisi_le",
+        "modifie_le"
+    ])
+
+    for op in results:
+        writer.writerow([
+            op.id_operation,
+            op.effective_date.strftime('%Y-%m-%d') if op.effective_date else "",
+            op.operation_date.strftime('%Y-%m-%d') if op.operation_date else "",
+            op.name_operation,
+            op.detail_operation,
+            op.type_operation,
+            op.category,
+            op.parent_category,
+            op.budget_name,
+            op.account_name,
+            op.payment_method,
+            Decimal(op.amount),
+            url_for('static', filename=op.uploaded_file) if op.uploaded_file else "",
+            op.meta_create_date,
+            op.meta_update_date
+        ])
+
+    output.seek(0)
+
+    return Response(
+        output,
+        mimetype="text/csv",
+        headers={
+            "Content-Disposition":
+                "attachment; filename=operations.csv"
+        }
+    )
+
+
 #####################
 # Toutes opérations #
 #####################
@@ -141,66 +207,10 @@ def get_api_operations():
 @operations_bp.route('/', methods=['GET', 'POST'])
 @login_required
 def operations():
-    budgets = db.session.query(vProfitBonus.id_budget, vProfitBonus.name).distinct().order_by(vProfitBonus.name).all()
-    accounts = db.session.query(tAccounts.id_account, tAccounts.name).filter_by(is_personnal=False).distinct().order_by(tAccounts.name).all()
+    budgets = db.session.query(vOperations.id_budget, vOperations.budget_name).filter(vOperations.id_budget.isnot(None)).distinct().order_by(vOperations.budget_name).all()
+    accounts = db.session.query(vOperations.id_account, vOperations.account_name).distinct().order_by(vOperations.account_name).all()
     categories = db.session.query(vOperations.category).distinct().order_by(vOperations.category)
     return render_template('operations/operations_list.html', budgets=budgets, accounts=accounts, categories=categories, type=None)
-
-# Export CSV
-@operations_bp.route('/export_csv/<year>')
-@operations_bp.route('/export_csv', defaults={'year': None})
-@login_required
-def operationsCSV(year=None):
-    @stream_with_context
-    def generate():
-        data = StringIO()
-        w = csv.writer(data)
-
-        # write header
-        header=['Date_operation','Date_effet','Exercice','Libelle','Detail','Montant','Moyen_de_paiement','Compte','Budget','Groupe_operation','Type','Categorie_fiscale','Categorie_parente','Justificatif','Date_creation','Derniere_modification']
-        w.writerow(header)
-        yield data.getvalue()
-        data.seek(0)
-        data.truncate(0)
-
-        # write each item
-        if year :
-            Operations = vOperations.query.filter(vOperations.type_operation != 'Engagement').filter(vOperations.year == year).order_by(vOperations.effective_date.desc()).all()
-        else : 
-            Operations = vOperations.query.filter(vOperations.type_operation != 'Engagement').order_by(vOperations.effective_date.desc()).all()
-        for operation in Operations:
-            if operation.uploaded_file is None or operation.uploaded_file == '':
-                document_url=None
-            else:
-                document_url=app.config['BASE_URL']+'/static/'+str(operation.uploaded_file)
-            w.writerow((
-                operation.operation_date,  
-                operation.effective_date, 
-                operation.year,
-                operation.name_operation,
-                operation.detail_operation,
-                operation.amount,
-                operation.payment_method,
-                operation.account_name,
-                operation.budget_name,
-                operation.id_grp_operation,
-                operation.type_operation,
-                operation.category,
-                operation.parent_category,
-                document_url,
-                operation.meta_create_date,
-                operation.meta_update_date
-            ))
-            yield data.getvalue()
-            data.seek(0)
-            data.truncate(0)
-        
-    # stream the response as the data is generated
-    response = Response(generate(), mimetype='text/csv')
-    # add a filename
-    response.headers.set("Content-Disposition", "attachment", filename=datetime.now().strftime("%Y%m%d_%H-%M-%S")+"_export_operations.csv")
-    return response
-
 
 # Suppression d'une opération ou de plusieurs opérations appariées
 @operations_bp.route('/<id_operation>/delete', methods=['GET', 'POST'])
