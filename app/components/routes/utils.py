@@ -8,7 +8,7 @@ from flask_login import login_required, current_user, login_user, logout_user, L
 from calendar import monthrange
 from sqlalchemy import func, or_, and_
 from zipfile import ZipFile, ZipInfo
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 import os
 import pdfkit
@@ -32,13 +32,16 @@ login_manager = LoginManager()
 #def allowed_file(filename):
 #    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
-# Todo : clean decimal inputs
-def getDecimal(input, allow_none=False):
-    if input is None or input=='' :
-        decimal=0.00
-    else :
-        decimal=abs(float(str(input).replace(',','.')))
-    return decimal
+def abs_decimal(value):
+    #Renvoie None si la valeur est vide, lève ValueError si elle est invalide.""", 
+    # mais traite les virgules et l'abs() pour gérer les négatifs selon les besoins du logiciel
+    if value is None or str(value).strip() == '':
+        return None
+    try:
+        amount = abs(Decimal(str(value).strip().replace(' ', '').replace(',', '.')))
+    except InvalidOperation:
+        raise ValueError(f"Montant invalide : {value!r}")
+    return abs(amount).quantize(Decimal('0.01'))
 
 
 def getChoiceOrNone(input):

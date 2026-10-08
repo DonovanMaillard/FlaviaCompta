@@ -8,7 +8,7 @@ from flask_login import login_required, current_user, login_user, logout_user, L
 from calendar import monthrange
 from sqlalchemy import func, or_, and_
 from zipfile import ZipFile, ZipInfo
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 import os
 import pdfkit
@@ -19,7 +19,7 @@ import babel
 from ..init_db import db
 from ..models import *
 from ..forms import *
-from .utils import getDecimal
+from .utils import *
 
 operations_bp = Blueprint("operations",__name__,url_prefix="/operations")
 
@@ -34,7 +34,7 @@ def search_operations():
     libelle = request.args.get("libelle", "")
     id_budget = request.args.get("id_budget", "")
     id_account = request.args.get("id_account", "")
-    montant = request.args.get("montant", type=float)
+    montant = request.args.get("montant", type=str)
     category = request.args.get("category", "")
     date_apres = request.args.get("date_apres", type=str)
     date_avant = request.args.get("date_avant", type=str)
@@ -64,9 +64,9 @@ def search_operations():
 
     if montant:
         try:
-            montant = request.args.get("montant", "").replace(",", ".")
-            montant_float = float(montant)
-            query = query.filter(func.abs(vOperations.amount) == abs(montant_float))
+            montant = request.args.get("montant", "")
+            montant_decimal = abs_decimal(montant)
+            query = query.filter(func.abs(vOperations.amount) == montant_decimal)
         except ValueError:
             pass  # montant mal formé, on ignore le filtre
 
@@ -77,7 +77,7 @@ def search_operations():
             ).date()
 
             query = query.filter(
-                vOperations.meta_create_date >= date_apres_parsed
+                vOperations.effective_date >= date_apres_parsed
             )
         except ValueError:
             pass
@@ -86,7 +86,7 @@ def search_operations():
         try:
             date_avant_parsed = datetime.strptime(date_avant, "%Y-%m-%d").date()
 
-            query = query.filter(vOperations.meta_create_date < date_avant_parsed + timedelta(days=1))
+            query = query.filter(vOperations.effective_date <= date_avant_parsed)
         except ValueError:
             pass
 
@@ -216,10 +216,10 @@ def operations():
 @operations_bp.route('/<id_operation>/delete', methods=['GET', 'POST'])
 @login_required
 def deleteMovement(id_operation): 
-    operation=db.session.get(tOperations, id_operation) #tOperations.query.get(id_operation)
+    operation=db.session.get(tOperations, id_operation) 
     db.session.delete(operation)
     db.session.commit()
-    return redirect(url_for('operations'))
+    return redirect(url_for('operations.operations'))
 
 
 
@@ -257,9 +257,9 @@ def addMovement(type_operation): #movement = Dépense + Recette
         operation_date = request.form.get('operation_date')
     # Get cleaned amound
     if type_operation == 'Dépense' and request.method == 'POST' and form.validate()  :
-        amount = -getDecimal(request.form.get('amount'))
+        amount = -abs_decimal(request.form.get('amount'))
     else :
-        amount = getDecimal(request.form.get('amount'))
+        amount = abs_decimal(request.form.get('amount'))
     # Commit form
     if request.method == 'POST' and form.validate() :
         Operation = tOperations(
@@ -281,7 +281,7 @@ def addMovement(type_operation): #movement = Dépense + Recette
         )
         db.session.add(Operation)
         db.session.commit()
-        return redirect(url_for('operations'))
+        return redirect(url_for('operations.operations'))
     # Return form
     return render_template('operations/add_or_update_movement.html', form=form, Operation=None, type_operation=type_operation)
 
@@ -324,9 +324,9 @@ def updateMovement(id_operation): #movement = Dépense + Recette
         operation_date = request.form.get('operation_date')
     # Get cleaned amound
     if type_operation == 'Dépense' and request.method == 'POST' and form.validate()  :
-        amount = -getDecimal(request.form.get('amount'))
+        amount = -abs_decimal(request.form.get('amount'))
     else :
-        amount = getDecimal(request.form.get('amount'))
+        amount = abs_decimal(request.form.get('amount'))
     # Update
     if request.method == 'POST' and form.validate():
         # let None as id_grp_operations
@@ -344,7 +344,7 @@ def updateMovement(id_operation): #movement = Dépense + Recette
             Operation.uploaded_file = getFileUrl('uploaded_file')
         Operation.meta_id_digitiser = current_user.id_user
         db.session.commit()
-        return redirect(url_for('operations'))
+        return redirect(url_for('operations.operations'))
     # Return form
     return render_template('operations/add_or_update_movement.html', form=form, Operation=Operation, type_operation=type_operation)
 

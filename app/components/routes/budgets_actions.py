@@ -46,7 +46,7 @@ def addAction(id_budget):
             )
         db.session.add(Action)
         db.session.commit()
-        return redirect(url_for('detailBudget', id_budget=id_budget))
+        return redirect(url_for('budgets.detailBudget', id_budget=id_budget))
     return render_template('budgets/add_or_update_action.html', form=form, Budget=Budget, Action=None)
 
 
@@ -72,7 +72,7 @@ def updateAction(id_budget, id_action_budget):
         if not request.form.get('keep_file'):
             Action.uploaded_file = getFileUrl('uploaded_file')
         db.session.commit()
-        return redirect(url_for('detailBudget', id_budget=id_budget))
+        return redirect(url_for('budgets.detailBudget', id_budget=id_budget))
     return render_template('budgets/add_or_update_action.html', form=form, Budget=Budget, Action=Action)
 
 
@@ -83,4 +83,4 @@ def deleteAction(id_budget, id_action_budget):
     current_action=db.session.get(corActionBudget, id_action_budget) #corActionBudget.query.get(id_action_budget)
     db.session.delete(current_action)
     db.session.commit()
-    return redirect(url_for('detailBudget', id_budget=id_budget))
+    return redirect(url_for('budgets.detailBudget', id_budget=id_budget))

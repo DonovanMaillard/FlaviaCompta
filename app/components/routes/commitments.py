@@ -8,7 +8,7 @@ from flask_login import login_required, current_user, login_user, logout_user, L
 from calendar import monthrange
 from sqlalchemy import func, or_, and_
 from zipfile import ZipFile, ZipInfo
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 import os
 import pdfkit
@@ -19,6 +19,7 @@ import babel
 from ..init_db import db
 from ..models import *
 from ..forms import *
+from .utils import *
 
 commitments_bp = Blueprint("commitments",__name__,url_prefix="/commitments")
 
@@ -60,7 +61,7 @@ def addCommitment():
             id_type_operation,
             request.form['operation_date'],
             None,
-            -getDecimal(request.form.get('amount')),
+            -abs_decimal(request.form.get('amount')),
             None,
             getChoiceOrNone(request.form['id_account']),
             getChoiceOrNone(request.form['id_budget']),
@@ -71,7 +72,7 @@ def addCommitment():
         )
         db.session.add(Commitment)
         db.session.commit()
-        return redirect(url_for('commitments'))
+        return redirect(url_for('commitments.commitments'))
     # Return form
     return render_template('operations/add_or_update_commitment.html', form=form, Operation=None)
 
@@ -105,7 +106,7 @@ def updateCommitment(id_operation):
         Operation.detail_operation = request.form['detail_operation']
         Operation.operation_date = request.form['operation_date']
         #let none as effective date
-        Operation.amount = -getDecimal(request.form.get('amount'))
+        Operation.amount = -abs_decimal(request.form.get('amount'))
         Operation.id_account = getChoiceOrNone(request.form['id_account'])
         Operation.id_budget = getChoiceOrNone(request.form['id_budget'])
         Operation.id_category = getChoiceOrNone(request.form['id_category'])
@@ -113,7 +114,7 @@ def updateCommitment(id_operation):
             Operation.uploaded_file = getFileUrl('uploaded_file')
         Operation.meta_id_digitiser = current_user.id_user
         db.session.commit()
-        return redirect(url_for('commitments'))
+        return redirect(url_for('commitments.commitments'))
     return render_template('operations/add_or_update_commitment.html', form=form, Operation=Operation)
 
 # Conversions
@@ -150,7 +151,7 @@ def convertCommitment(id_operation):
         Operation.id_type_operation = id_type_operation
         Operation.operation_date = request.form['operation_date']
         Operation.effective_date = request.form['effective_date']
-        Operation.amount = -getDecimal(request.form.get('amount'))
+        Operation.amount = -abs_decimal(request.form.get('amount'))
         Operation.id_payment_method = getChoiceOrNone(request.form['id_payment_method'])
         Operation.id_account = getChoiceOrNone(request.form['id_account'])
         Operation.id_budget = getChoiceOrNone(request.form['id_budget'])
@@ -158,7 +159,7 @@ def convertCommitment(id_operation):
         Operation.uploaded_file = getFileUrl('uploaded_file')
         Operation.meta_id_digitiser = current_user.id_user
         db.session.commit()
-        return redirect(url_for('operations'))
+        return redirect(url_for('operations.operations'))
     return render_template('operations/add_or_update_movement.html', form=form, Operation=Operation, type_operation="Dépense", Convert=True)
 
 
@@ -169,4 +170,4 @@ def deleteCommitment(id_operation):
     operation= db.session.get(tOperations, id_operation) #tOperations.query.get(id_operation)
     db.session.delete(operation)
     db.session.commit()
-    return redirect(url_for('commitments'))
+    return redirect(url_for('commitments.commitments'))

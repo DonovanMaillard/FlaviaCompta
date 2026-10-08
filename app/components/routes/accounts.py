@@ -71,7 +71,7 @@ def addAccount(type):
         )
         db.session.add(Account)
         db.session.commit()
-        return redirect(url_for('accounts', type=type))
+        return redirect(url_for('accounts.accounts', type=type))
     return render_template('accounts/add_or_update_account.html', form=form, Account=None, active=None, Type=type)
 
 # Edit account
@@ -95,7 +95,7 @@ def updateAccount(id_account):
             Account.uploaded_file = getFileUrl('uploaded_file'),
         Account.active = bool(request.form.get('active'))
         db.session.commit()
-        return redirect(url_for('accounts', type=type))
+        return redirect(url_for('accounts.accounts', type=type))
     return render_template('accounts/add_or_update_account.html', form=form, Account=Account)
 
 # Delete account
@@ -105,5 +105,5 @@ def deleteAccount(id_account):
     current_account=db.session.get(tAccounts, id_account)
     db.session.delete(current_account)
     db.session.commit()
-    return redirect(url_for('accounts'))
+    return redirect(url_for('accounts.accounts'))
 

@@ -148,8 +148,24 @@
   });
 
   // --- Filtres : rechargement automatique ---
+  // --- Filtres : rechargement automatique ---
   if (filtersForm) {
-    filtersForm.addEventListener('change', function () { table.ajax.reload(); });
+    let timer = null;
+    function reloadLater() {
+      clearTimeout(timer);
+      timer = setTimeout(function () { table.ajax.reload(); }, 300);   // 300 ms après la dernière frappe
+    }
+
+    // Champs texte : pendant la saisie
+    filtersForm.addEventListener('input', function (e) {
+      if (e.target.matches('input[type="text"]')) reloadLater();
+    });
+
+    // Listes déroulantes et dates : au changement de valeur
+    filtersForm.addEventListener('change', function (e) {
+      if (!e.target.matches('input[type="text"]')) table.ajax.reload();
+    });
+
     filtersForm.addEventListener('submit', function (e) { e.preventDefault(); table.ajax.reload(); });
     filtersForm.addEventListener('reset', function () { setTimeout(function () { table.ajax.reload(); }, 0); });
   }

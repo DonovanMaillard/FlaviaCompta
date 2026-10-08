@@ -8,7 +8,7 @@ from flask_login import login_required, current_user, login_user, logout_user, L
 from calendar import monthrange
 from sqlalchemy import func, or_, and_
 from zipfile import ZipFile, ZipInfo
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 import os
 import pdfkit
@@ -19,6 +19,7 @@ import babel
 from ..init_db import db
 from ..models import *
 from ..forms import *
+from .utils import *
 
 payrolls_bp = Blueprint("payrolls",__name__,url_prefix="/payrolls")
 
@@ -59,15 +60,15 @@ def addPayroll():
             request.form['id_member'],
             datetime(int(request.form['period_year']), int(request.form['period_month']), 1), #min date
             datetime(int(request.form['period_year']), int(request.form['period_month']), monthrange(int(request.form['period_year']), int(request.form['period_month']))[1]), #max date
-            getDecimal(request.form['gross_remuneration']), 
-            getDecimal(request.form['gross_premium']), 
-            getDecimal(request.form['employer_charge_amount']),
-            getDecimal(request.form['worked_days']),
+            abs_decimal(request.form['gross_remuneration']), 
+            abs_decimal(request.form['gross_premium']), 
+            abs_decimal(request.form['employer_charge_amount']),
+            abs_decimal(request.form['worked_days']),
             getFileUrl('uploaded_file'),
             )
         db.session.add(payroll)
         db.session.commit()
-        return redirect(url_for('payrolls'))
+        return redirect(url_for('payrolls.payrolls'))
     return render_template('payrolls/add_or_update_member_payroll.html', form=form, payroll=None, Members=Members)
 
 # Update payroll
@@ -88,14 +89,14 @@ def updatePayroll(id_payroll):
         payroll.id_member = request.form['id_member'], 
         payroll.date_min_period = datetime(int(request.form['period_year']), int(request.form['period_month']), 1), 
         payroll.date_max_period = datetime(int(request.form['period_year']), int(request.form['period_month']), monthrange(int(request.form['period_year']), int(request.form['period_month']))[1]), 
-        payroll.gross_remuneration = getDecimal(request.form['gross_remuneration']), 
-        payroll.gross_premium = getDecimal(request.form['gross_premium']), 
-        payroll.employer_charge_amount = getDecimal(request.form['employer_charge_amount']), 
-        payroll.worked_days = getDecimal(request.form['worked_days'])
+        payroll.gross_remuneration = abs_decimal(request.form['gross_remuneration']), 
+        payroll.gross_premium = abs_decimal(request.form['gross_premium']), 
+        payroll.employer_charge_amount = abs_decimal(request.form['employer_charge_amount']), 
+        payroll.worked_days = abs_decimal(request.form['worked_days'])
         if not request.form.get('keep_file'):
             payroll.uploaded_file = getFileUrl('uploaded_file')
         db.session.commit()
-        return redirect(url_for('payrolls'))
+        return redirect(url_for('payrolls.payrolls'))
     return render_template('payrolls/add_or_update_member_payroll.html', form=form, payroll=payroll, Members=Members)
 
 # Details payroll
@@ -113,11 +114,11 @@ def detailPayroll(id_payroll):
         payrollBudget = corPayrollBudget(
             id_payroll,
             getChoiceOrNone(request.form['id_budget']),  
-            getDecimal(request.form['nb_days_allocated'])
+            abs_decimal(request.form['nb_days_allocated'])
             )
         db.session.add(payrollBudget)
         db.session.commit()
-        return redirect(url_for('detailPayroll', id_payroll=id_payroll))
+        return redirect(url_for('payrolls.detailPayroll', id_payroll=id_payroll))
     return render_template('payrolls/detail_payroll.html', payroll=payroll, corsPayrollBudget=corsPayrollBudget, form=form, payrollBudget=None, Budgets=Budgets)
 
 # Delete payroll
@@ -127,7 +128,7 @@ def deletePayroll(id_payroll):
     current_payroll=db.session.get(tPayrolls, id_payroll) #tPayrolls.query.get(id_payroll)
     db.session.delete(current_payroll)
     db.session.commit()
-    return redirect(url_for('payrolls'))
+    return redirect(url_for('payrolls.payrolls'))
 
 
 ######################
@@ -145,11 +146,11 @@ def addCorPayrollBudget(id_payroll):
         payrollBudget = corPayrollBudget(
             id_payroll,
             getChoiceOrNone(request.form['id_budget']),  
-            getDecimal(request.form['nb_days_allocated'])
+            abs_decimal(request.form['nb_days_allocated'])
             )
         db.session.add(payrollBudget)
         db.session.commit()
-        return redirect(url_for('detailPayroll', id_payroll=id_payroll))
+        return redirect(url_for('payrolls.detailPayroll', id_payroll=id_payroll))
     return render_template('payrolls/add_or_update_allocation_payroll_budget.html', form=form, payrollBudget=None, Budgets=Budgets)
 
 
@@ -163,9 +164,9 @@ def updateCorPayrollBudget(id_payroll, id_payroll_budget):
     form.id_budget.choices = [('','Gestion associative & Autres activités')]+[(Budget.id_budget, Budget.name) for Budget in Budgets]
     if request.method == 'POST' and form.validate():
         cor.id_budget = getChoiceOrNone(request.form['id_budget'])
-        cor.nb_days_allocated = getDecimal(request.form['nb_days_allocated'])
+        cor.nb_days_allocated = abs_decimal(request.form['nb_days_allocated'])
         db.session.commit()
-        return redirect(url_for('detailPayroll', id_payroll=id_payroll))
+        return redirect(url_for('payrolls.detailPayroll', id_payroll=id_payroll))
     return render_template('payrolls/add_or_update_allocation_payroll_budget.html', form=form, corPayrollBudget=cor, Budgets=Budgets)
 
 
@@ -176,5 +177,5 @@ def deleteCorPayrollBudget(id_payroll, id_payroll_budget):
     cor = db.session.get(corPayrollBudget, id_payroll_budget) #corPayrollBudget.query.get(id_payroll_budget)
     db.session.delete(cor)
     db.session.commit()
-    return redirect(url_for('detailPayroll', id_payroll=id_payroll))
+    return redirect(url_for('payrolls.detailPayroll', id_payroll=id_payroll))
 

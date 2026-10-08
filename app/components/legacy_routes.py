@@ -21,6 +21,7 @@ import babel
 from .init_db import db
 from .models import *
 from .forms import *
+from .routes.utils import *
 
 # Import Blueprints 
 from .routes import (

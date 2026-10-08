@@ -8,7 +8,7 @@ from flask_login import login_required, current_user, login_user, logout_user, L
 from calendar import monthrange
 from sqlalchemy import func, or_, and_
 from zipfile import ZipFile, ZipInfo
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 import os
 import pdfkit
@@ -19,6 +19,7 @@ import babel
 from ..init_db import db
 from ..models import *
 from ..forms import *
+from .utils import *
 
 budgets_bp = Blueprint("budgets",__name__,url_prefix="/budgets")
 
@@ -54,7 +55,7 @@ def detailBudget(id_budget):
             value = existants.get(str(m.id_member))
             form.rows.append_entry({
                 "id_member": m.id_member,
-                "allocated_amount": getDecimal(value) if value is not None else None,
+                "allocated_amount": Decimal(value) if value is not None else None,
             })
     # POST : annule et remplace le contenu du jsonb
     if request.method == 'POST' and form.validate():
@@ -66,7 +67,7 @@ def detailBudget(id_budget):
         }
         db.session.commit()
         flash("Attributions enregistrées.")
-        return redirect(url_for('detailBudget', id_budget=id_budget))
+        return redirect(url_for('budgets.detailBudget', id_budget=id_budget))
     return render_template('budgets/details_budget.html', Budget = Budget, Actions = Actions, Operations = Operations, Commitments = Commitments, Payrolls = Payrolls, form=form, names=names)
 
 # Add budget
@@ -92,9 +93,9 @@ def addBudget():
             getChoiceOrNone(request.form['id_activity']),
             request.form['date_max_expenditure'], 
             request.form['date_return'], 
-            getDecimal(request.form['budget_amount']), 
-            getDecimal(request.form['payroll_limit']), 
-            getDecimal(request.form['indirect_charges']), 
+            abs_decimal(request.form.get('budget_amount')), 
+            abs_decimal(request.form['payroll_limit']), 
+            abs_decimal(request.form['indirect_charges']), 
             request.form['comment'], 
             bool(request.form.get('profit_bonus')),
             bool(request.form.get('active'))

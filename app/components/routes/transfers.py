@@ -8,7 +8,7 @@ from flask_login import login_required, current_user, login_user, logout_user, L
 from calendar import monthrange
 from sqlalchemy import func, or_, and_
 from zipfile import ZipFile, ZipInfo
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 import os
 import pdfkit
@@ -19,6 +19,7 @@ import babel
 from ..init_db import db
 from ..models import *
 from ..forms import *
+from .utils import *
 
 transfers_bp = Blueprint("transfers",__name__,url_prefix="/operations/transfer")
 
@@ -55,7 +56,7 @@ def addTransfer(type_transfer):
             id_type_operation,
             None,
             request.form['effective_date'],
-            -getDecimal(request.form.get('amount')),
+            -abs_decimal(request.form.get('amount')),
             getChoiceOrNone(request.form['id_payment_method']),
             request.form['from_id_account'],
             None, # budget id
@@ -71,7 +72,7 @@ def addTransfer(type_transfer):
             id_type_operation,
             None,
             request.form['effective_date'],
-            getDecimal(request.form.get('amount')),
+            abs_decimal(request.form.get('amount')),
             getChoiceOrNone(request.form['id_payment_method']),
             request.form['to_id_account'],
             None, #budget_id
@@ -83,7 +84,7 @@ def addTransfer(type_transfer):
         db.session.add(debit)
         db.session.add(credit)
         db.session.commit()
-        return redirect(url_for('operations'))
+        return redirect(url_for('operations.operations'))
     # return form
     return render_template('operations/add_or_update_transfer.html', form=form, Transfert=None, Type=type_transfer)
 
@@ -134,8 +135,8 @@ def updateTransfer(id_grp_operation):
         credit.effective_date = request.form['effective_date']
         debit.effective_date =request.form['effective_date']
         # Amount
-        credit.amount = getDecimal(request.form.get('amount'))
-        debit.amount = -getDecimal(request.form.get('amount'))
+        credit.amount = abs_decimal(request.form.get('amount'))
+        debit.amount = -abs_decimal(request.form.get('amount'))
         # Payment method
         credit.id_payment_method = getChoiceOrNone(request.form['id_payment_method'])
         debit.id_payment_method =getChoiceOrNone(request.form['id_payment_method'])
@@ -150,7 +151,7 @@ def updateTransfer(id_grp_operation):
         credit.meta_id_digitiser = current_user.id_user
         debit.meta_id_digitiser =current_user.id_user
         db.session.commit()
-        return redirect(url_for('operations'))
+        return redirect(url_for('operations.operations'))
     # return form
     return render_template('operations/add_or_update_transfer.html', form=form, Transfert=id_grp_operation, Type=type_operation)
 
@@ -162,4 +163,4 @@ def deleteTransfer(id_grp_operation):
     for operation in operations :
         db.session.delete(operation)
         db.session.commit()
-    return redirect(url_for('operations'))
+    return redirect(url_for('operations.operations'))
