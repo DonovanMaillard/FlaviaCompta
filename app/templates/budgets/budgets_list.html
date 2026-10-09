@@ -26,11 +26,93 @@
   
   <hr style="margin-bottom:50px">
 
-  <div id="budgets-detail">
-	<h1> Liste des lignes budgétaires </h1>
+<div id="budgets-detail">
+  <h2> Liste des lignes budgétaires </h2>
 
+<div class="btn-group btn-right">
+  <a class="btn btn-secondary" data-bs-toggle="collapse" href="#collapseFilters" role="button" aria-expanded="false" aria-controls="collapseFilters">
+    <i class="fa-solid fa-filter"></i> Filtrer
+  </a>
   <a class="btn btn-success btn-right " href="{{ url_for('budgets.addBudget') }}"><i class="fa fa-plus"></i> Ajouter un nouveau budget</a>
-  <br><br>
+</div>
+<br>
+
+<div class="collapse" id="collapseFilters" style="margin-top:50px">
+  <div class="card mb-3">
+    <div class="card-body">
+      <form id="filters" class="row g-2">
+        <div class="col-md-6">
+          <label class="form-label" for="budget_name">Nom du budget</label>
+          <input type="text" id="budget_name" name="budget_name" class="form-control">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="reference">Référence</label>
+          <input type="text" id="reference" name="reference" class="form-control">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="montant">Montant global</label>
+          <input type="text" id="montant" name="montant" class="form-control">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="id_funder">Financeur</label>
+          <select id="id_funder" name="id_funder" class="form-select">
+            <option value="">Tous les financeurs</option>
+            {% for f in funders %}
+              <option value="{{ f.id_funder }}">{{ f.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="id_type_budget">Type de budget</label>
+          <select id="id_type_budget" name="id_type_budget" class="form-select">
+            <option value="">Tous les types</option>
+            {% for t in types %}
+              <option value="{{ t.id_type_budget }}">{{ t.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="id_activity">Activité</label>
+          <select id="id_activity" name="id_activity" class="form-select">
+            <option value="">Toutes les activités</option>
+            {% for a in activities %}
+              <option value="{{ a.id_activity }}">{{ a.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="closed" name="closed" value="1">
+            <label class="form-check-label" for="closed">Clôturé</label>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="demarre_apres">Démarré entre le</label>
+          <input type="date" id="demarre_apres" name="demarre_apres" class="form-control">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="demarre_avant">et le</label>
+          <input type="date" id="demarre_avant" name="demarre_avant" class="form-control">
+        </div>
+        <div class="col-md-1"></div>
+        <div class="col-md-2">
+          <label class="form-label" for="cloture_apres">Clotûré entre le</label>
+          <input type="date" id="cloture_apres" name="cloture_apres" class="form-control">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="cloture_avant">et le</label>
+          <input type="date" id="cloture_avant" name="cloture_avant" class="form-control">
+        </div>
+        <div class="col-md-1"></div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="reset" class="btn btn-secondary w-100">Réinitialiser</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+  
 
       <table class="table table-striped" id="budgets">
          <thead>

@@ -44,8 +44,8 @@ def search_budgets():
     closed = request.args.get("closed") is not None
     id_type_budget = request.args.get("id_type", "")
     id_activity = request.args.get("id_activity", "")
-    cree_apres = request.args.get("cree_apres", type=str)
-    cree_avant = request.args.get("cree_avant", type=str)
+    demarre_apres = request.args.get("demarre_apres", type=str)
+    demarre_avant = request.args.get("demarre_avant", type=str)
     clos_apres = request.args.get("clos_apres", type=str)
     clos_avant = request.args.get("clos_avant", type=str)
 
@@ -77,23 +77,17 @@ def search_budgets():
     if id_activity:
         query = query.filter(vBudgets.id_activity == id_activity)
     
-    if cree_apres:
+    if demarre_apres:
         try:
-            cree_apres_parsed = datetime.strptime(
-                cree_apres, "%Y-%m-%d"
-            ).date()
-
-            query = query.filter(
-                vBudgets.meta_create_date >= cree_apres_parsed
-            )
+            demarre_apres_parsed = datetime.strptime(demarre_apres, "%Y-%m-%d").date()
+            query = query.filter(vBudgets.date_start >= demarre_apres_parsed)
         except ValueError:
             pass
 
-    if cree_apres:
+    if demarre_avant:
         try:
-            cree_apres_parsed = datetime.strptime(cree_apres, "%Y-%m-%d").date()
-
-            query = query.filter(vBudgets.meta_create_date <= cree_apres_parsed)
+            demarre_avant_parsed = datetime.strptime(demarre_avant, "%Y-%m-%d").date()
+            query = query.filter(vBudgets.date_start <= demarre_avant_parsed)
         except ValueError:
             pass
 
@@ -102,7 +96,6 @@ def search_budgets():
     if clos_apres:
         try:
             clos_apres_parsed = datetime.strptime(clos_apres, "%Y-%m-%d").date()
-
             query = query.filter(vBudgets.date_closing >= clos_apres_parsed)
         except ValueError:
             pass
@@ -110,7 +103,6 @@ def search_budgets():
     if clos_avant:
         try:
             clos_avant_parsed = datetime.strptime(clos_avant, "%Y-%m-%d").date()
-
             query = query.filter(vBudgets.date_closing <= clos_avant_parsed)
         except ValueError:
             pass
@@ -269,7 +261,10 @@ def download_budgets():
 def budgets():
     Budgets = vBudgets.query.all()
     Activities=vSyntheseActivities.query.all()
-    return render_template('budgets/budgets_list.html', Budgets=Budgets, Activities=Activities)
+    funders=db.session.query(tFunders.id_funder, tFunders.name).order_by(tFunders.name).all()
+    types=db.session.query(dictBudgetTypes.id_type_budget, dictBudgetTypes.label).order_by(dictBudgetTypes.label).all()
+    activities=db.session.query(tActivities.id_activity, tActivities.label).order_by(tActivities.label).all()
+    return render_template('budgets/budgets_list.html', Budgets=Budgets, Activities=Activities, funders=funders, types=types, activities=activities)
 
 # Details budget & list actions
 @budgets_bp.route('/detail/<id_budget>', methods=['GET', 'POST'])
