@@ -32,20 +32,19 @@ class formFunder(Form):
     active = BooleanField('Actif')
 
 class formBudget(Form):
-    name = StringField('Référence du budget', [validators.Length(min=1, max=50, message='Doit faire entre 1 et 50 caractères'), validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], render_kw={"placeholder": "Référence du budget"})
-    reference = StringField('Description', [validators.Length(max=50, message='Ne doit pas dépasser 50 caractères')], render_kw={"placeholder": "Référence du budget"})
-    id_funder = SelectField('Funder', [validators.NoneOf([''], message='Vous devez sélectionner une valeur')])
-    id_type_budget = SelectField('TypeBudget', [validators.NoneOf([''], message='Vous devez sélectionner une valeur')])
-    id_activity = SelectField('Activity')
+    name = StringField('Référence du budget', [validators.Length(min=1, max=50, message='Doit faire entre 1 et 50 caractères'), validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], render_kw={"placeholder": "Nom du budget"})
+    reference = StringField('Description', [validators.Length(max=50, message='Ne doit pas dépasser 50 caractères'), validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], render_kw={"placeholder": "Référence du budget"})
+    id_funder = SelectField('Funder', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
+    id_type_budget = SelectField('TypeBudget', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
+    id_activity = SelectField('Activity', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
     date_max_expenditure = DateField('Date de fin des dépenses')
     date_return = DateField('Date bilan et rendus')
     budget_amount = DecimalField('Montant du budget', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')],places=2)
-    payroll_limit = DecimalField('Masse salariale éligible', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')],places=2)
-    indirect_charges = DecimalField('Taux de charges indirectes', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')],places=2)
+    payroll_limit = DecimalField('Masse salariale éligible',places=2)
+    indirect_charges = DecimalField('Taux de charges indirectes',places=2)
     profit_bonus = BooleanField('Éligible aux primes d\'intéressement')
     comment = TextAreaField('Remarque', [validators.Length(min=0, max=255)], render_kw={"placeholder": "Remarque"})
-    active = BooleanField('Actif') 
-
+    date_start = DateField('Date de démarrage', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
 
 class formAllocatedBudgetRow(Form):
     id_member = IntegerField('id_member', widget=HiddenInput())

@@ -55,6 +55,9 @@ CROSS JOIN LATERAL (
 -- Ajout d'un champs jsonb pour stocker "temporairement" l'allocation du budget à chaque salarié avant cloture
 ALTER TABLE comptasso.t_budgets ADD COLUMN draft_allocations jsonb;
 
+-- Ajout d'un champs date pour stocker la date de lancement du projet
+ALTER TABLE comptasso.t_budgets ADD COLUMN date_start date;
+
 -- Ajout d'un champs date de cloture sur la table budget, qui remplacera le booleen active
 ALTER TABLE comptasso.t_budgets ADD COLUMN date_closing date;
 
@@ -69,9 +72,17 @@ SET date_closing = COALESCE(
 WHERE NOT b.active
   AND b.date_closing IS NULL;
 
--- Retirer la notion de "Actif" : remplacée par la notion de cloture 
-ALTER TABLE comptasso.t_budgets DROM COLUMN active;
+-- Ajout d'une date de début du projet
+ALTER TABLE comptasso.t_budgets ADD COLUMN date_start date;
 
+-- Calculer une date de lancement pour les projets existants (1ere date entre la 1ere operation et la date d'écriture)
+UPDATE comptasso.t_budgets b
+SET date_start = LEAST(
+    (SELECT min(op.effective_date)
+     FROM comptasso.t_operations op
+     WHERE op.id_budget = b.id_budget),
+    b.meta_create_date::date
+);
 
 -- Actualiser la vue correspondante
 DROP VIEW IF EXISTS comptasso.v_budgets;
@@ -83,6 +94,7 @@ SELECT b.id_budget,
     f.id_funder,
     f.name AS funder,
     bt.label AS type_budget,
+    a.id_activity AS id_activity,
     a.label AS activity,
     COALESCE(b.date_max_expenditure::text, '-') AS date_max_expenditure,
     COALESCE(b.date_return::text, '-') AS date_return,
@@ -103,7 +115,10 @@ SELECT b.id_budget,
     ops.nb_operations,
     b.profit_bonus,
     b.draft_allocations,
-    b.date_closing
+    b.date_start,
+    b.date_closing,
+    b.meta_create_date,
+    b.meta_update_date
 FROM comptasso.t_budgets b
 LEFT JOIN comptasso.t_activities a ON a.id_activity = b.id_activity
 LEFT JOIN comptasso.dict_budget_types bt ON bt.id_type_budget = b.id_type_budget
@@ -124,6 +139,32 @@ CROSS JOIN LATERAL (
     FROM comptasso.cor_action_budget cab
     WHERE cab.id_budget = b.id_budget
 ) acts;
+
+
+-- Actualiser la vue de synthèse par activité
+CREATE OR REPLACE VIEW comptasso.v_synthese_activities
+AS SELECT a.id_activity,
+    a.label,
+    a.description,
+    a.active,
+    sum(COALESCE(b.budget_amount, 0::numeric)::numeric(8,2) - comptasso.get_sum_movement(b.id_budget, 'Recette'::text)) AS to_receive,
+    sum(COALESCE(b.budget_amount, 0::numeric)::numeric(8,2)) AS global_amount,
+    b1.count AS active_budgets,
+    b2.count AS inactive_budgets
+   FROM comptasso.t_activities a
+     LEFT JOIN comptasso.t_budgets b ON b.id_activity = a.id_activity
+     LEFT JOIN LATERAL ( SELECT count(*) AS count
+           FROM comptasso.t_budgets
+          WHERE t_budgets.date_closing IS NULL AND t_budgets.id_activity = a.id_activity
+          GROUP BY t_budgets.id_activity) b1 ON true
+     LEFT JOIN LATERAL ( SELECT count(*) AS count
+           FROM comptasso.t_budgets
+          WHERE t_budgets.date_closing IS NOT NULL AND t_budgets.id_activity = a.id_activity
+          GROUP BY t_budgets.id_activity) b2 ON true
+  GROUP BY a.id_activity, a.label, a.description, a.active, b1.count, b2.count;
+
+-- Retirer la notion de "Actif" : remplacée par la notion de cloture 
+ALTER TABLE comptasso.t_budgets DROP COLUMN active;
 
 -- Table de stockage des intéressements acquis par salarié
 CREATE TABLE comptasso.t_profit_bonus (

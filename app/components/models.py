@@ -119,12 +119,12 @@ class tBudgets(db.Model):
     comment = db.Column(db.Unicode, nullable=True)
     profit_bonus = db.Column(db.Boolean, nullable=False)
     draft_allocations = db.Column(JSONB, nullable=True)
+    date_start = db.Column(db.Date(), nullable=True)
     date_closing = db.Column(db.Date(), nullable=True)
-    active = db.Column(db.Boolean, nullable=False)
     meta_create_date = db.Column(db.DateTime(), nullable=True)
     meta_update_date = db.Column(db.DateTime(), nullable=True)
 
-    def __init__(self, name, reference, id_funder, id_type_budget, id_activity, date_max_expenditure, date_return, budget_amount, payroll_limit, indirect_charges, comment, profit_bonus, active):
+    def __init__(self, name, reference, id_funder, id_type_budget, id_activity, date_max_expenditure, date_return, budget_amount, payroll_limit, indirect_charges, comment, profit_bonus, date_start):
         self.name = name
         self.reference = reference
         self.id_funder = id_funder
@@ -137,7 +137,7 @@ class tBudgets(db.Model):
         self.indirect_charges = indirect_charges
         self.comment = comment
         self.profit_bonus = profit_bonus
-        self.active = active
+        self.date_start = date_start
 
 class tProfitBonus(db.Model):
 
@@ -416,6 +416,7 @@ class vBudgets(db.Model):
     id_funder = db.Column(db.Integer, nullable=True)
     funder = db.Column(db.String(50), nullable=True)
     type_budget = db.Column(db.String(50), nullable=True)
+    id_activity = db.Column(db.Integer, nullable=True)
     activity = db.Column(db.String(255), nullable=True)
     date_max_expenditure = db.Column(db.Date(), nullable=True)
     date_return = db.Column(db.Date(), nullable=True)
@@ -424,7 +425,6 @@ class vBudgets(db.Model):
     indirect_charges = db.Column(db.Numeric(8,2), nullable=True)
     indirect_charges_amount = db.Column(db.Numeric(8,2), nullable=True)
     comment = db.Column(db.Unicode, nullable=True)
-    active = db.Column(db.Boolean, nullable=True)
     received_amount = db.Column(db.Numeric(8,2), nullable=True)
     percent_received = db.Column(db.Numeric(8,2), nullable=True)
     spent_amount = db.Column(db.Numeric(8,2), nullable=True)
@@ -436,8 +436,10 @@ class vBudgets(db.Model):
     nb_operations = db.Column(db.Integer, nullable=False)
     draft_allocations = db.Column(JSONB, nullable=True)
     profit_bonus = db.Column(db.Boolean, nullable=True)
+    date_start = db.Column(db.Date(), nullable=True)
     date_closing = db.Column(db.Date(), nullable=True)
-
+    meta_create_date = db.Column(db.DateTime(), nullable=True)
+    meta_update_date = db.Column(db.DateTime(), nullable=True)
 
 class vAccounts(db.Model):
 

@@ -23,6 +23,242 @@ from .utils import *
 
 budgets_bp = Blueprint("budgets",__name__,url_prefix="/budgets")
 
+############################################
+## MISE EN PLACE D'UNE API ET DES EXPORTS ##
+##            EN DEVELOPPEMENT            ##
+############################################
+
+
+#####################
+## Search function ##
+#####################
+
+# Filtering function for API & Downloads
+def search_budgets():
+    query = vBudgets.query
+
+    budget_name = request.args.get("budget_name", type=str)
+    reference = request.args.get("reference", type=str)
+    montant = request.args.get("montant", type=str)
+    id_funder = request.args.get("id_funder", "")
+    closed = request.args.get("closed") is not None
+    id_type_budget = request.args.get("id_type", "")
+    id_activity = request.args.get("id_activity", "")
+    cree_apres = request.args.get("cree_apres", type=str)
+    cree_avant = request.args.get("cree_avant", type=str)
+    clos_apres = request.args.get("clos_apres", type=str)
+    clos_avant = request.args.get("clos_avant", type=str)
+
+    if budget_name:
+        like_pattern = f"%{budget_name}%"
+        query = query.filter(vBudgets.name.ilike(like_pattern))
+
+    if reference:
+        like_pattern = f"%{reference}%"
+        query = query.filter(vBudgets.reference.ilike(like_pattern))
+
+    if montant:
+        try:
+            montant = request.args.get("montant", "")
+            montant_decimal = abs_decimal(montant)
+            query = query.filter(func.abs(vBudgets.budget_amount) == montant_decimal)
+        except ValueError:
+            pass  # montant mal formé, on ignore le filtre
+
+    if id_funder :
+        query = query.filter(vBudgets.id_funder == id_funder)       
+
+    if closed :
+        query = query.filter(vBudgets.date_closing.is_not(None))
+
+    if id_type_budget:
+        query = query.filter(vBudgets.id_type_budget == id_type_budget)
+
+    if id_activity:
+        query = query.filter(vBudgets.id_activity == id_activity)
+    
+    if cree_apres:
+        try:
+            cree_apres_parsed = datetime.strptime(
+                cree_apres, "%Y-%m-%d"
+            ).date()
+
+            query = query.filter(
+                vBudgets.meta_create_date >= cree_apres_parsed
+            )
+        except ValueError:
+            pass
+
+    if cree_apres:
+        try:
+            cree_apres_parsed = datetime.strptime(cree_apres, "%Y-%m-%d").date()
+
+            query = query.filter(vBudgets.meta_create_date <= cree_apres_parsed)
+        except ValueError:
+            pass
+
+    return query
+
+    if clos_apres:
+        try:
+            clos_apres_parsed = datetime.strptime(clos_apres, "%Y-%m-%d").date()
+
+            query = query.filter(vBudgets.date_closing >= clos_apres_parsed)
+        except ValueError:
+            pass
+
+    if clos_avant:
+        try:
+            clos_avant_parsed = datetime.strptime(clos_avant, "%Y-%m-%d").date()
+
+            query = query.filter(vBudgets.date_closing <= clos_avant_parsed)
+        except ValueError:
+            pass
+
+    return query
+
+
+@budgets_bp.route("/api", methods=["GET"])
+@login_required
+def get_api_budgets():
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 10))
+
+    query = search_budgets()
+
+    total = query.count()
+
+    results = query.order_by(vBudgets.date_closing.isnot(None),vBudgets.name).offset((page - 1) * per_page).limit(per_page).all()
+
+    data = [{
+        "id_budget" : b.id_budget,
+        "budget_name" : b.name,
+        "reference" : b.reference,
+        "id_funder" : b.id_funder,
+        "funder" : b.funder,
+        "type_budget" : b.type_budget,
+        "id_activity" : b.id_activity,
+        "activity" : b.activity,
+        "date_start" : b.date_start,
+        "date_max_expenditure" : b.date_max_expenditure,
+        "date_return" : b.date_return,
+        "budget_amount" : b.budget_amount,
+        "payroll_limit" : b.payroll_limit,
+        "indirect_charges" : b.indirect_charges,
+        "indirect_charges_amount" : b.indirect_charges_amount,
+        "comment" : b.comment,
+        "received_amount" : b.received_amount,
+        "percent_received" : b.percent_received,
+        "spent_amount" : b.spent_amount,
+        "percent_spent" : b.percent_spent,
+        "committed_amount" : b.committed_amount,
+        "percent_committed" : b.percent_committed,
+        "last_operation" : b.last_operation,
+        "last_action_date" : b.last_action_date,
+        "nb_operations" : b.nb_operations,
+        "draft_allocations" : b.draft_allocations,
+        "profit_bonus" : b.profit_bonus,
+        "date_closing" : b.date_closing,
+        "meta_create_date" : b.meta_create_date,
+        "meta_update_date" : b.meta_update_date
+    } for b in results]
+
+    return jsonify({
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "data": data
+    })
+
+# Download
+@budgets_bp.route("/download", methods=["GET"])
+@login_required
+def download_budgets():
+
+    query = search_budgets()
+
+    results = (
+        query
+        .order_by(vBudgets.meta_create_date.desc())
+        .all()
+    )
+
+    output = StringIO()
+
+    writer = csv.writer(output)
+
+    writer.writerow([
+        "id_budget",
+        "nom_budget",
+        "reference",
+        "financeur",
+        "type_budget",
+        "activite",
+        "date_demarrage",
+        "date_max_depenses",
+        "date_rendus",
+        "montant_budget",
+        "masse_salariale_max",
+        "pourcent_charges_indirectes",
+        "montant_max_charges_indirectes",
+        "commentaire",
+        "montant_percu",
+        "pourcentage_percu",
+        "montant_depense",
+        "pourcentage_depense",
+        "montant_engage",
+        "pourcentage_engage",
+        "derniere_operation",
+        "nb_operations",
+        "repartition_salaries",
+        "eligible_interessement",
+        "cloture_le",
+        "saisi_le",
+        "modifie_le"
+    ])
+
+    for b in results:
+        writer.writerow([
+            b.id_budget,
+            b.name,
+            b.reference,
+            b.funder,
+            b.type_budget,
+            b.activity,
+            b.date_start,
+            b.date_max_expenditure,
+            b.date_return,
+            b.budget_amount,
+            b.payroll_limit,
+            b.indirect_charges,
+            b.indirect_charges_amount,
+            b.comment,
+            b.received_amount,
+            str(b.percent_received)+"%",
+            b.spent_amount,
+            str(b.percent_spent)+"%",
+            b.committed_amount,
+            str(b.percent_committed)+"%",
+            b.last_operation,
+            b.nb_operations,
+            b.draft_allocations,
+            b.profit_bonus,
+            b.date_closing,
+            b.meta_create_date,
+            b.meta_update_date
+        ])
+
+    output.seek(0)
+
+    return Response(
+        output,
+        mimetype="text/csv",
+        headers={
+            "Content-Disposition":
+                "attachment; filename=budgets.csv"
+        }
+    )
+
 
 ###############
 ### BUDGETS ###
@@ -84,6 +320,8 @@ def addBudget():
     # Activité
     Activities = tActivities.query.filter_by(active=True).all()
     form.id_activity.choices = [('', '-- Sélectionnez une activité --')] + [(Activity.id_activity, Activity.label) for Activity in Activities]
+    # Date de démarrage par défaut :
+    form.date_start.data = date.today()
     if request.method == 'POST' and form.validate() :
         Budget = tBudgets(
             request.form['name'], 
@@ -98,13 +336,12 @@ def addBudget():
             abs_decimal(request.form['indirect_charges']), 
             request.form['comment'], 
             bool(request.form.get('profit_bonus')),
-            bool(request.form.get('active'))
+            request.form['date_start'],
         )
         db.session.add(Budget)
         db.session.commit()
         return redirect('/budgets')
     return render_template('budgets/add_or_update_budget.html', form=form, activeFunders=activeFunders, TypesBudget=TypesBudget, Budget=None, active=None, profit_bonus=False)
-
 
 # Edit budget
 @budgets_bp.route('/edit/<int:id_budget>', methods=['GET', 'POST'])
@@ -121,7 +358,6 @@ def updateBudget(id_budget):
     # Activité
     Activities = tActivities.query.filter_by(active=True).all()
     form.id_activity.choices = [('', '-- Sélectionnez une activité --')] + [(a.id_activity, a.label) for a in Activities]
-
     if request.method == 'POST' and form.validate():
         form.populate_obj(Budget)
         # Forcer le None dans les selects ignorés
