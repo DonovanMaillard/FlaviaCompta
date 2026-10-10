@@ -42,12 +42,12 @@ def search_budgets():
     montant = request.args.get("montant", type=str)
     id_funder = request.args.get("id_funder", "")
     closed = request.args.get("closed") is not None
-    id_type_budget = request.args.get("id_type", "")
+    id_type_budget = request.args.get("id_type_budget", "")
     id_activity = request.args.get("id_activity", "")
     demarre_apres = request.args.get("demarre_apres", type=str)
     demarre_avant = request.args.get("demarre_avant", type=str)
-    clos_apres = request.args.get("clos_apres", type=str)
-    clos_avant = request.args.get("clos_avant", type=str)
+    cloture_apres = request.args.get("cloture_apres", type=str)
+    cloture_avant = request.args.get("cloture_avant", type=str)
 
     if budget_name:
         like_pattern = f"%{budget_name}%"
@@ -91,19 +91,17 @@ def search_budgets():
         except ValueError:
             pass
 
-    return query
-
-    if clos_apres:
+    if cloture_apres:
         try:
-            clos_apres_parsed = datetime.strptime(clos_apres, "%Y-%m-%d").date()
-            query = query.filter(vBudgets.date_closing >= clos_apres_parsed)
+            cloture_apres_parsed = datetime.strptime(cloture_apres, "%Y-%m-%d").date()
+            query = query.filter(vBudgets.date_closing >= cloture_apres_parsed)
         except ValueError:
             pass
 
-    if clos_avant:
+    if cloture_avant:
         try:
-            clos_avant_parsed = datetime.strptime(clos_avant, "%Y-%m-%d").date()
-            query = query.filter(vBudgets.date_closing <= clos_avant_parsed)
+            cloture_avant_parsed = datetime.strptime(cloture_avant, "%Y-%m-%d").date()
+            query = query.filter(vBudgets.date_closing >= cloture_avant_parsed)
         except ValueError:
             pass
 

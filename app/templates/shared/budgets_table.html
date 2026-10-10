@@ -1,0 +1,165 @@
+<!--{# Variables facultatives, à définir avec {% set %} avant l'include :
+   budgets_filters_form : id du formulaire de recherche (ex. 'filters')
+   budgets_fixed_params : filtres imposés (ex. {'id_funder': Funder.id_funder}) #}-->
+
+
+<table id="budgetsTable" class="table display" style="width:100%;">
+  <thead>
+    <tr>
+      <th width="10%">Statut</th>
+      <th width="30%">Budget</th>
+      <th width="15%">Calendrier prévisionnel</th>
+      <th width="15%">Montant</th>
+      <th width="20%">Suivi</th>
+      <th width="5%">Actions</th>
+    </tr>
+  </thead>
+</table>
+
+<a class="btn btn-success btn-right" style="margin:50px;" id="download-csv" href="{{ url_for('budgets.download_budgets') }}">
+  <i class="fa fa-download"></i> Exporter en csv
+</a>
+
+<!-- Modale de suppression (une seule, remplie au clic) -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Supprimer la ligne budgétaire</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body"><p id="deleteModalText"></p></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <form id="deleteForm" method="post" class="d-inline">
+          <button type="submit" class="btn btn-danger"><i class="fa fa-trash"></i> <strong>Confirmer la suppression</strong></button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  const fixedParams = {{ (budgets_fixed_params or {})|tojson }};
+  const filtersForm = {% if budgets_filters_form %}document.getElementById({{ budgets_filters_form|tojson }}){% else %}null{% endif %};
+
+  // Adresses de base : l'identifiant 0 est remplacé ligne par ligne
+  const urlDetail = "{{ url_for('budgets.detailBudget', id_budget=0) }}";
+  const urlEdit   = "{{ url_for('budgets.updateBudget', id_budget=0) }}";
+  const urlDelete = "{{ url_for('budgets.deleteBudget', id_budget=0) }}";
+  const withId = (url, id) => url.replace(/\/0$/, '/' + id);
+
+  function esc(value) { return $('<div>').text(value ?? '').html(); }
+  function money(v) {
+    return Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+  }
+  function formatDate(s) {
+    if (!s) return '';
+    const d = new Date(s);
+    return isNaN(d) ? s : d.toLocaleDateString('fr-FR');
+  }
+
+  const table = $('#budgetsTable').DataTable({
+    searching: false,
+    ordering: false,
+    serverSide: true,
+    processing: true,
+    ajax: {
+      url: "{{ url_for('budgets.get_api_budgets') }}",
+      data: function (d) {
+        return Object.assign(
+          { page: Math.floor(d.start / d.length) + 1, per_page: d.length },
+          filtersForm ? Object.fromEntries(new FormData(filtersForm)) : {},
+          fixedParams            // les filtres imposés l'emportent sur ceux du formulaire
+        );
+      },
+      dataSrc: function (json) {
+        json.recordsTotal = json.total;
+        json.recordsFiltered = json.total;
+        return json.data;
+      }
+    },
+    columns: [
+      {
+        data: 'date_closing',
+        render: function (data) {
+          return data
+            ? '<span class="badge table-badge alert-dark"><i class="fa-solid fa-lock"></i> Clôturé</span>'
+            : '<span class="badge table-badge alert-success">Actif</span>';
+        }
+      },
+      {
+        data: 'budget_name',
+        render: function (data, type, row) {
+          const sub = [row.type_budget, row.funder].filter(Boolean).map(esc).join(' - ');
+          return esc(data) + (sub ? `<br><small style="color:grey">${sub}</small>` : '');
+        }
+      },
+      {
+        data: 'date_start',
+        render: function (data, type, row) {
+          const start = formatDate(data);
+          const end = (row.date_max_expenditure && row.date_max_expenditure !== '-')
+            ? formatDate(row.date_max_expenditure) : '';
+          return `Du ${start} <br>au ${end}`;
+        }
+      },
+      { data: 'budget_amount', render: money },
+      {
+        data: 'spent_amount',
+        render: function (data, type, row) {
+          return `Perçu : ${money(row.received_amount)}<br>`
+              + `Dépensé : ${money(row.spent_amount)}<br>`
+               + `Engagé : ${money(row.committed_amount)}`;
+        }
+      },
+      {
+        data: null,
+        orderable: false,
+        render: function (data, type, row) {
+          const closed = !!row.date_closing;
+          let html = `<a class="btn btn-info" title="Voir le détail" href="${withId(urlDetail, row.id_budget)}"><i class="fa fa-eye"></i></a>`;
+          if (!closed) {
+            html += `<a class="btn btn-warning" title="Modifier" href="${withId(urlEdit, row.id_budget)}"><i class="fa fa-edit"></i></a>`;
+            if (row.nb_operations == 0) {
+              html += `<button type="button" class="btn btn-danger" title="Supprimer le budget" data-bs-toggle="modal" data-bs-target="#deleteModal" data-id="${row.id_budget}" data-name="${esc(row.budget_name)}"><i class="fa fa-trash"></i></button>`;
+            }
+            html += `<a class="btn btn-dark" title="Clôturer" href="${withId(urlDetail, row.id_budget)}"><i class="fa fa-lock"></i></a>`;
+          }
+          return `<div class="btn btn-group">${html}</div>`;
+        }
+      }
+    ]
+  });
+
+  // --- Filtres : champs texte pendant la saisie, le reste au changement ---
+  if (filtersForm) {
+    let timer = null;
+    filtersForm.addEventListener('input', function (e) {
+      if (e.target.matches('input[type="text"]')) {
+        clearTimeout(timer);
+        timer = setTimeout(function () { table.ajax.reload(); }, 300);
+      }
+    });
+    filtersForm.addEventListener('change', function (e) {
+      if (!e.target.matches('input[type="text"]')) table.ajax.reload();
+    });
+    filtersForm.addEventListener('submit', function (e) { e.preventDefault(); table.ajax.reload(); });
+    filtersForm.addEventListener('reset', function () { setTimeout(function () { table.ajax.reload(); }, 0); });
+  }
+
+  // --- Modale de suppression ---
+  $('#budgetsTable').on('click', '.btn-danger[data-bs-target="#deleteModal"]', function () {
+    $('#deleteModalText').html(`Souhaitez-vous vraiment supprimer la ligne budgétaire <strong>"${esc($(this).data('name'))}"</strong> ?`);
+    $('#deleteForm').attr('action', withId(urlDelete, $(this).data('id')));
+  });
+
+  // --- Export CSV des lignes filtrées ---
+  document.getElementById('download-csv').addEventListener('click', function () {
+    var params = new URLSearchParams(filtersForm ? new FormData(filtersForm) : []);
+    Object.entries(fixedParams).forEach(function ([k, v]) { params.set(k, v); });
+    Array.from(params.keys()).forEach(function (k) { if (!params.get(k)) params.delete(k); });
+    this.href = '{{ url_for("budgets.download_budgets") }}' + (params.toString() ? '?' + params.toString() : '');
+  });
+})();
+</script>

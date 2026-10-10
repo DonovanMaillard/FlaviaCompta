@@ -27,17 +27,20 @@
   <hr style="margin-bottom:50px">
 
 <div id="budgets-detail">
-  <h2> Liste des lignes budgétaires </h2>
-
-<div class="btn-group btn-right">
-  <a class="btn btn-secondary" data-bs-toggle="collapse" href="#collapseFilters" role="button" aria-expanded="false" aria-controls="collapseFilters">
-    <i class="fa-solid fa-filter"></i> Filtrer
-  </a>
-  <a class="btn btn-success btn-right " href="{{ url_for('budgets.addBudget') }}"><i class="fa fa-plus"></i> Ajouter un nouveau budget</a>
-</div>
+  <h2>Liste des lignes budgétaires</h2>
+<div class="d-flex justify-content-end align-items-center mb-3">
+    <div class="btn-group">
+      <a class="btn btn-secondary" data-bs-toggle="collapse" href="#collapseFilters" role="button" aria-expanded="false" aria-controls="collapseFilters">
+        <i class="fa-solid fa-filter"></i> Filtrer
+      </a>
+      <a class="btn btn-success" href="{{ url_for('budgets.addBudget') }}">
+        <i class="fa fa-plus"></i> Ajouter un nouveau budget
+      </a>
+    </div>
+  </div>
 <br>
 
-<div class="collapse" id="collapseFilters" style="margin-top:50px">
+<div class="collapse" id="collapseFilters">
   <div class="card mb-3">
     <div class="card-body">
       <form id="filters" class="row g-2">
@@ -112,77 +115,11 @@
   </div>
 </div>
 
+
+  {% set budgets_filters_form = 'filters' %}
+  {% include 'shared/budgets_table.html' %}
   
-
-      <table class="table table-striped" id="budgets">
-         <thead>
-            <tr>
-               <th>Statut</th>
-               <th>Nom</th>
-               <th>Dépenses jusqu'au</th>
-               <th>Montant global</th>
-               <th>Coûts justifiés</th>
-               <th>Engagements</th>
-               <th>Sommes perçues</th>
-               <th>Action</th>
-            </tr>
-         </thead>
-         
-         <tbody>
-            {% for Budget in Budgets %}
-               <tr>
-                  <td>
-                    {% if Budget.date_closing %} <span class="badge table-badge alert-dark"> <i class="fa-solid fa-lock"></i> Clôturé</span>
-                    {% else %} <span class="badge table-badge alert-success">Actif</span>
-                    {% endif %}
-                  </td>
-                  <td>{{ Budget.name }}
-			<br><small style="color:grey">{{ Budget.type_budget }} - {{ Budget.funder }}</small></td>
-                  <td>{{ Budget.date_max_expenditure }}</td>
-                  <td>{{ Budget.budget_amount }}€ </td>
-                  <td>--TODO--</td>
-                  <td>{{ Budget.committed_amount }}€</td>
-                  <td>{{ Budget.received_amount }}€</td>
-                  <td>
-                    <div>
-                        <div class="btn btn-group">
-                          <a class="btn btn-info" title="Voir le détail" href="{{ url_for('budgets.detailBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-eye"></i> </a>
-                          {% if not Budget.date_closing %}
-                            <a class="btn btn-warning" title="Modifier" href="{{ url_for('budgets.updateBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-edit"></i> </a>
-                            {% if Budget.nb_operations == 0 %}
-                              <a class="btn btn-danger" title="Supprimer le budget" data-bs-toggle="modal" data-bs-target="#deleteModal{{Budget.id_budget}}"> <i class="fa fa-trash"></i> </a>
-                            {% endif %}
-                            <a class="btn btn-dark" title="Clôturer" href="{{ url_for('budgets.detailBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-lock"></i> </a>
-                          {% endif %}
-                        </div>
-                    </div>
-               </tr>
-
-               <!-- Delete Modal -->
-                <div class="modal fade" id="deleteModal{{Budget.id_budget}}" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
-                  <div class="modal-dialog">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <h5 class="modal-title" id="deleteModalLabel">Supprimer la ligne budgétaire</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                      </div>
-                      <div class="modal-body">
-                          <p> Souhaitez-vous vraiment supprimer la ligne budgétaire <strong>"{{ Budget.name }}"</strong> ?</p>
-                      </div>
-                      <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <a class="btn btn-danger" href="{{ url_for('budgets.deleteBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-            <!-- end modal -->
-
-            
-            {% endfor %}
-         </tbody>
-      </table>
-  </div>
+</div>
 </div>
 
 {% endblock %}

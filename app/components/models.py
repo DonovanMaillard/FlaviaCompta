@@ -415,6 +415,7 @@ class vBudgets(db.Model):
     reference = db.Column(db.String(255), nullable=True)
     id_funder = db.Column(db.Integer, nullable=True)
     funder = db.Column(db.String(50), nullable=True)
+    id_type_budget = db.Column(db.Integer, nullable=True)
     type_budget = db.Column(db.String(50), nullable=True)
     id_activity = db.Column(db.Integer, nullable=True)
     activity = db.Column(db.String(255), nullable=True)

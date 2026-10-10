@@ -59,56 +59,8 @@
     <!-- end modal -->
 
     <!-- Budgets liés -->
-    {% if not Budgets %}
-      <div class="card">
-        <div class="card-header">
-          <h4> Aucune ligne budgétaire associée </h4>
-        </div>
-        <div class="card-body">
-          <div class="btn btn-group">
-            <a class="btn btn-info" href="{{ url_for('budgets.budgets') }}"> <i class="fa fa-list"></i> Aller aux budgets</a>
-          </div>
-        </div>
-      </div>
-    {% else %}
-
-        
-        <div class="card">
-          <div class="card-header">
-            <h4> Budgets associés </h4>
-          </div>
-
-          {% for Budget in Budgets %}
-          <div class="card-body">
-            <div class="card">
-              <div class="card-header">
-                <h5>{{ Budget.name }}
-                  {% if not Budget.date_closing %} <span class="badge badge-right alert-success">Actif</span>
-                  {% else %} <span class="badge badge-right alert-dark">Clôturé le {{ Budget.date_closing }}</span>
-                  {% endif %}
-                </h5>
-              </div>
-              <div class="card-body">
-                <div class="row">
-                  <div class="col-md-4">
-                    <p class="card-text"> <strong>Dernière opération :</strong> {{ Budget.last_operation }}</p>
-                  </div>
-                  <div class="col-md-4">
-                    <p class="card-text"> <strong>Montant perçu :</strong> {{ Budget.received_amount }}€ /{{ Budget.budget_amount }}€</p>
-                  </div>
-                  <div class="col-md-4">
-                    <p class="card-text"> <strong>Total dépensé :</strong> {{ Budget.spent_amount }}€ /{{ Budget.budget_amount }}€</p>
-                  </div>
-                </div>
-                <div class="btn btn-group">
-                    <a class="btn btn-info" href="{{ url_for('budgets.detailBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-eye"></i> </a>
-                </div>
-              </div>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-    {% endif %}
+    {% set budgets_fixed_params = {'id_funder': Funder.id_funder} %}
+    {% include 'shared/budgets_table.html' %}
 </div>
 
 {% endblock %}
