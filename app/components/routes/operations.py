@@ -1,4 +1,4 @@
-from flask import Flask, Blueprint, render_template, request, flash, get_flashed_messages, redirect, url_for, make_response, stream_with_context, jsonify
+from flask import Flask, Blueprint, render_template, request, flash, get_flashed_messages, redirect, url_for, make_response, stream_with_context, jsonify, current_app
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.wrappers import Response
@@ -232,12 +232,17 @@ def deleteMovement(id_operation):
 def addMovement(type_operation): #movement = Dépense + Recette
     #Get choices and form
     id_type_operation = dictOperationTypes.query.filter_by(label = type_operation).one().id_type_operation
-    form = formMovement(request.form)
-    # Get accounts
     if type_operation=='Recette': 
+        # Charger le formulaire de base
+        form = formMovementBase(request.form)
         Accounts = tAccounts.query.filter_by(is_personnal=False).filter_by(active=True)
     else :
+        # Charger le formulaire étendu pour les dépenses
+        form = formMovementExtended(request.form)
         Accounts = tAccounts.query.filter_by(active=True)
+        # Affectation choices
+        VatRatios = dictVatRatio.query.order_by(dictVatRatio.ratio.desc()).all()
+        form.id_spending_allocation.choices = [('', '-- Sélectionnez une affectation --')] + [(r.id_spending_allocation, r.label, {'data-ratio': str(r.ratio) if r.ratio is not None else ''}) for r in VatRatios]
     # Form Choices
     # accounts
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
@@ -250,6 +255,11 @@ def addMovement(type_operation): #movement = Dépense + Recette
     # Payment method
     PaymentMethods = dictPaymentMethods.query.all() # TODO filtrer avec la cor.
     form.id_payment_method.choices = [('', '-- Sélectionnez un moyen de paiement --')] + [(PaymentMethod.id_payment_method, PaymentMethod.label) for PaymentMethod in PaymentMethods]
+    # VAT Rates for autocompletion
+    rates = current_app.config['VAT_RATES_AUTOCOMPLETE']          # [('20 %', '0.20'), ...]
+    form.vat_rate_autocompletion.choices = [(rate, label) for rate, label in rates]
+    if request.method == 'GET':
+        form.vat_rate_autocompletion.data = current_app.config['VAT_DEFAULT_RATE']
     # allow null operation_date
     if request.form.get('operation_date') == '' and request.method == 'POST' and form.validate()  :
         operation_date = None
@@ -262,21 +272,39 @@ def addMovement(type_operation): #movement = Dépense + Recette
         amount = abs_decimal(request.form.get('amount'))
     # Commit form
     if request.method == 'POST' and form.validate() :
+        if type_operation=='Dépense':
+            # Calcul de la TVA récupérable à partir du montant de TVA, et de l'affectation
+            id_spending_allocation = request.form['id_spending_allocation']
+            allocation = db.session.get(dictVatRatio, form.id_spending_allocation.data)
+            vat_ratio = allocation.ratio if allocation and allocation.ratio is not None else None
+            vat_amount = abs_decimal(form.vat_amount.data)
+            recoverable_vat_amount = (vat_amount * vat_ratio).quantize(Decimal('0.01')) if (vat_amount is not None and vat_ratio is not None) else None
+            with_depreciation = bool(request.form.get('with_depreciation'))
+        else : 
+            # Set None/0 for additional inputs
+            id_spending_allocation = None
+            vat_ratio = None
+            recoverable_vat_amount = Decimal('0.00')
+            with_depreciation = None
         Operation = tOperations(
             None, #id_grp_operation
             request.form['name'],
             request.form['detail_operation'],
             id_type_operation,
-            # allow None operation date
             operation_date,
             request.form['effective_date'],
             amount,
+            abs_decimal(request.form['vat_amount']),
+            id_spending_allocation,
+            vat_ratio,
+            recoverable_vat_amount,
+            with_depreciation,
             getChoiceOrNone(request.form['id_payment_method']),
             getChoiceOrNone(request.form['id_account']),
             getChoiceOrNone(request.form['id_budget']),
             getChoiceOrNone(request.form['id_category']),
+            request.form['invoice_reference'],
             getFileUrl('uploaded_file'),
-            bool('false'),
             current_user.id_user
         )
         db.session.add(Operation)
@@ -295,12 +323,18 @@ def updateMovement(id_operation): #movement = Dépense + Recette
     Operation = db.session.get(tOperations, id_operation) #tOperations.query.get(id_operation)
     type_operation = dictOperationTypes.query.filter_by(id_type_operation = Operation.id_type_operation).one().label
     #Get choices and form
-    form = formMovement(request.form, obj=Operation)
-    # Get accounts
-    if type_operation=='Recette':
+    if type_operation=='Recette': 
+        # Charger le formulaire de base
+        form = formMovementBase(request.form)
         Accounts = tAccounts.query.filter_by(is_personnal=False).filter_by(active=True)
     else :
+        # Charger le formulaire étendu pour les dépenses
+        form = formMovementExtended(request.form)
         Accounts = tAccounts.query.filter_by(active=True)
+        # Affectation choices
+        VatRatios = dictVatRatio.query.order_by(dictVatRatio.ratio.desc()).all()
+        form.id_spending_allocation.choices = [('', '-- Sélectionnez une affectation --')] + [(r.id_spending_allocation, r.label, {'data-ratio': str(r.ratio) if r.ratio is not None else ''}) for r in VatRatios]
+        form.id_spending_allocation.default = Operation.id_spending_allocation
     # Form Choices
     # accounts
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
@@ -317,6 +351,11 @@ def updateMovement(id_operation): #movement = Dépense + Recette
     PaymentMethods = dictPaymentMethods.query.all() # TODO filtrer avec la cor.
     form.id_payment_method.choices = [('', '-- Sélectionnez un moyen de paiement --')] + [(PaymentMethod.id_payment_method, PaymentMethod.label) for PaymentMethod in PaymentMethods]
     form.id_payment_method.default=Operation.id_payment_method
+    # VAT Rates for autocompletion
+    # Ne pas recharger les seuils pour faciliter la saisie en édition, afin de ne pas introduire d'erreurs ou ne pas recalculer la TVA de manière involontaire/transparente.
+    # Affectation choices
+    VatRatios = dictVatRatio.query.order_by(dictVatRatio.ratio.desc()).all()
+    form.id_spending_allocation.choices = [('', '-- Sélectionnez une affectation --')] + [(r.id_spending_allocation, r.label, {'data-ratio': str(r.ratio) if r.ratio is not None else ''}) for r in VatRatios]
     # allow null operation_date
     if request.form.get('operation_date') == '' and request.method == 'POST' and form.validate()  :
         operation_date = None
@@ -329,6 +368,11 @@ def updateMovement(id_operation): #movement = Dépense + Recette
         amount = abs_decimal(request.form.get('amount'))
     # Update
     if request.method == 'POST' and form.validate():
+        # Calcul de la TVA récupérable à partir du montant de TVA, et de l'affectation
+        allocation = db.session.get(dictVatRatio, form.id_spending_allocation.data)
+        vat_ratio = allocation.ratio if allocation and allocation.ratio is not None else None
+        vat_amount = abs_decimal(form.vat_amount.data)
+        recoverable_vat_amount = (vat_amount * vat_ratio).quantize(Decimal('0.01')) if (vat_amount is not None and vat_ratio is not None) else None
         # let None as id_grp_operations
         Operation.name = request.form['name'],
         Operation.detail_operation = request.form['detail_operation'],
@@ -336,10 +380,17 @@ def updateMovement(id_operation): #movement = Dépense + Recette
         Operation.operation_date = operation_date
         Operation.effective_date = request.form['effective_date']
         Operation.amount = amount
+        abs_decimal(request.form['vat_amount'])
+        if type_operation == 'Dépense' :
+            Operation.id_spending_allocation = request.form['id_spending_allocation']
+            Operation.vat_ratio = vat_ratio
+            Operation.recoverable_vat_amount = recoverable_vat_amount
+            Operation.with_depreciation = bool(request.form.get('with_depreciation'))
         Operation.id_payment_method = getChoiceOrNone(request.form['id_payment_method'])
         Operation.id_account = getChoiceOrNone(request.form['id_account'])
         Operation.id_budget = getChoiceOrNone(request.form['id_budget'])
         Operation.id_category = getChoiceOrNone(request.form['id_category'])
+        Operation.invoice_reference = request.form['invoice_reference']
         if not request.form.get('keep_file'):
             Operation.uploaded_file = getFileUrl('uploaded_file')
         Operation.meta_id_digitiser = current_user.id_user
@@ -347,5 +398,4 @@ def updateMovement(id_operation): #movement = Dépense + Recette
         return redirect(url_for('operations.operations'))
     # Return form
     return render_template('operations/add_or_update_movement.html', form=form, Operation=Operation, type_operation=type_operation)
-
 

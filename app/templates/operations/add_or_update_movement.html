@@ -12,139 +12,304 @@
 
 
       <form method = "post" enctype="multipart/form-data" novalidate>
-        <div class="row">
-          <div class="form-group col-md-4">
-            <label for = "id_account"><strong>Compte bancaire associé *</strong></label><br>
-            {{ form.id_account(class="form-control") }}
-            {% for error in form.id_account.errors %} 
-                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-            {% endfor %}
-          </div>
 
-          <div class="form-group col-md-4">
-            <label for = "operation_date">Date de facturation (optionnelle)</label><br>
-            {{ form.operation_date(class="form-control") }}
-            {% for error in form.operation_date.errors %} 
-                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-            {% endfor %}
+        <div class="card">
+          <div class="card-header">
+            <span class="h5"><i class="fa-solid fa-credit-card"></i> Description</span>
           </div>
+          <div class="card-body">
+            <!-- First row -->
+            <div class="row">
+              <div class="form-group col-md-9">
+                <label for = "name">Libellé</label>
+                {{ form.name(class="form-control") }}
+                {% for error in form.name.errors %} 
+                  <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
 
-          <div class="form-group col-md-4">
-          <label for = "effective_date"><strong>Date d'effet *</strong></label><br>
-            {{ form.effective_date(class="form-control") }}
-            {% for error in form.effective_date.errors %} 
-                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-            {% endfor %}
+              <div class="form-group col-md-3">
+                <label for = "amount">Montant TTC (€)</label>
+                {{ form.amount(class="form-control") }}
+                {% for error in form.amount.errors %} 
+                     <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="row" style="margin-top:15px;">
+              <div class="form-group col-md-4">
+                <label for = "invoice_reference">Référence de la facture</label><br>
+                {{ form.invoice_reference(class="form-control") }}
+                {% for error in form.invoice_reference.errors %} 
+                    <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+
+              <div class="form-group col-md-4">
+                <label for = "operation_date">Date de facturation (optionnelle)</label><br>
+                {{ form.operation_date(class="form-control") }}
+                {% for error in form.operation_date.errors %} 
+                    <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+
+              <div class="form-group col-md-4">
+                <label for = "effective_date">Date d'effet</label><br>
+                {{ form.effective_date(class="form-control") }}
+                {% for error in form.effective_date.errors %} 
+                    <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+
+              <!-- Justificatif -->
+              <div class="form-group col-md-6">
+                {% if type_operation=='Dépense' %}
+                  <label for = "uploaded_file">Justificatif</label><br>
+                  {{ form.uploaded_file(class="form-control") }}
+                  <small class="text-muted">Obligatoire pour les dépenses</small>
+                {% else %}
+                  <label for = "uploaded_file">Justificatif</label><br>
+                  {{ form.uploaded_file(class="form-control") }}
+                {% endif %}
+
+                {% if Convert %}
+                  <small>Lorsque vous convertissez un engagement en dépense effective, <strong> vous devez remplacer le justificatif précédemment fourni (devis validé) par la facture.</strong></small>
+                {% endif %}
+
+                {% for error in form.uploaded_file.errors %} 
+                  <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+              <!-- Keep previous uploaded file checkbox -->
+              {% if Operation.uploaded_file and not Convert %}
+                <div class="form-group">
+                  <label for = "keep_file">Conserver le <a href="{{ url_for('static', filename=Operation.uploaded_file) }}"> justificatif fourni précédemment</a></label>
+                  {{ form.keep_file(class="form-check-input", checked=true) }}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Section TVA -->
+            <div class="card" style="margin-top:30px">
+          <div class="card-body bg-light">
+            <!-- First row -->
+            <span class="h6"><i class="fa-solid fa-user-tie"></i> Déclaration de la TVA</span>
+            <hr>
+            <div class="row">
+              <div class="form-group col-md-2">
+                {% if Operation == None %}
+                  <label for = "vat_rate_autocompletion">Taux de TVA</label>
+                  {{ form.vat_rate_autocompletion(class="form-control") }}
+                  {% for error in form.vat_rate_autocompletion.errors %} 
+                     <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                  {% endfor %}
+                {% endif %}
+              </div>
+              <div class="form-group col-md-2">
+                <label for = "vat_amount">Montant de la TVA</label>
+                {{ form.vat_amount(class="form-control") }}
+                {% for error in form.vat_amount.errors %} 
+                     <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+              {% if type_operation=='Dépense' %}
+              <div class="form-group col-md-4">
+                <label for = "id_spending_allocation">Affectation</label>
+                {{ form.id_spending_allocation(class="form-control") }}
+                {% for error in form.id_spending_allocation.errors %} 
+                     <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+              <div class="form-group col-md-2">
+                <label for = "vat_ratio">Taux de récupération</label>
+                {{ form.vat_ratio(class="form-control") }}
+                {% for error in form.vat_ratio.errors %} 
+                     <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+              <div class="form-group col-md-2">
+                <label for = "recoverable_vat_amount">Montant récupérable</label>
+                {{ form.recoverable_vat_amount(class="form-control") }}
+                {% for error in form.recoverable_vat_amount.errors %} 
+                     <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div> 
           </div>
         </div>
-
-        <br><br>
-
-        <div>
-          <div class="row">
-            <div class="form-group col-md-8">
-              <label for = "name"><strong>Libellé *</strong></label>
-              {{ form.name(class="form-control") }}
-              {% for error in form.name.errors %} 
-                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-            {% endfor %}
-            </div>
-
-            <div class="form-group col-md-4">
-              <label for = "amount"><strong>Montant (€) *</strong></label>
-              {{ form.amount(class="form-control") }}
-              <small class="text-muted">Le séparateur de décimale doit être un point</small>
-              {% for error in form.amount.errors %} 
-                   <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-              {% endfor %}
-            </div>
-            <div class="form-group col-md-12">
-              <label for = "detail_operation">Détail de l'opération</label><br>
-              {{ form.detail_operation(class="form-control") }}
-              {% for error in form.detail_operation.errors %} 
-                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-              {% endfor %}
-            </div>
-          </div>
-        </div>
-
-        <br><br>
-
-        <div class="row">
-          <div class="form-group col-md-4">
-            <label for = "id_budget">Ligne budgétaire associée</label><br>
-            {{ form.id_budget(class="form-control") }}
-            <small class="text-muted">Obligatoire si action liée à une subvention</small>
-            {% for error in form.id_budget.errors %} 
-                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-            {% endfor %}
           </div> 
-
-          <div class="form-group col-md-4">
-            <label for = "id_payment_method">Moyen de paiement</label><br>
-            {{ form.id_payment_method(class="form-control") }}
-            {% for error in form.id_payment_method.errors %} 
-                   <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-            {% endfor %}
-          </div>
-
-          <div class="form-group col-md-4">
-            <label for = "id_category">
-              <strong>Catégorie fiscale *</strong>
-              <a class="a-icon" href="{{ url_for('categories') }}" target="_blank" title="Explications sur les catégories fiscales (nouvel onglet)">
-              <i class="fa fa-info-circle"></i>
-              </a>
-            </label><br>
-            {{ form.id_category(class="form-control") }}
-            {% for error in form.id_category.errors %} 
-                   <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-            {% endfor %}
-            <br><br>
-          </div>
-
-          <!-- Line2 -->
-          <div class="form-group col-md-6">
-            {% if type_operation=='Dépense' %}
-              <label for = "uploaded_file"><strong>Justificatif *</strong></label><br>
-              {{ form.uploaded_file(class="form-control") }}
-              <small class="text-muted">Obligatoire pour les dépenses</small>
-            {% else %}
-              <label for = "uploaded_file">Justificatif</label><br>
-              {{ form.uploaded_file(class="form-control") }}
-            {% endif %}
-
-            {% if Convert %}
-              <small>Lorsque vous convertissez un engagement en dépense effective, <strong> vous devez remplacer le justificatif précédemment fourni (devis validé) par la facture.</strong></small>
-            {% endif %}
-
-            {% for error in form.uploaded_file.errors %} 
-              <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-            {% endfor %}
-          </div>
-          <!-- Keep previous uploaded file checkbox -->
-          {% if Operation.uploaded_file and not Convert %}
-            <div class="form-group">
-              <label for = "keep_file">Conserver le <a href="{{ url_for('static', filename=Operation.uploaded_file) }}"> justificatif fourni précédemment</a></label>
-              {{ form.keep_file(class="form-check-input", checked=true) }}
-            </div>
-          {% endif %}
         </div>
 
-        <br><br>
+        <div class="card">
+          <div class="card-header">
+            <span class="h5"><i class="fa-solid fa-folder-tree"></i> Informations comptables</span>
+          </div>
+          <div class="card-body">
+            <!-- First row -->
+            <div class="row">
+              <div class="form-group col-md-4">
+                <label for = "id_account">Compte bancaire associé</label><br>
+                {{ form.id_account(class="form-control") }}
+                {% for error in form.id_account.errors %} 
+                  <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+
+              <div class="form-group col-md-4">
+                <label for = "id_budget">Ligne budgétaire associée</label><br>
+                {{ form.id_budget(class="form-control") }}
+                <small class="text-muted">Obligatoire si opération liée à une subvention</small>
+                {% for error in form.id_budget.errors %} 
+                    <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div> 
+
+              <div class="form-group col-md-4">
+                <label for = "id_category">
+                  Catégorie fiscale
+                  <a class="a-icon" href="{{ url_for('categories') }}" target="_blank" title="Explications sur les catégories fiscales (nouvel onglet)">
+                  <i class="fa fa-info-circle"></i>
+                  </a>
+                </label><br>
+                {{ form.id_category(class="form-control") }}
+                {% for error in form.id_category.errors %} 
+                       <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+                <br><br>
+              </div>
+
+              <div class="form-group col-md-4">
+                <label for = "id_payment_method">Moyen de paiement</label><br>
+                {{ form.id_payment_method(class="form-control") }}
+                {% for error in form.id_payment_method.errors %} 
+                   <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+
+              {% if type_operation=='Dépense' %}
+              <div class="form-group col-md-6">
+                <label for = "with_depreciation">Soumis à amortissement</label>
+                {{ form.with_depreciation(class="form-check-input") }}
+              </div>
+              {% endif %}
+
+            </div> 
+          </div>
+        </div>
+
+
+        <div class="card">
+            <div class="card-header">
+                <span class="h5"><i class="fa-solid fa-comment-dots"></i> Détails de l'opération</span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="form-group col-md-12">
+                      {{ form.detail_operation(class="form-control") }}
+                      {% for error in form.detail_operation.errors %} 
+                        <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                      {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <input class="btn btn-primary float-right" type = "submit" value = "Enregistrer" />
       </form>
-
+    </div>
 </div>
 
-<!-- Make budget field searchable with select2-->
+
 <script>
-$(document).ready(function() {
-    $('#id_budget').select2({  // init Select2 on form's name field
-        placeholder: "Sélectionnez une ligne budgétaire",
-        allowClear: true
+(function () {
+  const amountInput  = document.getElementById('amount');
+  const rateSelect   = document.getElementById('vat_rate_autocompletion');
+  const vatInput     = document.getElementById('vat_amount');
+  const allocSelect  = document.getElementById('id_spending_allocation');
+  const ratioInput   = document.getElementById('vat_ratio');
+  const recoverInput = document.getElementById('recoverable_vat_amount');
+
+  function parse(v) {
+    return parseFloat(String(v).replace(/\s/g, '').replace(',', '.'));
+  }
+
+  function fmt(n) {
+    return (Math.round(n * 100) / 100).toFixed(2);
+  }
+
+  // TVA récupérable = TVA × ratio de l'affectation
+  function recompute() {
+    // Ces champs sont spécifiques aux dépenses
+    if (!vatInput || !ratioInput || !recoverInput) return;
+
+    const vat = parse(vatInput.value);
+    const ratio = parse(ratioInput.value);
+
+    recoverInput.value =
+      (isNaN(vat) || isNaN(ratio)) ? '' : fmt(vat * ratio);
+  }
+
+  // TVA = TTC - TTC / (1 + taux)
+  function autofillVat() {
+    if (!amountInput || !rateSelect || !vatInput) return;
+
+    const ttc = parse(amountInput.value);
+    const rate = parseFloat(rateSelect.value);
+
+    if (isNaN(ttc) || isNaN(rate)) return;
+
+    vatInput.value = fmt(ttc * rate / (1 + rate));
+    recompute();
+  }
+
+  // Gestion du calcul automatique de TVA
+  if (amountInput && rateSelect && vatInput) {
+    let manual = false;
+
+    vatInput.addEventListener('input', function () {
+      manual = true;
+      recompute();
     });
-});
+
+    rateSelect.addEventListener('change', function () {
+      manual = false;
+      autofillVat();
+    });
+
+    amountInput.addEventListener('input', function () {
+      if (!manual) autofillVat();
+    });
+
+    // Calcul initial : uniquement si la TVA est vide
+    if (!vatInput.value.trim()) autofillVat();
+  }
+
+  // Affectation : spécifique aux dépenses
+  if (allocSelect && ratioInput) {
+    allocSelect.addEventListener('change', function () {
+      const option = allocSelect.selectedOptions[0];
+
+      ratioInput.value = option
+        ? (option.dataset.ratio || '')
+        : '';
+
+      recompute();
+    });
+
+    // Initialisation du ratio
+    if (!ratioInput.value && allocSelect.value) {
+      const option = allocSelect.selectedOptions[0];
+      ratioInput.value = option
+        ? (option.dataset.ratio || '')
+        : '';
+    }
+  }
+
+  // Calcul final si les champs sont présents
+  recompute();
+})();
 </script>
 
 {% endblock %}

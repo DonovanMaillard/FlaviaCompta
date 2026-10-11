@@ -180,7 +180,13 @@ CREATE TABLE comptasso.t_profit_bonus (
 );
 
 -- Ajouter les clés étrangères sur id_budget, id_member
+ALTER TABLE comptasso.t_profit_bonus ADD CONSTRAINT fk_profit_bonus_budget
+FOREIGN KEY (id_budget) REFERENCES comptasso.t_budgets(id_budget);
 
+ALTER TABLE comptasso.t_profit_bonus ADD CONSTRAINT fk_profit_bonus_member
+FOREIGN KEY (id_member) REFERENCES comptasso.t_members(id_member);
+
+-- Stocker les dates d'écriture et de modifications sur les intéressements
 CREATE TRIGGER tri_meta_dates_change_t_funders
 BEFORE INSERT OR UPDATE ON comptasso.t_profit_bonus 
 FOR EACH ROW EXECUTE PROCEDURE fct_trg_meta_dates_change();
@@ -204,3 +210,153 @@ AS SELECT
 FROM comptasso.t_profit_bonus pb
 LEFT JOIN comptasso.t_budgets b ON pb.id_budget=b.id_budget
 LEFT JOIN comptasso.t_members m ON pb.id_member=m.id_member;
+
+
+-- Permettre un commentaire plus long sur les opérations
+-- En supprimant et recréant les vues dépendantes
+DROP VIEW comptasso.v_result_by_year;
+DROP VIEW comptasso.v_operations;
+
+-- En changeant le type de champs
+ALTER TABLE comptasso.t_operations
+ALTER COLUMN detail_operation TYPE text USING detail_operation::text;
+
+-- Puis reconstruire les vues dépendantes
+CREATE OR REPLACE VIEW comptasso.v_result_by_year
+AS WITH years AS (
+         SELECT generate_series(min(date_part('year'::text, op.effective_date))::integer, max(date_part('year'::text, op.effective_date))::integer) AS year
+           FROM comptasso.t_operations op
+        ), details AS (
+         SELECT DISTINCT y.year,
+            typ.label AS type_category,
+            cat.level,
+            cat.cd_category::text AS cd_category,
+            (cat.cd_category || '. '::text) || cat.label::text AS label,
+            cat.cd_broader,
+            sum(op.amount) AS sum,
+            jsonb_build_object('category', (cat.cd_category || '. '::text) || cat.label::text, 'result', sum(op.amount)) AS json
+           FROM comptasso.dict_categories cat
+             JOIN comptasso.dict_operation_types typ ON cat.id_type_operation = typ.id_type_operation
+             CROSS JOIN years y
+             LEFT JOIN LATERAL ( SELECT op_1.id_operation,
+                    op_1.id_grp_operation,
+                    op_1.name,
+                    op_1.detail_operation,
+                    op_1.id_type_operation,
+                    op_1.operation_date,
+                    op_1.effective_date,
+                    op_1.amount,
+                    op_1.id_payment_method,
+                    op_1.id_account,
+                    op_1.id_budget,
+                    op_1.id_category,
+                    op_1.uploaded_file,
+                    op_1.pointed,
+                    op_1.meta_id_digitiser,
+                    op_1.meta_create_date,
+                    op_1.meta_update_date,
+                    typ_1.id_type_operation,
+                    typ_1.label,
+                    typ_1.description,
+                    typ_1.operator
+                   FROM comptasso.t_operations op_1
+                     JOIN comptasso.dict_operation_types typ_1 ON op_1.id_type_operation = typ_1.id_type_operation
+                  WHERE date_part('year'::text, op_1.effective_date)::integer = y.year AND op_1.id_category = cat.id_category) op(id_operation, id_grp_operation, name, detail_operation, id_type_operation, operation_date, effective_date, amount, id_payment_method, id_account, id_budget, id_category, uploaded_file, pointed, meta_id_digitiser, meta_create_date, meta_update_date, id_type_operation_1, label, description, operator) ON true
+          WHERE typ.label::text = ANY (ARRAY['Recette'::character varying, 'Dépense'::character varying]::text[])
+          GROUP BY y.year, typ.label, cat.level, (cat.cd_category::text), ((cat.cd_category || '. '::text) || cat.label::text), cat.cd_broader
+          ORDER BY y.year, typ.label, (cat.cd_category::text), ((cat.cd_category || '. '::text) || cat.label::text)
+        )
+ SELECT DISTINCT d.year,
+    d.type_category,
+    d.cd_category,
+    d.label,
+    jsonb_agg(child.json) AS json,
+    sum(child.sum) AS amount
+   FROM details d
+     JOIN details child ON d.cd_category = child.cd_broader::text
+  WHERE d.level = 1 AND child.year = d.year
+  GROUP BY d.year, d.type_category, d.cd_category, d.label;
+
+
+-- v_operations remontée plus tard, après intégration de la TVA
+-- Retirer la notion de "pointé" inutilisée dans le même temps
+ALTER TABLE comptasso.t_operations DROP COLUMN pointed ;
+
+-- ARRETE ICI !!
+
+-- Implémenter la gestion de la TVA --
+-- Créer la table dict des modalités d'affectation des dépenses aux secteurs lucratifs/non lucratifs
+CREATE TABLE comptasso.dict_vat_ratio (
+    id_spending_allocation serial primary key,
+    label varchar(50) NOT NULL,
+    description text,
+    ratio numeric(5,2) NOT NULL
+);
+
+INSERT INTO comptasso.dict_vat_ratio (label, description, ratio)
+VALUES ('Secteur lucratif','Charge intégralement affectée au secteur lucratif et ouvrant droit à la récupération de TVA au taux de 100%.',1)
+,('Essentiellement secteur lucratif','Charge essentiellement affectée au secteur lucratif et ouvrant droit à la récupération de TVA au taux de 90%.',0.90)
+,('Mixte','Charge mixte affectée aux secteurs lucratif et non lucratif, ouvrant droit à la récupération de TVA au taux de 40%.',0.40)
+,('Essentiellement secteur non lucratif','Charge essentiellement affectée au secteur non lucratif et ouvrant droit à la récupération de TVA au taux de 10%.',0.10)
+,('Secteur non lucratif','Charge intégralement affectée au secteur non lucratif et n''ouvrant pas le droit à la récupération de TVA.',0)
+;
+
+-- Modifier la table t_operations
+ALTER TABLE comptasso.t_operations ADD COLUMN invoice_reference varchar(50);
+ALTER TABLE comptasso.t_operations ADD COLUMN vat_amount numeric(12,2);
+ALTER TABLE comptasso.t_operations ADD COLUMN id_spending_allocation integer;
+ALTER TABLE comptasso.t_operations ADD COLUMN vat_ratio numeric(5,2);
+ALTER TABLE comptasso.t_operations ADD COLUMN recoverable_vat_amount numeric(12,2);
+ALTER TABLE comptasso.t_operations ADD COLUMN with_depreciation boolean;
+
+-- Ajouter une clé étrangère sur l'id de l'affectation TVA
+ALTER TABLE comptasso.t_operations ADD CONSTRAINT fk_operation_vat_ratio
+FOREIGN KEY (id_spending_allocation) REFERENCES comptasso.comptasso.dict_vat_ratio(id_spending_allocation);
+
+-- Affecter toutes les dépenses existantes au secteur non lucratif sans récupération de TVA
+UPDATE comptasso.t_operations
+    SET id_spending_allocation=dict.id_spending_allocation,
+    vat_ratio=dict.ratio,
+    recoverable_vat_amount=0
+FROM comptasso.dict_vat_ratio dict 
+WHERE dict.label='Secteur non lucratif';
+
+
+-- Remonter la vue v_operations intégrant les nouveaux champs
+CREATE OR REPLACE VIEW comptasso.v_operations
+AS SELECT op.id_operation,
+    op.id_grp_operation,
+    op.name AS name_operation,
+    op.detail_operation,
+    dot.id_type_operation,
+    dot.label AS type_operation,
+    op.operation_date,
+    op.effective_date,
+    date_part('year'::text, op.effective_date)::integer AS year,
+    op.amount,
+    op.vat_amount,
+    op.id_spending_allocation,
+    op.vat_ratio,
+    op.recoverable_vat_amount,
+    op.with_depreciation,
+    dpm.label AS payment_method,
+    op.id_account,
+    ac.name AS account_name,
+    ac.is_personnal AS personnal_account,
+    op.id_budget,
+    b.name AS budget_name,
+    (cat.cd_category || '. '::text) || cat.label::text AS category,
+    (cat2.cd_category || '. '::text) || cat2.label::text AS parent_category,
+    op.invoice_reference,
+    op.uploaded_file,
+    op.meta_create_date,
+    op.meta_update_date
+   FROM comptasso.t_operations op
+     LEFT JOIN comptasso.dict_operation_types dot ON dot.id_type_operation = op.id_type_operation
+     LEFT JOIN comptasso.dict_payment_methods dpm ON dpm.id_payment_method = op.id_payment_method
+     LEFT JOIN comptasso.t_accounts ac ON ac.id_account = op.id_account
+     LEFT JOIN comptasso.t_budgets b ON b.id_budget = op.id_budget
+     LEFT JOIN comptasso.dict_categories cat ON cat.id_category = op.id_category
+     LEFT JOIN comptasso.dict_categories cat2 ON cat.cd_broader = cat2.cd_category
+  ORDER BY op.effective_date;
+

@@ -70,6 +70,14 @@ class dictDocumentType(db.Model):
         self.label = label
         self.description = description 
 
+class dictVatRatio(db.Model):
+
+    __tablename__ = "dict_vat_ratio"
+    __table_args__ = {"schema": "comptasso"}
+    id_spending_allocation = db.Column(db.Integer, primary_key=True)
+    label = db.Column(db.Unicode, nullable=False)
+    ratio = db.Column(db.Numeric(5,2), nullable=False)
+
 #######################
 ## TABLES DE DONNEES ##
 #######################
@@ -199,17 +207,22 @@ class tOperations(db.Model):
     operation_date = db.Column(db.Date(), nullable=True)
     effective_date = db.Column(db.Date(), nullable=True)
     amount = db.Column(db.Numeric(8,2), nullable=False)
+    vat_amount = db.Column(db.Numeric(12,2), nullable=True)
+    id_spending_allocation = db.Column(db.Integer, nullable=True)
+    vat_ratio = db.Column(db.Numeric(5,2), nullable=True)
+    recoverable_vat_amount = db.Column(db.Numeric(12,2), nullable=True)
+    with_depreciation = db.Column(db.Boolean, nullable=False)
     id_payment_method = db.Column(db.Integer(), nullable=True)
     id_account = db.Column(db.Integer(), nullable=False)
     id_budget = db.Column(db.Integer(), nullable=False)
     id_category = db.Column(db.Integer(), nullable=True)
+    invoice_reference =  db.Column(db.String(50), nullable=True)
     uploaded_file = db.Column(db.String(255), nullable=False)
-    pointed = db.Column(db.Boolean, nullable=True)
     meta_id_digitiser = db.Column(db.Integer(), nullable=True)
     meta_create_date = db.Column(db.DateTime(), nullable=True)
     meta_update_date = db.Column(db.DateTime(), nullable=True)
 
-    def __init__(self, id_grp_operation, name, detail_operation, id_type_operation, operation_date, effective_date, amount, id_payment_method, id_account, id_budget, id_category, uploaded_file, pointed, meta_id_digitiser):
+    def __init__(self, id_grp_operation, name, detail_operation, id_type_operation, operation_date, effective_date, amount, vat_amount, id_spending_allocation, vat_ratio, recoverable_vat_amount, with_depreciation, id_payment_method, id_account, id_budget, id_category, invoice_reference, uploaded_file, meta_id_digitiser):
         self.id_grp_operation = id_grp_operation
         self.name = name
         self.detail_operation = detail_operation
@@ -217,12 +230,17 @@ class tOperations(db.Model):
         self.operation_date = operation_date
         self.effective_date = effective_date
         self.amount = amount
+        self.vat_amount = vat_amount
+        self.id_spending_allocation = id_spending_allocation
+        self.vat_ratio = vat_ratio
+        self.recoverable_vat_amount = recoverable_vat_amount
+        self.with_depreciation = with_depreciation
         self.id_payment_method = id_payment_method
         self.id_account = id_account
         self.id_budget = id_budget
         self.id_category = id_category
+        self.invoice_reference = invoice_reference
         self.uploaded_file = uploaded_file
-        self.pointed = pointed
         self.meta_id_digitiser = meta_id_digitiser
 
 
@@ -489,6 +507,11 @@ class vOperations(db.Model):
     effective_date = db.Column(db.Date, nullable=False)
     year = db.Column(db.Integer, nullable=True)
     amount = db.Column(db.Numeric(8,2), nullable=False)
+    vat_amount = db.Column(db.Numeric(12,2), nullable=True)
+    id_spending_allocation = db.Column(db.Integer, nullable=True)
+    vat_ratio = db.Column(db.Numeric(5,2), nullable=True)
+    recoverable_vat_amount = db.Column(db.Numeric(12,2), nullable=True)
+    with_depreciation = db.Column(db.Boolean, nullable=False)
     payment_method = db.Column(db.String(50), nullable=False)
     id_account = db.Column(db.Integer, nullable=False)
     account_name = db.Column(db.String(50), nullable=False)
@@ -497,8 +520,8 @@ class vOperations(db.Model):
     budget_name = db.Column(db.String(50), nullable=False)
     category = db.Column(db.String(50), nullable=False)
     parent_category = db.Column(db.String(50), nullable=False)
+    invoice_reference = db.Column(db.String(50), nullable=True)
     uploaded_file = db.Column(db.String(255), nullable=True)
-    pointed = db.Column(db.Boolean, nullable=True)
     meta_create_date = db.Column(db.DateTime(), nullable=True)
     meta_update_date = db.Column(db.DateTime(), nullable=True)
 

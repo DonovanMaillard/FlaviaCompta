@@ -63,11 +63,16 @@ def addCommitment():
             None,
             -abs_decimal(request.form.get('amount')),
             None,
+            None,
+            None,
+            None,
+            None,
+            None,
             getChoiceOrNone(request.form['id_account']),
             getChoiceOrNone(request.form['id_budget']),
             getChoiceOrNone(request.form['id_category']),
+            None,
             getFileUrl('uploaded_file'),
-            bool('false'),
             current_user.id_user
         )
         db.session.add(Commitment)
@@ -125,7 +130,7 @@ def convertCommitment(id_operation):
     Operation = db.session.get(tOperations, id_operation) #tOperations.query.get(id_operation)
     #Get choices and form
     id_type_operation = dictOperationTypes.query.filter_by(label = 'Dépense').one().id_type_operation
-    form = formMovement(request.form, obj=Operation)
+    form = formMovementExt(request.form, obj=Operation)
     # Form Choices
     # accounts
     Accounts = tAccounts.query.filter_by(is_personnal=False).filter_by(active=True)

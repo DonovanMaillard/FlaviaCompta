@@ -54,10 +54,8 @@ class formAllocatedBudgetRow(Form):
         places=2,
     )
 
-
 class formAllocatedBudget(Form):
     rows = FieldList(FormField(formAllocatedBudgetRow))
-
 
 class formAccount(Form):
     name = StringField('Nom du compte', [validators.Length(min=1, max=50, message='Doit faire entre 1 et 50 caractères'), validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], render_kw={"placeholder": "Nom du compte"})
@@ -84,19 +82,27 @@ class formActivity(Form):
     description = StringField('Description', render_kw={"placeholder": "Description de l'activité"})
     active = BooleanField('Actif')
 
-class formMovement(Form):
+class formMovementBase(Form):
     name = StringField('Libellé de l\'opération', [validators.Length(min=1, max=50, message='Doit faire entre 1 et 50 caractères'), validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], render_kw={"placeholder": "Libellé de l'opération"})
     detail_operation = TextAreaField('Détail de l\'opération', render_kw={"placeholder": "Précisions sur l'opération"})
     operation_date = DateField('operation_date', [validators.Optional()])
     effective_date = DateField('effective_date', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
     amount = DecimalField('amount', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner'), validators.NoneOf([0, 0.00], message='Le montant ne peut pas être de 0€')], places=2)
+    vat_rate_autocompletion = SelectField('vat_rate_autocompletion', [validators.Optional()], default=None)
+    vat_amount = DecimalField('vat_amount', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], places=2)
     id_payment_method = SelectField('id_payment_method', [validators.Optional()], default=None)
     id_account = SelectField('id_account', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner'),validators.NoneOf([''], message='Vous devez sélectionner une valeur')])
     id_budget = SelectField('id_budget')
     id_category = SelectField('id_category', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner'),validators.NoneOf([''], message='Vous devez sélectionner une valeur')])
+    invoice_reference = StringField('invoice_reference', [validators.Length(max=50, message='Doit faire moins de 50 caractères'), validators.Optional()], render_kw={"placeholder": "Référence de la facture"})
     uploaded_file = FileField('uploaded_file')
     keep_file = BooleanField('keep_file', default=True)
-    pointed = BooleanField('pointed')
+
+class formMovementExtended(formMovementBase):
+    id_spending_allocation = SelectField('id_spending_allocation', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
+    vat_ratio = DecimalField('vat_ratio', [validators.Optional()], render_kw={"readonly": True}, places=2)
+    recoverable_vat_amount = DecimalField('recoverable_vat_amount', [validators.Optional()], render_kw={"readonly": True}, places=2)
+    with_depreciation = BooleanField('with_depreciation', default=False)
 
 class formCommitment(Form):
     name = StringField('Libellé de l\'opération', [validators.Length(min=1, max=50, message='Doit faire entre 1 et 50 caractères'), validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], render_kw={"placeholder": "Libellé de l'opération"})
