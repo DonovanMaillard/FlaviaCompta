@@ -56,6 +56,7 @@ class dictCategories(db.Model):
     cd_broader = db.Column(db.Integer, nullable=True)
     id_type_operation = db.Column(db.Integer, nullable=True)
     seizable = db.Column(db.Boolean, nullable=False)
+    keywords = db.Column(db.Unicode, nullable=True)
 
 
 class dictDocumentType(db.Model):

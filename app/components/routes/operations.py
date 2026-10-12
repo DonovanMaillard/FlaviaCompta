@@ -253,7 +253,7 @@ def addMovement(type_operation): #movement = Dépense + Recette
     form.id_budget.choices = [('', '-- Sélectionnez un budget --')] + [(activeBudget.id_budget, activeBudget.name) for activeBudget in activeBudgets]
     # Category
     Categories = dictCategories.query.filter(dictCategories.id_type_operation == id_type_operation, dictCategories.seizable == True).order_by(dictCategories.cd_category).all()
-    form.id_category.choices = [('', '-- Sélectionnez une catégorie --')] + [(category.id_category, str(category.cd_category)+" - "+category.label) for category in Categories]
+    form.id_category.choices = [('', '-- Sélectionnez une catégorie --')] + [(category.id_category, str(category.cd_category)+" - "+category.label, {'data-keywords': category.keywords or ''}) for category in Categories]
     # Payment method
     PaymentMethods = dictPaymentMethods.query.all() # TODO filtrer avec la cor.
     form.id_payment_method.choices = [('', '-- Sélectionnez un moyen de paiement --')] + [(PaymentMethod.id_payment_method, PaymentMethod.label) for PaymentMethod in PaymentMethods]

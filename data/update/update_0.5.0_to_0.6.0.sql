@@ -360,6 +360,10 @@ AS SELECT op.id_operation,
      LEFT JOIN comptasso.dict_categories cat2 ON cat.cd_broader = cat2.cd_category
   ORDER BY op.effective_date;
 
+  -- Ajouter la catégorie fiscale correspondant au reversement de la TVA à l'état après déduction de la TVA récupérable
+  INSERT INTO comptasso.dict_categories (cd_category,label,detail,level,cd_broader,id_type_operation,seizable)
+  VALUES(44551, 'TVA reversée à l''état', 'TVA nette reversée à l''état après déduction des montants de TVA récupérable', 1,44551,(SELECT id_type_operation FROM comptasso.dict_operation_types WHERE label='Dépense'),true);
+
 
 -- Ajouter un compte par défaut pour les utilisateurs
 ALTER TABLE comptasso.t_users ADD COLUMN id_default_account integer ;
@@ -370,3 +374,24 @@ FOREIGN KEY (id_default_account) REFERENCES comptasso.t_accounts(id_account);
 
 -- L'affectation d'un compte par défaut pour chaque utilisateur se fait actuellement en base - penser à le renseigner. 
 
+# Ajouter une sélection automatique "intelligente" de la catégorie fiscale basée sur des mots-clés du libellé et le type d'opération
+ALTER TABLE comptasso.dict_categories ADD COLUMN keywords text;
+
+UPDATE comptasso.dict_categories
+    SET keywords = CASE 
+    WHEN cd_category=706 THEN 'FLA_, Prestation, ABC, Animation, Étude, Etude'
+    WHEN cd_category=74 THEN 'Subvention, Région, DREAL, AAP, Appel à projet'
+    WHEN cd_category=64 THEN 'Salaire, Rémunération, Prime, URSSAF, URSAFF, Charges'
+    WHEN cd_category=648 THEN 'Gratification, Indemnité de stage, stagiaire'
+    WHEN cd_category=626 THEN 'Frais bancaires, Téléphone, Téléphonie, Internet, SFR, Orange, Postal, Envoi'
+    WHEN cd_category=606 THEN 'Carburant, Encre, Cartouches, Consommable, Consommables'
+    WHEN cd_category=604 THEN 'Prestation, Étude, Validation, Développement, Commande'
+    WHEN cd_category=601 THEN 'Matériel, Inventaire, Photographie, Photographique, Laboratoire'
+    WHEN cd_category=613 THEN 'Plugin, OVH, Serveur, Hébergement, Licence, Abonnement, Forfait'
+    WHEN cd_category=616 THEN 'Assurance'
+    WHEN cd_category=625 THEN 'Péage, Autoroute, Train, Repas'
+    WHEN cd_category=44551 THEN 'TVA'
+    WHEN cd_category=615 THEN 'SARL Bejuis Auto, Contrôle technique, Garage, Entretien, Citroën Jumpy'
+    WHEN cd_category=618 THEN 'Documentation, Ressource documentaire'
+    WHEN cd_category=623 THEN 'Impression, Plaquettes, Assemblée Générale, Réception, Repas'
+END;
