@@ -37,7 +37,8 @@ from .routes import (
     results_bp,
     payrolls_bp,
     operations_bp,
-    utils_bp
+    utils_bp,
+    admin_bp
     )
 
 app = Flask(__name__, template_folder='../templates', static_folder='../static')
@@ -55,6 +56,7 @@ app.register_blueprint(results_bp)
 app.register_blueprint(payrolls_bp)
 app.register_blueprint(operations_bp)
 app.register_blueprint(utils_bp)
+app.register_blueprint(admin_bp)
 
 # Load configuration
 app.config.from_pyfile('../../config/config.py')
@@ -69,73 +71,7 @@ app.config.from_pyfile('../../config/config.py')
 def index():
     return render_template('home.html')
 
-# Features
-@app.route('/features')
-@login_required
-def features():
-    return render_template('about/features.html')
-
-# Tutorial
-@app.route('/tutorial')
-@login_required
-def tutorial():
-    return render_template('about/tutorial.html')
-
-
-#############
-### Admin ###
-#############
-### Members ###
-@app.route('/admin/members', methods=['GET'])
-@login_required
-def members():
-    Members=tMembers.query.all()
-    return render_template('admin/members/members_list.html', Members=Members)
-
-@app.route('/admin/member/add', methods=['GET','POST'])
-@login_required
-def addMember():
-    form = formMember(request.form)
-    if request.method == 'POST' and form.validate():
-        member = tMembers(
-            request.form['member_name'],
-            request.form['member_role'],
-            bool(request.form.get('is_employed')),
-            bool(request.form.get('active'))
-            )
-        db.session.add(member)
-        db.session.commit()
-        return redirect(url_for('members'))
-    return render_template('admin/members/add_or_update_member.html', form=form, Member=None, active=True, is_employed=False)
-
-@app.route('/admin/member/edit/<id_member>', methods=['GET','POST'])
-@login_required
-def updateMember(id_member):
-    member = db.session.get(tMembers, id_member) #tMembers.query.get(id_member)
-    form = formMember(request.form, obj=member)
-    if request.method == 'POST' and form.validate():
-        member.member_name = request.form['member_name']
-        member.member_role = request.form['member_role']
-        member.is_employed = bool(request.form.get('is_employed'))
-        member.active = bool(request.form.get('active'))
-        db.session.commit()
-        return redirect(url_for('members'))
-    return render_template('admin/members/add_or_update_member.html', form=form, Member=member, active=member.active, is_employed=member.is_employed)
-
-### Categories ###
-# List categories
-@app.route('/admin/categories')
-@login_required
-def categories():
-    Depenses=dictCategories.query.filter_by(id_type_operation = dictOperationTypes.query.filter_by(label='Dépense').one().id_type_operation).all()
-    Recettes=dictCategories.query.filter_by(id_type_operation = dictOperationTypes.query.filter_by(label='Recette').one().id_type_operation).all()
-    Benevolats=dictCategories.query.filter_by(id_type_operation = dictOperationTypes.query.filter_by(label='Valorisation du bénévolat').one().id_type_operation).all()
-    Transferts=dictCategories.query.filter_by(id_type_operation = dictOperationTypes.query.filter_by(label='Transaction interne').one().id_type_operation).all()
-    return render_template('admin/categories/categories_list.html', Depenses = Depenses, Recettes=Recettes, Benevolats=Benevolats,Transferts=Transferts)
-
-### Activities
-@app.route('/activities', methods=['GET'])
-@login_required
-def activities():
-    return render_template('admin/activities/activities_list.html', Activities = tActivities.query.all() )
+@app.errorhandler(401)
+def unauthorized(error):
+    return redirect(url_for('auth.login'))
 

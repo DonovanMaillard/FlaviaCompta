@@ -131,32 +131,25 @@
                 <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Admin</a>
                 <ul class="dropdown-menu">
                   <li>
-                    <a class="dropdown-item" href="{{ url_for('members') }}">Membres</a>
+                    <a class="dropdown-item" href="{{ url_for('admin.members') }}">Membres</a>
                   </li>
                   <li>
                     <a class="dropdown-item" href="{{url_for('funders.funders')}}">Financeurs</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('activities')}}">Activités</a>
+                    <a class="dropdown-item" href="{{url_for('admin.activities')}}">Activités</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('categories')}}">Catégories fiscales</a>
+                    <a class="dropdown-item" href="{{url_for('admin.categories')}}">Catégories fiscales</a>
                   </li>
                   <li>
                     <a class="dropdown-item" href="{{url_for('documents.documents')}}">Documents</a>
                   </li>
-                </ul>
-              </li>
-
-              <!-- Guides -->
-              <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Guide utilisateurs</a>
-                <ul class="dropdown-menu">
                   <li>
-                    <a class="dropdown-item" href="{{url_for('tutorial')}}">Tutoriel</a>
+                    <a class="dropdown-item" href="{{url_for('admin.tutorial')}}">Tutoriel</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('features')}}">Suivi des développements</a>
+                    <a class="dropdown-item" href="{{url_for('admin.features')}}">Suivi des développements</a>
                   </li>
                 </ul>
               </li>

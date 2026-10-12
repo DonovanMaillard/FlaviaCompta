@@ -72,12 +72,13 @@ def signup():
             request.form['email'],
             request.form['login'],
             generate_password_hash(request.form['password']),
+            None,
             bool(False)
             )
             db.session.add(User)
             db.session.commit()
             flash('Votre demande d\'accès a bien été enregistrée. Un administrateur doit désormais activer votre compte.', category="success")
-            return redirect(url_for('signup'))
+            return redirect(url_for('auth.signup'))
     return render_template('signup.html', form=form)
 
 # LogOut

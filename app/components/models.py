@@ -300,16 +300,18 @@ class tUsers(UserMixin, db.Model):
     email = db.Column(db.String(100), nullable=True)
     login = db.Column(db.String(50), nullable=False)
     password = db.Column(db.String(255), nullable=False)
+    id_default_account = db.Column(db.Integer, nullable=True)
     is_active = db.Column(db.Boolean, nullable=False)
     meta_create_date = db.Column(db.DateTime(), nullable=True)
     meta_update_date = db.Column(db.DateTime(), nullable=True)
 
-    def __init__(self, name, firstname, email, login, password, is_active):
+    def __init__(self, name, firstname, email, login, password, id_default_account, is_active):
         self.name = name
         self.firstname = firstname
         self.email = email 
         self.login = login
         self.password = password
+        self.id_default_account = id_default_account
         self.is_active = is_active
 
     def get_id(self):

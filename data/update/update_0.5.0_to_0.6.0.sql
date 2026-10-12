@@ -290,7 +290,7 @@ CREATE TABLE comptasso.dict_vat_ratio (
     id_spending_allocation serial primary key,
     label varchar(50) NOT NULL,
     description text,
-    ratio numeric(5,2) NOT NULL
+    ratio numeric(6,3) NOT NULL
 );
 
 INSERT INTO comptasso.dict_vat_ratio (label, description, ratio)
@@ -305,13 +305,13 @@ VALUES ('Secteur lucratif','Charge intégralement affectée au secteur lucratif 
 ALTER TABLE comptasso.t_operations ADD COLUMN invoice_reference varchar(50);
 ALTER TABLE comptasso.t_operations ADD COLUMN vat_amount numeric(12,2);
 ALTER TABLE comptasso.t_operations ADD COLUMN id_spending_allocation integer;
-ALTER TABLE comptasso.t_operations ADD COLUMN vat_ratio numeric(5,2);
+ALTER TABLE comptasso.t_operations ADD COLUMN vat_ratio numeric(6,3);
 ALTER TABLE comptasso.t_operations ADD COLUMN recoverable_vat_amount numeric(12,2);
 ALTER TABLE comptasso.t_operations ADD COLUMN with_depreciation boolean;
 
 -- Ajouter une clé étrangère sur l'id de l'affectation TVA
 ALTER TABLE comptasso.t_operations ADD CONSTRAINT fk_operation_vat_ratio
-FOREIGN KEY (id_spending_allocation) REFERENCES comptasso.comptasso.dict_vat_ratio(id_spending_allocation);
+FOREIGN KEY (id_spending_allocation) REFERENCES comptasso.dict_vat_ratio(id_spending_allocation);
 
 -- Affecter toutes les dépenses existantes au secteur non lucratif sans récupération de TVA
 UPDATE comptasso.t_operations
@@ -359,4 +359,14 @@ AS SELECT op.id_operation,
      LEFT JOIN comptasso.dict_categories cat ON cat.id_category = op.id_category
      LEFT JOIN comptasso.dict_categories cat2 ON cat.cd_broader = cat2.cd_category
   ORDER BY op.effective_date;
+
+
+-- Ajouter un compte par défaut pour les utilisateurs
+ALTER TABLE comptasso.t_users ADD COLUMN id_default_account integer ;
+
+-- Ajouter une clé étrangère sur l'id de compte par défaut
+ALTER TABLE comptasso.t_users ADD CONSTRAINT fk_user_default_account
+FOREIGN KEY (id_default_account) REFERENCES comptasso.t_accounts(id_account);
+
+-- L'affectation d'un compte par défaut pour chaque utilisateur se fait actuellement en base - penser à le renseigner. 
 

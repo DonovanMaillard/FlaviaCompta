@@ -45,6 +45,8 @@ def addCommitment():
     # accounts
     Accounts = tAccounts.query.filter_by(is_personnal=False).filter_by(active=True)
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
+    if request.method == 'GET':
+        form.id_account.data = str(current_user.id_default_account)
     # Budget
     activeBudgets = tBudgets.query.filter_by(date_closing=None)
     form.id_budget.choices = [('', '-- Sélectionnez un budget --')] + [(activeBudget.id_budget, activeBudget.name) for activeBudget in activeBudgets]

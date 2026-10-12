@@ -20,7 +20,7 @@
       <form method = "post" enctype="multipart/form-data" novalidate>
         <div class="row">
             <div class="form-group col-md-8">
-              <label for = "name"><strong>Libellé *</strong></label>
+              <label for = "name">Libellé</label>
               {{ form.name(class="form-control") }}
               {% for error in form.name.errors %} 
                 <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
@@ -28,7 +28,7 @@
             </div>
 
             <div class="form-group col-md-4">
-              <label for = "amount"><strong>Montant (€)</strong></label>
+              <label for = "amount">Montant (€)</label>
               {{ form.amount(class="form-control") }}
               <small class="text-muted">Le séparateur de décimale doit être un point</small>
               {% for error in form.amount.errors %} 
@@ -49,7 +49,7 @@
 
         <div class="row">
           <div class="form-group col-md-4">
-            <label for = "operation_date"><strong>Date d'engagement *</strong></label><br>
+            <label for = "operation_date">Date d'engagement</label><br>
             {{ form.operation_date(class="form-control") }}
             {% for error in form.operation_date.errors %} 
               <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
@@ -57,7 +57,7 @@
           </div>
 
           <div class="form-group col-md-4">
-            <label for = "id_account"><strong>Compte bancaire associé *</strong></label><br>
+            <label for = "id_account">Compte bancaire associé</label><br>
             {{ form.id_account(class="form-control") }}
             {% for error in form.id_account.errors %} 
               <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
@@ -73,7 +73,7 @@
           </div>
 
           <div class="form-group col-md-4">
-            <label for = "id_category"><strong>Catégorie fiscale *</strong></label><br>
+            <label for = "id_category">Catégorie fiscale</label><br>
             {{ form.id_category(class="form-control") }}
             {% for error in form.id_category.errors %} 
               <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>

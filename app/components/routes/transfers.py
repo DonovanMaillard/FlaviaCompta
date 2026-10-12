@@ -43,6 +43,8 @@ def addTransfer(type_transfer):
         id_type_operation = dictOperationTypes.query.filter_by(label = 'Remboursement de frais').one().id_type_operation
         id_category = dictCategories.query.filter_by(cd_category=910).one().id_category
     form.from_id_account.choices = [('', '-- Sélectionnez un compte débiteur --')] + [(FromAccount.id_account, FromAccount.name) for FromAccount in FromAccounts]
+    if request.method == 'GET':
+        form.from_id_account.data = str(current_user.id_default_account)
     form.to_id_account.choices = [('', '-- Sélectionnez un compte créditeur --')] + [(ToAccount.id_account, ToAccount.name) for ToAccount in ToAccounts]
     # Payment method
     PaymentMethods = dictPaymentMethods.query.all()
