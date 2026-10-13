@@ -12,3 +12,4 @@ from .payrolls import payrolls_bp
 from .operations import operations_bp
 from .utils import utils_bp
 from .admin import admin_bp
+from .vat import vat_bp

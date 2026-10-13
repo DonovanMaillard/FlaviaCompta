@@ -1,0 +1,105 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="container">
+<h1> Rapport de TVA</h1>
+
+<div class="card">
+  <div class="card-header">
+    <h4>Obtenir un rapport</h4>
+  </div>
+  <div class="card-body">
+    <form id="filters" class="row g-2 mb-3">
+      <div class="col-md-5">
+        <label class="form-label" for="date_apres">Pour la période du (inclus)</label>
+        <input type="date" id="date_apres" name="date_apres" class="form-control required"> 
+      </div>
+      <div class="col-md-5">
+        <label class="form-label" for="date_avant">jusqu'au (inclus)</label>
+        <input type="date" id="date_avant" name="date_avant" class="form-control required"> 
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button type="reset" class="btn btn-secondary w-100">Réinitialiser</button>
+      </div>
+    </form>
+
+    <div class="d-flex justify-content-center align-items-start gap-3 flex-wrap my-5">
+
+      <div class="text-center">
+        <label class="form-label" for="vat-collected">TVA collectée sur les recettes</label>
+        <div id="vat-collected" class="form-control text-end fw-bold bg-light" style="min-width:220px">0,00 €</div>
+      </div>
+
+      <div class="fs-4 pt-1">−</div>
+
+      <div class="text-center">
+        <label class="form-label" for="vat-recoverable">TVA récupérable sur les dépenses</label>
+        <div id="vat-recoverable" class="form-control text-end fw-bold bg-light" style="min-width:220px">0,00 €</div>
+      </div>
+
+      <div class="fs-4 pt-1">=</div>
+
+      <div class="text-center">
+        <strong><label id="vat-balance-label" class="form-label" for="vat-balance">Montant différentiel</label></strong>
+        <div id="vat-balance" class="form-control text-end fw-bold" style="min-width:250px">0,00 €</div>
+      </div>
+
+    </div>
+
+    <a class="btn btn-success btn-right" id="download-pdf" href="{{ url_for('vat.vatReportPdf') }}">
+      <i class="fa fa-download"></i> Exporter le rapport PDF
+    </a>
+  </div>
+</div>
+
+
+
+<div class="card">
+  <div class="card-header">
+    <h4>Détail des opérations</h4>
+  </div>
+  <div class="card-body">
+    {% set operations_filters_form = 'filters' %}
+    {% set operations_fixed_params = {'for_vat_summary': '1'} %}
+    {% include 'shared/operations_table.html' %}
+  </div>
+</div>
+
+</div>
+
+<script>
+(function () {
+  const euro = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
+  const collectedBox   = document.getElementById('vat-collected');
+  const recoverableBox = document.getElementById('vat-recoverable');
+  const balanceBox     = document.getElementById('vat-balance');
+  const balanceLabel   = document.getElementById('vat-balance-label');
+
+  function showSummary(s) {
+    // Pas de résumé (période incomplète) : tout retombe à 0
+    const collected   = s ? Number(s.collected)   : 0;
+    const recoverable = s ? Number(s.recoverable) : 0;
+    const balance     = s ? Number(s.balance)     : 0;
+
+    collectedBox.textContent   = euro.format(collected);
+    recoverableBox.textContent = euro.format(recoverable);
+    balanceBox.textContent     = euro.format(Math.abs(balance));
+
+    balanceBox.classList.toggle('bg-light', balance === 0);
+    balanceBox.classList.toggle('border-danger', balance > 0);
+    balanceBox.classList.toggle('border-success', balance < 0);
+    balanceLabel.textContent = balance < 0
+      ? 'Crédit de TVA (à reporter ou à rembourser)'
+      : 'Montant différentiel';
+  }
+
+  $(document).on('xhr.dt', function (e, settings, json) {
+    if (settings.nTable.id !== 'operationsTable' || !json) return;
+    console.log('vat_summary reçu :', json.vat_summary);     // à retirer une fois que ça marche
+    showSummary(json.vat_summary);
+  });
+
+  showSummary(null);      // état initial
+})();
+</script>
+{% endblock %}

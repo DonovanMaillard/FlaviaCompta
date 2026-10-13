@@ -336,6 +336,7 @@ AS SELECT op.id_operation,
     op.amount,
     op.vat_amount,
     op.id_spending_allocation,
+    dvt.label AS affectation,
     op.vat_ratio,
     op.recoverable_vat_amount,
     op.with_depreciation,
@@ -358,6 +359,7 @@ AS SELECT op.id_operation,
      LEFT JOIN comptasso.t_budgets b ON b.id_budget = op.id_budget
      LEFT JOIN comptasso.dict_categories cat ON cat.id_category = op.id_category
      LEFT JOIN comptasso.dict_categories cat2 ON cat.cd_broader = cat2.cd_category
+     LEFT JOIN comptasso.dict_vat_ratio dvt ON op.id_spending_allocation= dvt.id_spending_allocation
   ORDER BY op.effective_date;
 
   -- Ajouter la catégorie fiscale correspondant au reversement de la TVA à l'état après déduction de la TVA récupérable

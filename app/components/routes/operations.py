@@ -36,9 +36,12 @@ def search_operations():
     id_account = request.args.get("id_account", "")
     montant = request.args.get("montant", type=str)
     category = request.args.get("category", "")
+    id_spending_allocation = request.args.get("id_spending_allocation", "")
+    with_depreciation = request.args.get("with_depreciation") is not None
+    invoice_reference = request.args.get("invoice_reference", "")
     date_apres = request.args.get("date_apres", type=str)
     date_avant = request.args.get("date_avant", type=str)
-
+    for_vat_summary = request.args.get("for_vat_summary") is not None
 
     if libelle:
         like_pattern = f"%{libelle}%"
@@ -62,6 +65,20 @@ def search_operations():
             vOperations.category == category
         )
 
+    if id_spending_allocation :
+        query = query.filter(
+            vOperations.id_spending_allocation == id_spending_allocation
+        )
+
+    if invoice_reference:
+        like_pattern = f"%{invoice_reference}%"
+        query = query.filter(
+            vOperations.invoice_reference.ilike(like_pattern)
+        )
+
+    if with_depreciation :
+        query = query.filter(vOperations.with_depreciation.is_not(None))
+
     if montant:
         try:
             montant = request.args.get("montant", "")
@@ -72,13 +89,9 @@ def search_operations():
 
     if date_apres:
         try:
-            date_apres_parsed = datetime.strptime(
-                date_apres, "%Y-%m-%d"
-            ).date()
+            date_apres_parsed = datetime.strptime(date_apres, "%Y-%m-%d").date()
 
-            query = query.filter(
-                vOperations.effective_date >= date_apres_parsed
-            )
+            query = query.filter(vOperations.effective_date >= date_apres_parsed)
         except ValueError:
             pass
 
@@ -90,8 +103,41 @@ def search_operations():
         except ValueError:
             pass
 
+    # Si "for_vat_summary" mais pas de période définie, ne retourner aucune donnée
+    if for_vat_summary and not (date_apres and date_avant):
+        query = query.filter(vOperations.id_operation < 0)
+
+    if for_vat_summary and date_apres and date_avant :
+        query = query.filter(or_(
+        # Recettes comportant de la TVA
+        and_(
+            vOperations.type_operation == 'Recette',
+            vOperations.vat_amount.isnot(None),
+            vOperations.vat_amount != 0,
+        ),
+        # Dépenses avec une TVA récupérable
+        and_(
+            vOperations.type_operation == 'Dépense',
+            vOperations.recoverable_vat_amount.isnot(None),
+            vOperations.recoverable_vat_amount != 0,
+        ),
+    ))
+
     return query
 
+def compute_vat_summary(query):
+    """Résumé de TVA sur les opérations filtrées par `query`.
+    Renvoie des Decimal : collected (recettes), recoverable (dépenses), balance (à reverser si > 0)."""
+    collected = (query.filter(vOperations.type_operation == 'Recette').with_entities(func.coalesce(func.sum(vOperations.vat_amount), 0)).scalar())
+    recoverable = (query.filter(vOperations.type_operation == 'Dépense').with_entities(func.coalesce(func.sum(vOperations.recoverable_vat_amount), 0)).scalar())
+    collected = Decimal(collected)
+    recoverable = Decimal(recoverable)
+    # Retourner une table des TVA collectées, récupérables, et du différentiel
+    return {
+        "collected": collected,
+        "recoverable": recoverable,
+        "balance": collected - recoverable,
+    }
 
 @operations_bp.route("/api", methods=["GET"])
 @login_required
@@ -103,6 +149,11 @@ def get_api_operations():
 
     total = query.count()
 
+    # Calculs des montants de TVA collectés, Récupérables, et bilan. Utilisé par le bilan de TVA
+    vat_summary = None
+    if (request.args.get("for_vat_summary") is not None and request.args.get("date_apres") and request.args.get("date_avant")):
+        vat_summary = compute_vat_summary(query)
+
     results = query.order_by(vOperations.effective_date.desc()).order_by(vOperations.id_operation.desc()).offset((page - 1) * per_page).limit(per_page).all()
 
     data = [{
@@ -110,6 +161,7 @@ def get_api_operations():
         "effective_date": op.effective_date.strftime('%Y-%m-%d') if op.effective_date else "",
         "operation_date": op.operation_date.strftime('%Y-%m-%d') if op.operation_date else "",
         "name_operation": op.name_operation,
+        "invoice_reference": op.invoice_reference,
         "detail_operation": op.detail_operation,
         "type_operation": op.type_operation,
         "category": op.category,
@@ -120,6 +172,11 @@ def get_api_operations():
         "account_name": op.account_name,
         "payment_method": op.payment_method,
         "amount": Decimal(op.amount),
+        "vat_amount": op.vat_amount,
+        "affectation": op.affectation,
+        "vat_ratio": op.vat_ratio,
+        "recoverable_vat_amount": op.recoverable_vat_amount,
+        "with_depreciation": op.with_depreciation,
         "uploaded_file": url_for('static', filename=op.uploaded_file) if op.uploaded_file else "",
         "meta_create_date": op.meta_create_date,
         "meta_update_date": op.meta_update_date
@@ -129,6 +186,7 @@ def get_api_operations():
         "total": total,
         "page": page,
         "per_page": per_page,
+        "vat_summary": vat_summary,
         "data": data
     })
 
@@ -155,6 +213,7 @@ def download_operations():
         "date_effet",
         "date_operation",
         "libelle",
+        "reference_facture"
         "detail",
         "type_operation",
         "categorie",
@@ -162,7 +221,12 @@ def download_operations():
         "budget",
         "compte",
         "methode_paiement",
-        "montant",
+        "montant_ttc",
+        "montant_tva",
+        "affectation",
+        "taux_recuparation_tva",
+        "tva_recuperable",
+        "amortissement",
         "justificatif",
         "saisi_le",
         "modifie_le"
@@ -174,6 +238,7 @@ def download_operations():
             op.effective_date.strftime('%Y-%m-%d') if op.effective_date else "",
             op.operation_date.strftime('%Y-%m-%d') if op.operation_date else "",
             op.name_operation,
+            op.invoice_reference,
             op.detail_operation,
             op.type_operation,
             op.category,
@@ -182,6 +247,10 @@ def download_operations():
             op.account_name,
             op.payment_method,
             Decimal(op.amount),
+            op.vat_amount,
+            op.affectation,
+            op.vat_ratio,
+            op.recoverable_vat_amount,
             url_for('static', filename=op.uploaded_file) if op.uploaded_file else "",
             op.meta_create_date,
             op.meta_update_date
@@ -210,7 +279,8 @@ def operations():
     budgets = db.session.query(vOperations.id_budget, vOperations.budget_name).filter(vOperations.id_budget.isnot(None)).distinct().order_by(vOperations.budget_name).all()
     accounts = db.session.query(vOperations.id_account, vOperations.account_name).distinct().order_by(vOperations.account_name).all()
     categories = db.session.query(vOperations.category).distinct().order_by(vOperations.category)
-    return render_template('operations/operations_list.html', budgets=budgets, accounts=accounts, categories=categories, type=None)
+    allocations = db.session.query(dictVatRatio.id_spending_allocation, dictVatRatio.label)
+    return render_template('operations/operations_list.html', budgets=budgets, accounts=accounts, categories=categories, allocations=allocations, type=None)
 
 # Suppression d'une opération ou de plusieurs opérations appariées
 @operations_bp.route('/<id_operation>/delete', methods=['GET', 'POST'])

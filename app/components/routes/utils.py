@@ -63,6 +63,12 @@ def getFileUrl(input):
     return file_url
 
 
+def parse_date(value):
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    except (TypeError, ValueError):
+        return None
+
 
 def format_datetime(value):
     format="dd-MM-y"

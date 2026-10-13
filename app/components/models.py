@@ -502,7 +502,7 @@ class vOperations(db.Model):
     __table_args__ = {"schema": "comptasso"}
     id_operation = db.Column(db.Integer, primary_key=True)
     id_grp_operation = db.Column(UUID(as_uuid=True), nullable=False)
-    name_operation = db.Column(db.String(50), nullable=False)
+    name_operation = db.Column(db.String(255), nullable=False)
     detail_operation = db.Column(db.Unicode, nullable=True)
     id_type_operation = db.Column(db.Integer, nullable=False)
     type_operation = db.Column(db.String(50), nullable=False)
@@ -512,6 +512,7 @@ class vOperations(db.Model):
     amount = db.Column(db.Numeric(8,2), nullable=False)
     vat_amount = db.Column(db.Numeric(12,2), nullable=True)
     id_spending_allocation = db.Column(db.Integer, nullable=True)
+    affectation = db.Column(db.String(255), nullable=True)
     vat_ratio = db.Column(db.Numeric(5,2), nullable=True)
     recoverable_vat_amount = db.Column(db.Numeric(12,2), nullable=True)
     with_depreciation = db.Column(db.Boolean, nullable=False)

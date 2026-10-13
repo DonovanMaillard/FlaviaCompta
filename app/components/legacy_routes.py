@@ -38,7 +38,8 @@ from .routes import (
     payrolls_bp,
     operations_bp,
     utils_bp,
-    admin_bp
+    admin_bp,
+    vat_bp
     )
 
 app = Flask(__name__, template_folder='../templates', static_folder='../static')
@@ -57,6 +58,7 @@ app.register_blueprint(payrolls_bp)
 app.register_blueprint(operations_bp)
 app.register_blueprint(utils_bp)
 app.register_blueprint(admin_bp)
+app.register_blueprint(vat_bp)
 
 # Load configuration
 app.config.from_pyfile('../../config/config.py')

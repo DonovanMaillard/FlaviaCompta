@@ -28,7 +28,7 @@ results_bp = Blueprint("results",__name__,url_prefix="/results")
 ### Resultats ###
 #################
 
-# Export as pdf
+# Results per year
 @results_bp.route('/')
 @login_required
 def results():
