@@ -88,7 +88,7 @@ class formMovementBase(Form):
     operation_date = DateField('operation_date', [validators.Optional()])
     effective_date = DateField('effective_date', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
     amount = DecimalField('amount', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner'), validators.NoneOf([0, 0.00], message='Le montant ne peut pas être de 0€')], places=2)
-    vat_rate_autocompletion = SelectField('vat_rate_autocompletion', [validators.Optional()], default=None)
+    vat_rate_autocompletion = SelectField('vat_rate_autocompletion', choices=[], validate_choice=False, validators=[validators.Optional()])
     vat_amount = DecimalField('vat_amount', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], places=2)
     id_payment_method = SelectField('id_payment_method', [validators.Optional()], default=None)
     id_account = SelectField('id_account', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner'),validators.NoneOf([''], message='Vous devez sélectionner une valeur')])

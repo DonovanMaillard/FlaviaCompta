@@ -1,3 +1,6 @@
+DROP VIEW IF EXISTS comptasso.v_decode_payroll_budgets;
+DROP VIEW IF EXISTS comptasso.v_synthese_payroll_budget;
+
 -- Retirer la notion de coût fixe
 ALTER TABLE comptasso.t_budgets DROP COLUMN allowed_fixed_cost;
 ALTER TABLE comptasso.t_budgets ADD COLUMN profit_bonus boolean NOT NULL DEFAULT FALSE;
@@ -14,8 +17,6 @@ AS SELECT cpb.id_payroll_budget,
     FROM comptasso.cor_payroll_budget cpb
      LEFT JOIN comptasso.t_payrolls p ON cpb.id_payroll = p.id_payroll
      LEFT JOIN comptasso.t_budgets b ON cpb.id_budget = b.id_budget;
-
-DROP VIEW IF EXISTS comptasso.v_synthese_payroll_budget;
 
 CREATE VIEW comptasso.v_synthese_payroll_budget AS
 SELECT
@@ -54,9 +55,6 @@ CROSS JOIN LATERAL (
 
 -- Ajout d'un champs jsonb pour stocker "temporairement" l'allocation du budget à chaque salarié avant cloture
 ALTER TABLE comptasso.t_budgets ADD COLUMN draft_allocations jsonb;
-
--- Ajout d'un champs date pour stocker la date de lancement du projet
-ALTER TABLE comptasso.t_budgets ADD COLUMN date_start date;
 
 -- Ajout d'un champs date de cloture sur la table budget, qui remplacera le booleen active
 ALTER TABLE comptasso.t_budgets ADD COLUMN date_closing date;
@@ -169,14 +167,14 @@ ALTER TABLE comptasso.t_budgets DROP COLUMN active;
 
 -- Table de stockage des intéressements acquis par salarié
 CREATE TABLE comptasso.t_profit_bonus (
-	id_pb serial PRIMARY KEY,
-	id_budget integer NOT NULL,
-	id_member integer NOT NULL,
-	allocated_amount numeric(12,2) NOT NULL,
-	profit_percent numeric(5,2) NOT NULL,
-	profit_bonus_amount numeric(12,2),
-	meta_create_date timestamp without time zone,
-	meta_update_date timestamp without time zone,
+    id_pb serial PRIMARY KEY,
+    id_budget integer NOT NULL,
+    id_member integer NOT NULL,
+    allocated_amount numeric(12,2) NOT NULL,
+    profit_percent numeric(5,2) NOT NULL,
+    profit_bonus_amount numeric(12,2),
+    meta_create_date timestamp without time zone,
+    meta_update_date timestamp without time zone
 );
 
 -- Ajouter les clés étrangères sur id_budget, id_member
@@ -238,31 +236,13 @@ AS WITH years AS (
            FROM comptasso.dict_categories cat
              JOIN comptasso.dict_operation_types typ ON cat.id_type_operation = typ.id_type_operation
              CROSS JOIN years y
-             LEFT JOIN LATERAL ( SELECT op_1.id_operation,
-                    op_1.id_grp_operation,
-                    op_1.name,
-                    op_1.detail_operation,
-                    op_1.id_type_operation,
-                    op_1.operation_date,
-                    op_1.effective_date,
-                    op_1.amount,
-                    op_1.id_payment_method,
-                    op_1.id_account,
-                    op_1.id_budget,
-                    op_1.id_category,
-                    op_1.uploaded_file,
-                    op_1.pointed,
-                    op_1.meta_id_digitiser,
-                    op_1.meta_create_date,
-                    op_1.meta_update_date,
-                    typ_1.id_type_operation,
-                    typ_1.label,
-                    typ_1.description,
-                    typ_1.operator
-                   FROM comptasso.t_operations op_1
-                     JOIN comptasso.dict_operation_types typ_1 ON op_1.id_type_operation = typ_1.id_type_operation
-                  WHERE date_part('year'::text, op_1.effective_date)::integer = y.year AND op_1.id_category = cat.id_category) op(id_operation, id_grp_operation, name, detail_operation, id_type_operation, operation_date, effective_date, amount, id_payment_method, id_account, id_budget, id_category, uploaded_file, pointed, meta_id_digitiser, meta_create_date, meta_update_date, id_type_operation_1, label, description, operator) ON true
-          WHERE typ.label::text = ANY (ARRAY['Recette'::character varying, 'Dépense'::character varying]::text[])
+             LEFT JOIN LATERAL (
+                SELECT op_1.amount
+                FROM comptasso.t_operations op_1
+                WHERE date_part('year', op_1.effective_date)::int = y.year
+                AND op_1.id_category = cat.id_category
+                ) op ON true
+             WHERE typ.label::text = ANY (ARRAY['Recette'::character varying, 'Dépense'::character varying]::text[])
           GROUP BY y.year, typ.label, cat.level, (cat.cd_category::text), ((cat.cd_category || '. '::text) || cat.label::text), cat.cd_broader
           ORDER BY y.year, typ.label, (cat.cd_category::text), ((cat.cd_category || '. '::text) || cat.label::text)
         )
@@ -277,12 +257,7 @@ AS WITH years AS (
   WHERE d.level = 1 AND child.year = d.year
   GROUP BY d.year, d.type_category, d.cd_category, d.label;
 
-
--- v_operations remontée plus tard, après intégration de la TVA
--- Retirer la notion de "pointé" inutilisée dans le même temps
 ALTER TABLE comptasso.t_operations DROP COLUMN pointed ;
-
--- ARRETE ICI !!
 
 -- Implémenter la gestion de la TVA --
 -- Créer la table dict des modalités d'affectation des dépenses aux secteurs lucratifs/non lucratifs
@@ -294,11 +269,11 @@ CREATE TABLE comptasso.dict_vat_ratio (
 );
 
 INSERT INTO comptasso.dict_vat_ratio (label, description, ratio)
-VALUES ('Secteur lucratif','Charge intégralement affectée au secteur lucratif et ouvrant droit à la récupération de TVA au taux de 100%.',1)
-,('Essentiellement secteur lucratif','Charge essentiellement affectée au secteur lucratif et ouvrant droit à la récupération de TVA au taux de 90%.',0.90)
+VALUES ('Lucratif','Charge intégralement affectée au secteur lucratif et ouvrant droit à la récupération de TVA au taux de 100%.',1)
+,('Essentiellement lucratif','Charge essentiellement affectée au secteur lucratif et ouvrant droit à la récupération de TVA au taux de 90%.',0.90)
 ,('Mixte','Charge mixte affectée aux secteurs lucratif et non lucratif, ouvrant droit à la récupération de TVA au taux de 40%.',0.40)
-,('Essentiellement secteur non lucratif','Charge essentiellement affectée au secteur non lucratif et ouvrant droit à la récupération de TVA au taux de 10%.',0.10)
-,('Secteur non lucratif','Charge intégralement affectée au secteur non lucratif et n''ouvrant pas le droit à la récupération de TVA.',0)
+,('Essentiellement non lucratif','Charge essentiellement affectée au secteur non lucratif et ouvrant droit à la récupération de TVA au taux de 10%.',0.10)
+,('Non lucratif','Charge intégralement affectée au secteur non lucratif et n''ouvrant pas le droit à la récupération de TVA.',0)
 ;
 
 -- Modifier la table t_operations
@@ -319,7 +294,7 @@ UPDATE comptasso.t_operations
     vat_ratio=dict.ratio,
     recoverable_vat_amount=0
 FROM comptasso.dict_vat_ratio dict 
-WHERE dict.label='Secteur non lucratif';
+WHERE dict.label='Non lucratif';
 
 
 -- Remonter la vue v_operations intégrant les nouveaux champs
@@ -376,7 +351,7 @@ FOREIGN KEY (id_default_account) REFERENCES comptasso.t_accounts(id_account);
 
 -- L'affectation d'un compte par défaut pour chaque utilisateur se fait actuellement en base - penser à le renseigner. 
 
-# Ajouter une sélection automatique "intelligente" de la catégorie fiscale basée sur des mots-clés du libellé et le type d'opération
+-- Ajouter une sélection automatique "intelligente" de la catégorie fiscale basée sur des mots-clés du libellé et le type d'opération
 ALTER TABLE comptasso.dict_categories ADD COLUMN keywords text;
 
 UPDATE comptasso.dict_categories

@@ -213,7 +213,7 @@ def download_operations():
         "date_effet",
         "date_operation",
         "libelle",
-        "reference_facture"
+        "reference_facture",
         "detail",
         "type_operation",
         "categorie",
@@ -406,34 +406,33 @@ def updateMovement(id_operation): #movement = Dépense + Recette
         # Affectation choices
         VatRatios = dictVatRatio.query.order_by(dictVatRatio.ratio.desc()).all()
         form.id_spending_allocation.choices = [('', '-- Sélectionnez une affectation --')] + [(r.id_spending_allocation, r.label, {'data-ratio': str(r.ratio) if r.ratio is not None else ''}) for r in VatRatios]
-        form.id_spending_allocation.default = Operation.id_spending_allocation
     # Form Choices
     # accounts
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
-    form.id_account.default=Operation.id_account
     # Budget
     activeBudgets = tBudgets.query.filter_by(date_closing=None)
     form.id_budget.choices = [('', '-- Sélectionnez un budget --')] + [(activeBudget.id_budget, activeBudget.name) for activeBudget in activeBudgets]
-    form.id_budget.default=Operation.id_budget
     # Category
     Categories = dictCategories.query.filter(dictCategories.id_type_operation == Operation.id_type_operation, dictCategories.seizable == True).order_by(dictCategories.cd_category).all()
     form.id_category.choices = [('', '-- Sélectionnez une catégorie --')] + [(category.id_category, str(category.cd_category)+" - "+category.label) for category in Categories]
-    form.id_category.default=Operation.id_category
     # Payment method
     PaymentMethods = dictPaymentMethods.query.all() # TODO filtrer avec la cor.
     form.id_payment_method.choices = [('', '-- Sélectionnez un moyen de paiement --')] + [(PaymentMethod.id_payment_method, PaymentMethod.label) for PaymentMethod in PaymentMethods]
-    form.id_payment_method.default=Operation.id_payment_method
     # VAT Rates for autocompletion
     # Ne pas recharger les seuils pour faciliter la saisie en édition, afin de ne pas introduire d'erreurs ou ne pas recalculer la TVA de manière involontaire/transparente.
     # Affectation choices
     VatRatios = dictVatRatio.query.order_by(dictVatRatio.ratio.desc()).all()
     form.id_spending_allocation.choices = [('', '-- Sélectionnez une affectation --')] + [(r.id_spending_allocation, r.label, {'data-ratio': str(r.ratio) if r.ratio is not None else ''}) for r in VatRatios]
+    # Pré-remplir avec les valeurs existantes
+    if request.method == 'GET':
+        form.process(obj=Operation)
+        form.amount.data = abs(Operation.amount) if Operation.amount is not None else None
     # allow null operation_date
     if request.form.get('operation_date') == '' and request.method == 'POST' and form.validate()  :
         operation_date = None
     else :
         operation_date = request.form.get('operation_date')
-    # Get cleaned amound
+    # Get cleaned amount
     if type_operation == 'Dépense' and request.method == 'POST' and form.validate()  :
         amount = -abs_decimal(request.form.get('amount'))
     else :
@@ -446,13 +445,13 @@ def updateMovement(id_operation): #movement = Dépense + Recette
         vat_amount = abs_decimal(form.vat_amount.data)
         recoverable_vat_amount = (vat_amount * vat_ratio).quantize(Decimal('0.01')) if (vat_amount is not None and vat_ratio is not None) else None
         # let None as id_grp_operations
-        Operation.name = request.form['name'],
-        Operation.detail_operation = request.form['detail_operation'],
+        Operation.name = request.form['name']
+        Operation.detail_operation = request.form['detail_operation']
         # - let id_type_operation unchanged
         Operation.operation_date = operation_date
         Operation.effective_date = request.form['effective_date']
         Operation.amount = amount
-        abs_decimal(request.form['vat_amount'])
+        Operation.vat_amount = vat_amount
         if type_operation == 'Dépense' :
             Operation.id_spending_allocation = request.form['id_spending_allocation']
             Operation.vat_ratio = vat_ratio

@@ -2,6 +2,9 @@
 
 {% block content %}
 <div class="container">
+{% set operations_filters_form = 'filters' %}
+{% set operations_fixed_params = {'for_vat_summary': '1'} %}
+
 <h1> Rapport de TVA</h1>
 
 <div class="card">
@@ -59,8 +62,6 @@
     <h4>Détail des opérations</h4>
   </div>
   <div class="card-body">
-    {% set operations_filters_form = 'filters' %}
-    {% set operations_fixed_params = {'for_vat_summary': '1'} %}
     {% include 'shared/operations_table.html' %}
   </div>
 </div>
@@ -74,6 +75,22 @@
   const recoverableBox = document.getElementById('vat-recoverable');
   const balanceBox     = document.getElementById('vat-balance');
   const balanceLabel   = document.getElementById('vat-balance-label');
+  const filtersForm = document.getElementById('filters');
+  const pdfLink     = document.getElementById('download-pdf');
+  const pdfBaseUrl  = pdfLink.getAttribute('href');   // "/vat/pdf" généré par url_for
+
+  pdfLink.addEventListener('click', function (e) {
+    const params = new URLSearchParams(new FormData(filtersForm));
+    params.set('for_vat_summary', '1');
+
+    if (!params.get('date_apres') || !params.get('date_avant')) {
+      e.preventDefault();
+      alert('Choisissez une date de début et une date de fin avant d\'exporter.');
+      return;
+    }
+    pdfLink.href = pdfBaseUrl + '?' + params.toString();
+    // pas de preventDefault : le navigateur suit le lien avec les paramètres
+  });
 
   function showSummary(s) {
     // Pas de résumé (période incomplète) : tout retombe à 0

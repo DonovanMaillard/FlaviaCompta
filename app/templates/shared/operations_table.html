@@ -6,19 +6,20 @@
     <thead>
         <tr>
             <th width="10%">Date d'effet</th>
-            <th width="10%">Type</th>
-            <th width="25%">Libellé et catégorie</th>
-            <th width="20%">Compte</th>
-            <th width="20%">Budget</th>
-            <th width="10%">Montant</th>
+            <th width="25%">Libellé</th>
+            <th width="30%">Infos comptables</th>
+            <th width="10%">Montant TTC</th>
+            <th width="20%">TVA</th>
             <th width="5%">Actions</th>
         </tr>
     </thead>
 </table>
 
-<a class="btn btn-success btn-right" id="download-csv" href="{{ url_for('operations.download_operations') }}">
-  <i class="fa fa-download"></i> Exporter en csv
-</a>
+<div class="btn btn-group">
+  <a class="btn btn-success btn-right" id="download-csv" href="{{ url_for('operations.download_operations') }}">
+    <i class="fa fa-download"></i> Exporter en csv
+  </a>
+</div>
 
 <!-- Modale de détail -->
 <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
@@ -101,23 +102,29 @@
           return `${row.effective_date}`;
         }
       },
-      { data: 'type_operation' },
       {
         data: 'name_operation',
         render: function (data, type, row) {
           const name = esc(row.name_operation);
-          const category = `<br><small style="font-size:13px;"><em>${esc(row.category)}</em></small>`;
+          const type_operation = `<br><small>${esc(row.type_operation)}</small>`;
           if (row.uploaded_file) {
-            return `${name} <a href="${row.uploaded_file}"><i class="fa fa-file" title="Voir le justificatif"></i></a>${category}`;
+            return `${name} <a href="${row.uploaded_file}"><i class="fa fa-file" title="Voir le justificatif"></i></a>${type_operation}`;
           }
           if (row.type_operation == 'Dépense') {
-            return `${name} <i class="fa fa-warning" style="color:red;" title="Aucun justificatif fourni pour cette dépense"></i>${category}`;
+            return `${name} <i class="fa fa-receipt" style="color:red;" title="Aucun justificatif fourni pour cette dépense"></i>${type_operation}`;
           }
-          return `${name}${category}`;
+          return `${name},${type_operation}`;
         }
       },
-      { data: 'account_name' },
-      { data: 'budget_name' },
+      {
+        data: null,
+        render: function (data, type, row) {
+          return `<small>- Compte : <em>${esc(row.account_name)}</em></small><br>`
+               + `<small>- Budget : <em>${esc(row.budget_name)}</em></small><br>`
+               + `<small>- Catégorie : <em>${esc(row.category)}</em></small>`
+               ;
+          }
+      },
       {
         data: 'amount',
         render: function (data, type, row) {
@@ -129,6 +136,20 @@
             return `<span style="background-color:#D9FCD4; border-radius: 5px; padding:5px;">+ ${montant} €</span>`;
           }
           return `<span>${montant} €</span>`;
+        }
+      },
+      {
+        data:null,
+        render: function (data, type, row) {
+          if (row.type_operation == 'Dépense') {
+            return `<small>Montant versé : <em>${row.vat_amount ?? '- '}€</em></small><br><br>`
+               + `<small>Affectation : <em>${row.affectation ?? '- '}</em></small><br>`
+               + `<small>TVA récupérable : <em>${row.recoverable_vat_amount ?? '- '}€</em></small>`;
+          }
+          if (row.type_operation == 'Recette') {
+            return `<small>TVA perçue : <em>${row.vat_amount ?? '- '}€</em></small><br>`;
+          }
+          return '';
         }
       },
       {
