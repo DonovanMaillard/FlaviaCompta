@@ -78,18 +78,46 @@
   const filtersForm = document.getElementById('filters');
   const pdfLink     = document.getElementById('download-pdf');
   const pdfBaseUrl  = pdfLink.getAttribute('href');   // "/vat/pdf" généré par url_for
+  const pdfLinkHtml = pdfLink.innerHTML;              // contenu d'origine du bouton
 
-  pdfLink.addEventListener('click', function (e) {
+  pdfLink.addEventListener('click', async function (e) {
+    e.preventDefault();
+    if (pdfLink.classList.contains('disabled')) return;   // évite le double clic
+
     const params = new URLSearchParams(new FormData(filtersForm));
     params.set('for_vat_summary', '1');
+    const dMin = params.get('date_apres');
+    const dMax = params.get('date_avant');
 
-    if (!params.get('date_apres') || !params.get('date_avant')) {
-      e.preventDefault();
+    if (!dMin || !dMax) {
       alert('Choisissez une date de début et une date de fin avant d\'exporter.');
       return;
     }
-    pdfLink.href = pdfBaseUrl + '?' + params.toString();
-    // pas de preventDefault : le navigateur suit le lien avec les paramètres
+
+    // Spinner pendant la génération
+    pdfLink.classList.add('disabled');
+    pdfLink.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Génération en cours…';
+
+    try {
+      const resp = await fetch(pdfBaseUrl + '?' + params.toString(), { credentials: 'same-origin' });
+      const type = resp.headers.get('Content-Type') || '';
+      if (!resp.ok || !type.includes('application/pdf')) throw new Error('Réponse inattendue');
+
+      // Téléchargement du PDF reçu
+      const blobUrl = URL.createObjectURL(await resp.blob());
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `bilan_tva_du_${dMin}_au_${dMax}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    } catch (err) {
+      alert('La génération du rapport a échoué.');
+    } finally {
+      pdfLink.innerHTML = pdfLinkHtml;
+      pdfLink.classList.remove('disabled');
+    }
   });
 
   function showSummary(s) {

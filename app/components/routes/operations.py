@@ -31,6 +31,7 @@ operations_bp = Blueprint("operations",__name__,url_prefix="/operations")
 def search_operations():
     query = vOperations.query.filter(vOperations.type_operation != 'Engagement')
 
+    id_type_operation = request.args.get("id_type_operation", "")
     libelle = request.args.get("libelle", "")
     id_budget = request.args.get("id_budget", "")
     id_account = request.args.get("id_account", "")
@@ -41,7 +42,13 @@ def search_operations():
     invoice_reference = request.args.get("invoice_reference", "")
     date_apres = request.args.get("date_apres", type=str)
     date_avant = request.args.get("date_avant", type=str)
+    missing_file = request.args.get("missing_file") is not None
     for_vat_summary = request.args.get("for_vat_summary") is not None
+
+    if id_type_operation:
+        query = query.filter(
+            vOperations.id_type_operation == id_type_operation
+        )
 
     if libelle:
         like_pattern = f"%{libelle}%"
@@ -102,6 +109,11 @@ def search_operations():
             query = query.filter(vOperations.effective_date <= date_avant_parsed)
         except ValueError:
             pass
+
+    if missing_file :
+        query = query.filter(and_(
+            vOperations.type_operation == 'Dépense',
+            vOperations.uploaded_file.is_(None)))
 
     # Si "for_vat_summary" mais pas de période définie, ne retourner aucune donnée
     if for_vat_summary and not (date_apres and date_avant):
@@ -178,6 +190,7 @@ def get_api_operations():
         "recoverable_vat_amount": op.recoverable_vat_amount,
         "with_depreciation": op.with_depreciation,
         "uploaded_file": url_for('static', filename=op.uploaded_file) if op.uploaded_file else "",
+        "locked" : op.locked,
         "meta_create_date": op.meta_create_date,
         "meta_update_date": op.meta_update_date
     } for op in results]
@@ -228,6 +241,7 @@ def download_operations():
         "tva_recuperable",
         "amortissement",
         "justificatif",
+        "verouillee",
         "saisi_le",
         "modifie_le"
     ])
@@ -252,6 +266,7 @@ def download_operations():
             op.vat_ratio,
             op.recoverable_vat_amount,
             url_for('static', filename=op.uploaded_file) if op.uploaded_file else "",
+            op.locked,
             op.meta_create_date,
             op.meta_update_date
         ])
@@ -280,7 +295,8 @@ def operations():
     accounts = db.session.query(vOperations.id_account, vOperations.account_name).distinct().order_by(vOperations.account_name).all()
     categories = db.session.query(vOperations.category).distinct().order_by(vOperations.category)
     allocations = db.session.query(dictVatRatio.id_spending_allocation, dictVatRatio.label)
-    return render_template('operations/operations_list.html', budgets=budgets, accounts=accounts, categories=categories, allocations=allocations, type=None)
+    types = db.session.query(dictOperationTypes.id_type_operation, dictOperationTypes.label).filter(dictOperationTypes.label !='Engagement').filter(dictOperationTypes.label !='Solde initial').filter(dictOperationTypes.label != 'Valorisation du bénévolat')
+    return render_template('operations/operations_list.html', budgets=budgets, accounts=accounts, categories=categories, allocations=allocations, types=types)
 
 # Suppression d'une opération ou de plusieurs opérations appariées
 @operations_bp.route('/<id_operation>/delete', methods=['GET', 'POST'])
@@ -320,7 +336,7 @@ def addMovement(type_operation): #movement = Dépense + Recette
         form.id_account.data = str(current_user.id_default_account)
     # Budget
     activeBudgets = tBudgets.query.filter_by(date_closing=None)
-    form.id_budget.choices = [('', '-- Sélectionnez un budget --')] + [(activeBudget.id_budget, activeBudget.name) for activeBudget in activeBudgets]
+    form.id_budget.choices = [('', '-- Sélectionnez un budget --')] + [(activeBudget.id_budget, activeBudget.name, {'data-vat': str(activeBudget.vat_amount) if activeBudget.vat_amount is not None else 0}) for activeBudget in activeBudgets]
     # Category
     Categories = dictCategories.query.filter(dictCategories.id_type_operation == id_type_operation, dictCategories.seizable == True).order_by(dictCategories.cd_category).all()
     form.id_category.choices = [('', '-- Sélectionnez une catégorie --')] + [(category.id_category, str(category.cd_category)+" - "+category.label, {'data-keywords': category.keywords or ''}) for category in Categories]
@@ -411,7 +427,7 @@ def updateMovement(id_operation): #movement = Dépense + Recette
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
     # Budget
     activeBudgets = tBudgets.query.filter_by(date_closing=None)
-    form.id_budget.choices = [('', '-- Sélectionnez un budget --')] + [(activeBudget.id_budget, activeBudget.name) for activeBudget in activeBudgets]
+    form.id_budget.choices = [('', '-- Sélectionnez un budget --')] + [(activeBudget.id_budget, activeBudget.name, {'data-vat': str(activeBudget.vat_amount) if activeBudget.vat_amount is not None else 0}) for activeBudget in activeBudgets]
     # Category
     Categories = dictCategories.query.filter(dictCategories.id_type_operation == Operation.id_type_operation, dictCategories.seizable == True).order_by(dictCategories.cd_category).all()
     form.id_category.choices = [('', '-- Sélectionnez une catégorie --')] + [(category.id_category, str(category.cd_category)+" - "+category.label) for category in Categories]
@@ -420,9 +436,6 @@ def updateMovement(id_operation): #movement = Dépense + Recette
     form.id_payment_method.choices = [('', '-- Sélectionnez un moyen de paiement --')] + [(PaymentMethod.id_payment_method, PaymentMethod.label) for PaymentMethod in PaymentMethods]
     # VAT Rates for autocompletion
     # Ne pas recharger les seuils pour faciliter la saisie en édition, afin de ne pas introduire d'erreurs ou ne pas recalculer la TVA de manière involontaire/transparente.
-    # Affectation choices
-    VatRatios = dictVatRatio.query.order_by(dictVatRatio.ratio.desc()).all()
-    form.id_spending_allocation.choices = [('', '-- Sélectionnez une affectation --')] + [(r.id_spending_allocation, r.label, {'data-ratio': str(r.ratio) if r.ratio is not None else ''}) for r in VatRatios]
     # Pré-remplir avec les valeurs existantes
     if request.method == 'GET':
         form.process(obj=Operation)
@@ -434,16 +447,15 @@ def updateMovement(id_operation): #movement = Dépense + Recette
         operation_date = request.form.get('operation_date')
     # Get cleaned amount
     if type_operation == 'Dépense' and request.method == 'POST' and form.validate()  :
+        # Affectation choices
+        VatRatios = dictVatRatio.query.order_by(dictVatRatio.ratio.desc()).all()
+        form.id_spending_allocation.choices = [('', '-- Sélectionnez une affectation --')] + [(r.id_spending_allocation, r.label, {'data-ratio': str(r.ratio) if r.ratio is not None else ''}) for r in VatRatios]
         amount = -abs_decimal(request.form.get('amount'))
     else :
         amount = abs_decimal(request.form.get('amount'))
     # Update
     if request.method == 'POST' and form.validate():
-        # Calcul de la TVA récupérable à partir du montant de TVA, et de l'affectation
-        allocation = db.session.get(dictVatRatio, form.id_spending_allocation.data)
-        vat_ratio = allocation.ratio if allocation and allocation.ratio is not None else None
         vat_amount = abs_decimal(form.vat_amount.data)
-        recoverable_vat_amount = (vat_amount * vat_ratio).quantize(Decimal('0.01')) if (vat_amount is not None and vat_ratio is not None) else None
         # let None as id_grp_operations
         Operation.name = request.form['name']
         Operation.detail_operation = request.form['detail_operation']
@@ -453,6 +465,10 @@ def updateMovement(id_operation): #movement = Dépense + Recette
         Operation.amount = amount
         Operation.vat_amount = vat_amount
         if type_operation == 'Dépense' :
+            # Calcul de la TVA récupérable à partir du montant de TVA, et de l'affectation
+            allocation = db.session.get(dictVatRatio, form.id_spending_allocation.data)
+            vat_ratio = allocation.ratio if allocation and allocation.ratio is not None else None
+            recoverable_vat_amount = (vat_amount * vat_ratio).quantize(Decimal('0.01')) if (vat_amount is not None and vat_ratio is not None) else None
             Operation.id_spending_allocation = request.form['id_spending_allocation']
             Operation.vat_ratio = vat_ratio
             Operation.recoverable_vat_amount = recoverable_vat_amount

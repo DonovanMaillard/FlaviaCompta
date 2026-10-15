@@ -40,7 +40,6 @@ def vatReportPdf():
     # Le bilan ne doit être produit qu'avec une période définie et si demandée "pour le bilan tva"
     if not (request.args.get("for_vat_summary") is not None
             and request.args.get("date_apres") and request.args.get("date_avant")):
-        print("Il y a du None !")
         flash("Choisissez une période complète (date de début et de fin) pour exporter le bilan.")
         return redirect(request.referrer or url_for('operations.operations'))
 
@@ -55,8 +54,6 @@ def vatReportPdf():
     recettes = query.filter(vOperations.type_operation == 'Recette').order_by(*order).all()
     depenses = query.filter(vOperations.type_operation == 'Dépense').order_by(*order).all()
     summary = compute_vat_summary(query)
-
-    print(recettes)
 
     html = render_template(
         'vat/vat_pdf.html',

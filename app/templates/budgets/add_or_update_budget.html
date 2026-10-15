@@ -40,10 +40,6 @@
                             <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
                         {% endfor %}
                     </div>
-                    <div class="orm-group col-md-4">
-                        Secteur lucratif (TVA)
-                    </div>
-                    <!-- Third row -->
                     <div class="form-group col-md-4">
                         <label for = "id_funder">Financeur</label><br>
                         {{ form.id_funder(class="form-control") }}
@@ -51,6 +47,7 @@
                             <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
                         {% endfor %}
                     </div>
+                    <!-- Third row -->
                     <div class="form-group col-md-4">
                         <label for = "id_activity">Activité</label><br>
                         {{ form.id_activity(class="form-control") }}
@@ -76,10 +73,9 @@
                     </div>
                     <hr>
                     <div class="form-group">
-                        <label for = "budget_amount">dont tva</label><br>
-                        {{ form.budget_amount(class="form-control") }}
-                        <small>Commandes assujetties uniquement</small>
-                        {% for error in form.budget_amount.errors %} 
+                        <label for = "vat_amount">dont tva</label><br>
+                        {{ form.vat_amount(class="form-control") }}
+                        {% for error in form.vat_amount.errors %} 
                             <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
                         {% endfor %}
                     </div>
@@ -141,9 +137,9 @@
                             <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
                         {% endfor %}
                     </div> 
-                    <div class="form-group col-md-4">
+                    <div class="form-group col-md-4 d-flex align-items-center">
                         {{ form.profit_bonus(class="form-check-input") }}
-                        <label for = "profit_bonus">Éligible au calcul de l'intéressement</label>
+                        <label for = "profit_bonus"> Éligible au calcul de l'intéressement</label>
                     </div>
                 </div>
             </div>

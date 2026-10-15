@@ -23,11 +23,6 @@ from .utils import *
 
 budgets_bp = Blueprint("budgets",__name__,url_prefix="/budgets")
 
-############################################
-## MISE EN PLACE D'UNE API ET DES EXPORTS ##
-##            EN DEVELOPPEMENT            ##
-############################################
-
 
 #####################
 ## Search function ##
@@ -42,6 +37,7 @@ def search_budgets():
     montant = request.args.get("montant", type=str)
     id_funder = request.args.get("id_funder", "")
     closed = request.args.get("closed") is not None
+    for_profit = request.args.get("for_profit") is not None
     id_type_budget = request.args.get("id_type_budget", "")
     id_activity = request.args.get("id_activity", "")
     demarre_apres = request.args.get("demarre_apres", type=str)
@@ -76,6 +72,9 @@ def search_budgets():
 
     if id_activity:
         query = query.filter(vBudgets.id_activity == id_activity)
+
+    if for_profit:
+        query = query.filter(func.coalesce(vBudgets.vat_amount, 0) != 0)
     
     if demarre_apres:
         try:
@@ -133,6 +132,7 @@ def get_api_budgets():
         "date_max_expenditure" : b.date_max_expenditure,
         "date_return" : b.date_return,
         "budget_amount" : b.budget_amount,
+        "vat_amount": b.vat_amount,
         "payroll_limit" : b.payroll_limit,
         "indirect_charges" : b.indirect_charges,
         "indirect_charges_amount" : b.indirect_charges_amount,
@@ -188,6 +188,7 @@ def download_budgets():
         "date_max_depenses",
         "date_rendus",
         "montant_budget",
+        "dont_tva",
         "masse_salariale_max",
         "pourcent_charges_indirectes",
         "montant_max_charges_indirectes",
@@ -219,6 +220,7 @@ def download_budgets():
             b.date_max_expenditure,
             b.date_return,
             b.budget_amount,
+            b.vat_amount,
             b.payroll_limit,
             b.indirect_charges,
             b.indirect_charges_amount,
@@ -305,7 +307,7 @@ def detailBudget(id_budget):
 def addBudget():
     form = formBudget(request.form)
     # Funders
-    activeFunders = tFunders.query.filter_by(active=True)
+    activeFunders = tFunders.query.filter_by(active=True).order_by(tFunders.name)
     form.id_funder.choices = [('', '-- Sélectionnez un financeur --')] + [(activeFunder.id_funder, activeFunder.name) for activeFunder in activeFunders]
     # Type budget
     TypesBudget = dictBudgetTypes.query.all()
@@ -322,9 +324,10 @@ def addBudget():
             getChoiceOrNone(request.form['id_funder']), 
             getChoiceOrNone(request.form['id_type_budget']), 
             getChoiceOrNone(request.form['id_activity']),
-            request.form['date_max_expenditure'], 
-            request.form['date_return'], 
-            abs_decimal(request.form.get('budget_amount')), 
+            form.date_max_expenditure.data, 
+            form.date_return.data, 
+            abs_decimal(request.form.get('budget_amount')),
+            abs_decimal(request.form.get('vat_amount') or 0),  
             abs_decimal(request.form['payroll_limit']), 
             abs_decimal(request.form['indirect_charges']), 
             request.form['comment'], 
@@ -385,7 +388,7 @@ def closeBudget(id_budget):
                     profit_percent=profit_bonus_ratio,
                     profit_bonus_amount =allocated_amount*profit_bonus_ratio
                 ))
-        db.session.commit()
+    db.session.commit()
     return redirect('/budgets')
 
 

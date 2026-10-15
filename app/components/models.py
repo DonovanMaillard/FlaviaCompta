@@ -122,7 +122,8 @@ class tBudgets(db.Model):
     id_activity = db.Column(db.Integer(), nullable=True)
     date_max_expenditure = db.Column(db.Date(), nullable=True)
     date_return = db.Column(db.Date(), nullable=True)
-    budget_amount = db.Column(db.Numeric(8,2), nullable=True)
+    budget_amount = db.Column(db.Numeric(8,2), nullable=False)
+    vat_amount = db.Column(db.Numeric(8,2), nullable=False)
     payroll_limit = db.Column(db.Numeric(8,2), nullable=True)
     indirect_charges = db.Column(db.Numeric(8,2), nullable=True)
     comment = db.Column(db.Unicode, nullable=True)
@@ -133,7 +134,7 @@ class tBudgets(db.Model):
     meta_create_date = db.Column(db.DateTime(), nullable=True)
     meta_update_date = db.Column(db.DateTime(), nullable=True)
 
-    def __init__(self, name, reference, id_funder, id_type_budget, id_activity, date_max_expenditure, date_return, budget_amount, payroll_limit, indirect_charges, comment, profit_bonus, date_start):
+    def __init__(self, name, reference, id_funder, id_type_budget, id_activity, date_max_expenditure, date_return, budget_amount, vat_amount, payroll_limit, indirect_charges, comment, profit_bonus, date_start):
         self.name = name
         self.reference = reference
         self.id_funder = id_funder
@@ -142,6 +143,7 @@ class tBudgets(db.Model):
         self.date_max_expenditure = date_max_expenditure
         self.date_return = date_return
         self.budget_amount = budget_amount
+        self.vat_amount = vat_amount
         self.payroll_limit = payroll_limit
         self.indirect_charges = indirect_charges
         self.comment = comment
@@ -443,6 +445,7 @@ class vBudgets(db.Model):
     date_max_expenditure = db.Column(db.Date(), nullable=True)
     date_return = db.Column(db.Date(), nullable=True)
     budget_amount = db.Column(db.Numeric(8,2), nullable=True)
+    vat_amount = db.Column(db.Numeric(8,2), nullable=True)
     payroll_limit = db.Column(db.Numeric(8,2), nullable=True)
     indirect_charges = db.Column(db.Numeric(8,2), nullable=True)
     indirect_charges_amount = db.Column(db.Numeric(8,2), nullable=True)
@@ -526,6 +529,7 @@ class vOperations(db.Model):
     parent_category = db.Column(db.String(50), nullable=False)
     invoice_reference = db.Column(db.String(50), nullable=True)
     uploaded_file = db.Column(db.String(255), nullable=True)
+    locked = db.Column(db.Boolean, nullable=False)
     meta_create_date = db.Column(db.DateTime(), nullable=True)
     meta_update_date = db.Column(db.DateTime(), nullable=True)
 

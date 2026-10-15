@@ -99,12 +99,18 @@
         data: 'date_start',
         render: function (data, type, row) {
           const start = formatDate(data);
-          const end = (row.date_max_expenditure && row.date_max_expenditure !== '-')
+          const end = (row.date_max_expenditure ?? '-')
             ? formatDate(row.date_max_expenditure) : '';
           return `Du ${start} <br>au ${end}`;
         }
       },
-      { data: 'budget_amount', render: money },
+      {
+        data: 'budget_amount',
+        render: function (data, type, row) {
+          return `${money(row.budget_amount)}<br>`
+               + `<small><em>Dont TVA</em> : ${money(row.vat_amount)}</small>`;
+        }
+      },
       {
         data: 'spent_amount',
         render: function (data, type, row) {

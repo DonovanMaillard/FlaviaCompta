@@ -82,6 +82,12 @@ SET date_start = LEAST(
     b.meta_create_date::date
 );
 
+-- Ajouter la notion de TVA sur les budgets
+ALTER TABLE comptasso.t_budgets ADD COLUMN vat_amount numeric(12,2);
+
+UPDATE comptasso.t_budgets
+    SET vat_amount=0;
+
 -- Actualiser la vue correspondante
 DROP VIEW IF EXISTS comptasso.v_budgets;
 
@@ -97,17 +103,18 @@ SELECT b.id_budget,
     a.label AS activity,
     COALESCE(b.date_max_expenditure::text, '-') AS date_max_expenditure,
     COALESCE(b.date_return::text, '-') AS date_return,
-    COALESCE(b.budget_amount, 0)::numeric(8,2) AS budget_amount,
-    COALESCE(b.payroll_limit, 0)::numeric(8,2) AS payroll_limit,
+    COALESCE(b.budget_amount, 0)::numeric(12,2) AS budget_amount,
+    COALESCE(b.vat_amount, 0)::numeric(12,2) AS vat_amount,
+    COALESCE(b.payroll_limit, 0)::numeric(12,2) AS payroll_limit,
     COALESCE(b.indirect_charges, 0)::numeric(8,2) AS indirect_charges,
-    COALESCE(b.indirect_charges / 100 * b.payroll_limit, 0)::numeric(8,2) AS indirect_charges_amount,
+    COALESCE(b.indirect_charges / 100 * b.payroll_limit, 0)::numeric(12,2) AS indirect_charges_amount,
     b.comment,
     mv.received_amount,
-    (mv.received_amount / NULLIF(b.budget_amount, 0) * 100)::numeric(8,2) AS percent_received,
+    (mv.received_amount / NULLIF(b.budget_amount, 0) * 100)::numeric(12,2) AS percent_received,
     mv.spent_amount,
-    (mv.spent_amount / NULLIF(b.budget_amount, 0) * 100)::numeric(8,2) AS percent_spent,
+    (mv.spent_amount / NULLIF(b.budget_amount, 0) * 100)::numeric(12,2) AS percent_spent,
     mv.committed_amount,
-    (mv.committed_amount / NULLIF(b.budget_amount, 0) * 100)::numeric(8,2) AS percent_committed,
+    (mv.committed_amount / NULLIF(b.budget_amount, 0) * 100)::numeric(12,2) AS percent_committed,
     COALESCE(b.budget_amount, 0) - (mv.spent_amount + mv.committed_amount) AS available_amount,
     COALESCE(ops.last_operation::text, '-') AS last_operation,
     COALESCE(acts.last_action_date::text, '-') AS last_action_date,
@@ -325,6 +332,7 @@ AS SELECT op.id_operation,
     (cat2.cd_category || '. '::text) || cat2.label::text AS parent_category,
     op.invoice_reference,
     op.uploaded_file,
+    b.date_closing IS NOT NULL as locked,
     op.meta_create_date,
     op.meta_update_date
    FROM comptasso.t_operations op

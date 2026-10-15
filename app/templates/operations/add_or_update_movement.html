@@ -97,15 +97,15 @@
             <span class="h6"><i class="fa-solid fa-user-tie"></i> Déclaration de la TVA</span>
             <hr>
             <div class="row">
+              {% if Operation == None  %}
               <div class="form-group col-md-2">
-                {% if Operation == None %}
                   <label for = "vat_rate_autocompletion">Taux de TVA</label>
                   {{ form.vat_rate_autocompletion(class="form-control") }}
                   {% for error in form.vat_rate_autocompletion.errors %} 
                      <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
                   {% endfor %}
-                {% endif %}
               </div>
+              {% endif %}
               <div class="form-group col-md-2">
                 <label for = "vat_amount">Montant de la TVA</label>
                 {{ form.vat_amount(class="form-control") }}
@@ -195,6 +195,8 @@
                 {{ form.with_depreciation(class="form-check-input") }}
               </div>
               {% endif %}
+
+              <div id="vat-consistency-alert" class="alert alert-danger d-none" role="alert"></div>
 
             </div> 
           </div>
@@ -377,8 +379,60 @@
     });
   }
 
+  // ===== Cohérence budget / TVA / affectation =====
+  const typeOperation = {{ type_operation|tojson }};               // 'Recette' ou 'Dépense'
+  const budgetSelect  = document.getElementById('id_budget');
+  const alertBox      = document.getElementById('vat-consistency-alert');
+
+  function checkConsistency() {
+    if (!budgetSelect || !alertBox) return;
+
+    const messages = [];
+    const budgetOpt = budgetSelect.selectedOptions[0];
+
+    // Aucun budget choisi : pas de contrôle
+    if (budgetOpt && budgetOpt.value) {
+      const budgetHasVat = (parse(budgetOpt.dataset.vat || '0') || 0) > 0;
+
+      if (typeOperation === 'Dépense' && allocSelect) {
+        const allocOpt = allocSelect.selectedOptions[0];
+        const allocation = (allocOpt && allocOpt.value) ? allocOpt.text.trim() : null;
+
+        if (allocation) {
+          if (budgetHasVat && allocation !== 'Lucratif') {
+            messages.push("Le budget sélectionné est soumis à TVA : est-ce volontaire que l'affection ne soit pas « Lucratif » ? <br>Pour des dépenses mixtes, ne pas les rattacher à un budget en particulier.");
+          }
+          if (!budgetHasVat && allocation !== 'Non lucratif') {
+            messages.push("Le budget sélectionné n'est pas soumis à TVA : est-ce volontaire que l'affectation ne soit pas « Non lucratif » ? <br>Pour des dépenses mixtes, ne pas les rattacher à un budget en particulier.");
+          }
+        }
+      } else if (typeOperation === 'Recette') {
+        const vat = vatInput ? (parse(vatInput.value) || 0) : 0;
+
+        if (budgetHasVat && vat === 0) {
+          messages.push("Le budget sélectionné est soumis à TVA : cette recette devrait comporter un montant de TVA.");
+        }
+        if (!budgetHasVat && vat !== 0) {
+          messages.push("Le budget sélectionné n'est pas soumis à TVA : cette recette ne devrait pas comporter de TVA.");
+        }
+      }
+    }
+
+    alertBox.innerHTML = messages.map(m => `<div>${m}</div>`).join('');
+    alertBox.classList.toggle('d-none', messages.length === 0);
+  }
+
+  if (budgetSelect) budgetSelect.addEventListener('change', checkConsistency);
+  if (allocSelect)  allocSelect.addEventListener('change', checkConsistency);
+  if (vatInput)     vatInput.addEventListener('input', checkConsistency);
+  // La TVA peut aussi être remplie automatiquement par autofillVat() (sans événement "input") :
+  // ces écouteurs, ajoutés après ceux du calcul, s'exécutent une fois la TVA mise à jour.
+  if (amountInput)  amountInput.addEventListener('input', checkConsistency);
+  if (rateSelect)   rateSelect.addEventListener('change', checkConsistency);
+
   // ===== Calcul final si les champs sont présents =====
   recompute();
+  checkConsistency();   // contrôle initial (utile en édition)
 })();
 </script>
 

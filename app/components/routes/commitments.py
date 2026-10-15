@@ -132,7 +132,7 @@ def convertCommitment(id_operation):
     Operation = db.session.get(tOperations, id_operation) #tOperations.query.get(id_operation)
     #Get choices and form
     id_type_operation = dictOperationTypes.query.filter_by(label = 'Dépense').one().id_type_operation
-    form = formMovementExt(request.form, obj=Operation)
+    form = formMovementExtended(request.form, obj=Operation)
     # Form Choices
     # accounts
     Accounts = tAccounts.query.filter_by(is_personnal=False).filter_by(active=True)
@@ -150,8 +150,15 @@ def convertCommitment(id_operation):
     # Payment method
     PaymentMethods = dictPaymentMethods.query.all() # TODO filtrer avec la cor.
     form.id_payment_method.choices = [('', '-- Sélectionnez un moyen de paiement --')] + [(PaymentMethod.id_payment_method, PaymentMethod.label) for PaymentMethod in PaymentMethods]
+    # Affectation choices
+    VatRatios = dictVatRatio.query.order_by(dictVatRatio.ratio.desc()).all()
+    form.id_spending_allocation.choices = [('', '-- Sélectionnez une affectation --')] + [(r.id_spending_allocation, r.label, {'data-ratio': str(r.ratio) if r.ratio is not None else ''}) for r in VatRatios]
     # update
     if request.method == 'POST' and form.validate():
+        vat_amount = abs_decimal(form.vat_amount.data)
+        allocation = db.session.get(dictVatRatio, form.id_spending_allocation.data)
+        vat_ratio = allocation.ratio if allocation and allocation.ratio is not None else None
+        recoverable_vat_amount = (vat_amount * vat_ratio).quantize(Decimal('0.01')) if (vat_amount is not None and vat_ratio is not None) else None 
         # Let None as id_grp_operation
         Operation.name = request.form['name']
         Operation.detail_operation = request.form['detail_operation']
@@ -159,11 +166,21 @@ def convertCommitment(id_operation):
         Operation.operation_date = request.form['operation_date']
         Operation.effective_date = request.form['effective_date']
         Operation.amount = -abs_decimal(request.form.get('amount'))
+        Operation.vat_amount = vat_amount
+        # Calcul de la TVA récupérable à partir du montant de TVA, et de l'affectation
+        allocation = db.session.get(dictVatRatio, form.id_spending_allocation.data)
+        vat_ratio = allocation.ratio if allocation and allocation.ratio is not None else None
+        recoverable_vat_amount = (vat_amount * vat_ratio).quantize(Decimal('0.01')) if (vat_amount is not None and vat_ratio is not None) else None
+        Operation.id_spending_allocation = request.form['id_spending_allocation']
+        Operation.vat_ratio = vat_ratio
+        Operation.recoverable_vat_amount = recoverable_vat_amount
+        Operation.with_depreciation = bool(request.form.get('with_depreciation'))
         Operation.id_payment_method = getChoiceOrNone(request.form['id_payment_method'])
         Operation.id_account = getChoiceOrNone(request.form['id_account'])
         Operation.id_budget = getChoiceOrNone(request.form['id_budget'])
         Operation.id_category = getChoiceOrNone(request.form['id_category'])
         Operation.uploaded_file = getFileUrl('uploaded_file')
+        Operation.invoice_reference = request.form['invoice_reference']
         Operation.meta_id_digitiser = current_user.id_user
         db.session.commit()
         return redirect(url_for('operations.operations'))

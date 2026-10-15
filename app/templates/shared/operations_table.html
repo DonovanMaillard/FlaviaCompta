@@ -142,7 +142,7 @@
         data:null,
         render: function (data, type, row) {
           if (row.type_operation == 'Dépense') {
-            return `<small>Montant versé : <em>${row.vat_amount ?? '- '}€</em></small><br><br>`
+            return `<small>TVA versée : <em>${row.vat_amount ?? '- '}€</em></small><br><br>`
                + `<small>Affectation : <em>${row.affectation ?? '- '}</em></small><br>`
                + `<small>TVA récupérable : <em>${row.recoverable_vat_amount ?? '- '}€</em></small>`;
           }
@@ -157,11 +157,18 @@
         orderable: false,
         render: function (data, type, row) {
           const editUrl = editUrlTemplate.replace('__ID__', row.id_operation);
+
+          console.log(row.id_operation, row.locked, row);
+
+          const editButtons = row.locked ? '' : `
+            <a class="btn btn-warning" href="${editUrl}"><i class="fa fa-edit"></i></a>
+            <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"
+                    data-id="${row.id_operation}" data-name="${esc(row.name_operation)}"><i class="fa fa-trash"></i></button>`;
+
           return `
-            <div class="btn btn-group">
+            <div class="btn-group">
               <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#detailModal" data-id="${row.id_operation}"><i class="fa fa-eye"></i></button>
-              <a class="btn btn-warning" href="${editUrl}"><i class="fa fa-edit"></i></a>
-              <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" data-id="${row.id_operation}" data-name="${esc(row.name_operation)}"><i class="fa fa-trash"></i></button>
+              ${editButtons}
             </div>`;
         }
       }
