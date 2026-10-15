@@ -10,7 +10,6 @@
                <th>Statut</th>
                <th>Activité</th>
                <th>Description</th>
-               <th>Modifier</th>
             </tr>
          </thead>
          
@@ -23,18 +22,10 @@
                     {% endif %}
                   <td>{{ Activity.label }}</td>
                   <td>{{ Activity.deescription }}</td>
-                  <td>
-                  	<div>
-                        <div class="btn btn-group">
-                           <a class="btn btn-warning" href="{{ url_for('updateMember', id_member=Activity.id_activity) }}"> <i class="fa fa-edit"></i> </a>
-                        </div>
-                  	</div>
                </tr>
             {% endfor %}
         </tbody>
     </table>
-
-<a class="btn btn-success disabled" href="{{ url_for('addMember') }}"><i class="fa fa-plus"></i> Enregistrer une nouvelle activité</a>
-
+    <small>L'ajout ou la modification d'activités ne sont possibles qu'en base de données par un administrateur. </small>
 </div>
 {% endblock %}

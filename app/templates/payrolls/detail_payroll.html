@@ -54,7 +54,7 @@
         <br><br>
 
         <div class="btn-group">
-          <a class="btn btn-warning" href="{{ url_for('updatePayroll', id_payroll=payroll.id_payroll) }}"> <i class="fa fa-edit"></i> Modifier</a>
+          <a class="btn btn-warning" href="{{ url_for('payrolls.updatePayroll', id_payroll=payroll.id_payroll) }}"> <i class="fa fa-edit"></i> Modifier</a>
           <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"> <i class="fa fa-trash"></i> Supprimer </a>  
         </div>
 
@@ -72,7 +72,7 @@
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                <a class="btn btn-danger" href="{{ url_for('deletePayroll', id_payroll=payroll.id_payroll) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
+                <a class="btn btn-danger" href="{{ url_for('payrolls.deletePayroll', id_payroll=payroll.id_payroll) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
               </div>
             </div>
           </div>
@@ -106,7 +106,7 @@
                      <td> {{ cor.nb_days_allocated }} j </td>
                      <td>
                         <div class="btn-group">
-                          <a class="btn btn-warning" href="{{ url_for('updateCorPayrollBudget', id_payroll=payroll.id_payroll, id_payroll_budget=cor.id_payroll_budget) }}"> <i class="fa fa-edit"></i></a>
+                          <a class="btn btn-warning" href="{{ url_for('payrolls.updateCorPayrollBudget', id_payroll=payroll.id_payroll, id_payroll_budget=cor.id_payroll_budget) }}"> <i class="fa fa-edit"></i></a>
                           <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteCorModal{{cor.id_payroll_budget}}"> <i class="fa fa-trash"></i> </a>  
                         </div>
                      </td>
@@ -125,7 +125,7 @@
                         </div>
                         <div class="modal-footer">
                           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                            <a class="btn btn-danger" href="{{ url_for('deleteCorPayrollBudget', id_payroll=payroll.id_payroll, id_payroll_budget=cor.id_payroll_budget) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
+                            <a class="btn btn-danger" href="{{ url_for('payrolls.deleteCorPayrollBudget', id_payroll=payroll.id_payroll, id_payroll_budget=cor.id_payroll_budget) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
                         </div>
                       </div>
                     </div>

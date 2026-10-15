@@ -8,7 +8,7 @@
   <h1>Masses salariales déclarées</h1>
 
   <div>
-    <a class="btn btn-success btn-right" href="{{ url_for('addPayroll') }}"><i class="fa fa-plus"></i> Ajouter une masse salariale</a>
+    <a class="btn btn-success btn-right" href="{{ url_for('payrolls.addPayroll') }}"><i class="fa fa-plus"></i> Ajouter une masse salariale</a>
     <br><br>
   </div>
 
@@ -37,9 +37,9 @@
         <td>
           <div>
             <div class="btn btn-group">
-              <a class="btn btn-info" href="{{ url_for('detailPayroll', id_payroll=payroll.id_payroll)}}"> <i class="fa fa-eye"></i> </a>
-              <a class="btn btn-warning" href="{{ url_for('updatePayroll', id_payroll=payroll.id_payroll)}}"> <i class="fa fa-edit"></i> </a>
-              <a class="btn btn-success" href="{{ url_for('addCorPayrollBudget', id_payroll=payroll.id_payroll) }}" title="Affecter une part à un projet"> <i class="fa fa-diagram-project"></i> </a>
+              <a class="btn btn-info" href="{{ url_for('payrolls.detailPayroll', id_payroll=payroll.id_payroll)}}"> <i class="fa fa-eye"></i> </a>
+              <a class="btn btn-warning" href="{{ url_for('payrolls.updatePayroll', id_payroll=payroll.id_payroll)}}"> <i class="fa fa-edit"></i> </a>
+              <a class="btn btn-success" href="{{ url_for('payrolls.addCorPayrollBudget', id_payroll=payroll.id_payroll) }}" title="Affecter une part à un projet"> <i class="fa fa-diagram-project"></i> </a>
               <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{payroll.id_payroll}}"> <i class="fa fa-trash"></i> </a>
             </div>
           </div>
@@ -60,7 +60,7 @@
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                <a class="btn btn-danger" href="{{ url_for('deletePayroll', id_payroll=payroll.id_payroll) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
+                <a class="btn btn-danger" href="{{ url_for('payrolls.deletePayroll', id_payroll=payroll.id_payroll) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
               </div>
             </div>
           </div>

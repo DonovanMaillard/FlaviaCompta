@@ -32,7 +32,7 @@
                   <td>
                   	<div>
                         <div class="btn btn-group">
-                           <a class="btn btn-warning" href="{{ url_for('updateMember', id_member=Member.id_member) }}"> <i class="fa fa-edit"></i> </a>
+                           <a class="btn btn-warning" href="{{ url_for('admin.updateMember', id_member=Member.id_member) }}"> <i class="fa fa-edit"></i> </a>
                         </div>
                   	</div>
                </tr>
@@ -40,7 +40,7 @@
         </tbody>
     </table>
 
-<a class="btn btn-success" href="{{ url_for('addMember') }}"><i class="fa fa-plus"></i> Enregistrer un nouveau membre</a>
+<a class="btn btn-success" href="{{ url_for('admin.addMember') }}"><i class="fa fa-plus"></i> Enregistrer un nouveau membre</a>
 
 </div>
 {% endblock %}
