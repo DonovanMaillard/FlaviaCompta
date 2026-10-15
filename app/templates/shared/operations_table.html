@@ -16,8 +16,11 @@
 </table>
 
 <div class="btn btn-group">
+  <a class="btn btn-success btn-right" id="download-files" href="{{ url_for('operations.download_operation_files') }}">
+    <i class="fa-solid fa-file-zipper"></i> Exporter les justificatifs (.zip)
+  </a>
   <a class="btn btn-success btn-right" id="download-csv" href="{{ url_for('operations.download_operations') }}">
-    <i class="fa fa-download"></i> Exporter en csv
+    <i class="fa fa-download"></i> Exporter en CSV
   </a>
 </div>
 
@@ -267,6 +270,19 @@
     });
 
     this.href = '{{ url_for("operations.download_operations") }}' + (params.toString() ? '?' + params.toString() : '');
+  });
+
+  // Export ZIP des justificatifs
+  document.getElementById('download-files').addEventListener('click', function () {
+    var params = new URLSearchParams(filtersForm ? new FormData(filtersForm) : []);
+    Object.entries(fixedParams).forEach(function ([k, v]) { params.set(k, v); });
+
+    // On retire les filtres vides
+    Array.from(params.keys()).forEach(function (k) {
+        if (!params.get(k)) params.delete(k);
+    });
+
+    this.href = '{{ url_for("operations.download_operation_files") }}' + (params.toString() ? '?' + params.toString() : '');
   });
 
 })();

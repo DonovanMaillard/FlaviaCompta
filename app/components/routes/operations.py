@@ -1,4 +1,4 @@
-from flask import Flask, Blueprint, render_template, request, flash, get_flashed_messages, redirect, url_for, make_response, stream_with_context, jsonify, current_app
+from flask import Flask, Blueprint, render_template, request, flash, get_flashed_messages, redirect, url_for, make_response, stream_with_context, jsonify, current_app, send_file, abort
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.wrappers import Response
@@ -15,6 +15,8 @@ import pdfkit
 import csv
 import uuid
 import babel
+import zipfile
+import tempfile
 
 from ..init_db import db
 from ..models import *
@@ -282,6 +284,57 @@ def download_operations():
         }
     )
 
+@operations_bp.route("/download_files", methods=["GET"])
+@login_required
+def download_operation_files():
+    query = search_operations().filter(
+        vOperations.uploaded_file.isnot(None),
+        vOperations.uploaded_file != ""
+    )
+    results = query.order_by(
+        vOperations.effective_date, vOperations.id_operation
+    ).all()
+
+    if not results:
+        abort(404, description="Aucun justificatif pour cette recherche.")
+
+    static_root = os.path.realpath(current_app.static_folder)
+    missing = []
+
+    # En mémoire jusqu'à 50 Mo, puis bascule automatiquement sur disque
+    archive = tempfile.SpooledTemporaryFile(max_size=50 * 1024 * 1024)
+
+    with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as zf:
+        for op in results:
+            file_path = os.path.realpath(os.path.join(static_root, op.uploaded_file))
+
+            # Sécurité : interdit de sortir du dossier static (../../etc/passwd...)
+            if not file_path.startswith(static_root + os.sep):
+                missing.append(f"{op.id_operation} ; chemin refusé ; {op.uploaded_file}")
+                continue
+
+            if not os.path.isfile(file_path):
+                missing.append(f"{op.id_operation} ; fichier introuvable ; {op.uploaded_file}")
+                continue
+
+            date_str = op.effective_date.strftime("%Y-%m-%d") if op.effective_date else "sans-date"
+            arcname = f"{date_str}_op{op.id_operation}_{os.path.basename(op.uploaded_file)}"
+            zf.write(file_path, arcname=arcname)
+
+        if missing:
+            zf.writestr(
+                "_fichiers_manquants.txt",
+                "id_operation ; probleme ; chemin\n" + "\n".join(missing)
+            )
+
+    archive.seek(0)
+
+    return send_file(
+        archive,
+        mimetype="application/zip",
+        as_attachment=True,
+        download_name=f"archive_justificatifs.zip",
+    )
 
 #####################
 # Toutes opérations #
