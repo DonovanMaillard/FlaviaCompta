@@ -427,7 +427,6 @@ class vSyntheseActivities(db.Model):
     to_receive = db.Column(db.Numeric(8,2), nullable=True)
     global_amount = db.Column(db.Numeric(8,2), nullable=True)
     active_budgets = db.Column(db.Integer)
-    inactive_budgets = db.Column(db.Integer)
 
 class vBudgets(db.Model):
 
