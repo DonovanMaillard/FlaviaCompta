@@ -1,0 +1,30 @@
+<div>
+  <form method="post">
+  <table class="table">
+    <thead>
+      <tr><th>Salarié</th><th>Montant alloué</th></tr>
+    </thead>
+    <tbody>
+      {% for row in form.rows %}
+      <tr>
+        <td>
+          {{ row.id_member() }}
+          {{ names[row.id_member.data] }}
+        </td>
+        <td>
+          {{ row.allocated_amount(class="form-control") }}
+          {% for e in row.allocated_amount.errors %}
+            <small class="text-danger">{{ e }}</small>
+          {% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if not Budget.date_closing %}
+    <button type="submit" class="btn btn-primary">Enregistrer les attributions</button>
+  {% endif %}
+</form>       
+
+</div>

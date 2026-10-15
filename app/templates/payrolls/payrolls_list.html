@@ -31,7 +31,7 @@
         <th>du {{payroll.date_min_period|format_datetime}}<br>au {{payroll.date_max_period|format_datetime}}</th>
         <th>{{payroll.member_name}}</th>
         <td>{{payroll.gross_remuneration}}€ {% if payroll.gross_premium != 0.00 %}<br>prime : {{payroll.gross_premium}}€{% endif %}</td>
-        <td>{{payroll.employer_charge_amount}}</td>
+        <td>{{payroll.employer_charge_amount}} €</td>
         <td>{{payroll.total_amount}} €</td>
         <td>{{payroll.worked_days}}j</td>
         <td>
@@ -56,6 +56,7 @@
               </div>
               <div class="modal-body">
                   <p> Souhaitez-vous vraiment supprimer la masse salariale du <strong>{{payroll.date_min_period|format_datetime}}</strong> au <strong>{{payroll.date_max_period|format_datetime}}</strong> pour <strong>{{ payroll.member_name }}</strong> ?</p>
+                  <p><i class="fa fa-triangle-exclamation" style="color:red"></i> <strong style="color:red">En supprimant la masse salariale, vous supprimerez également toutes ses correspondances avec les budgets auxquels du temps était attribué.</strong> </p>
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>

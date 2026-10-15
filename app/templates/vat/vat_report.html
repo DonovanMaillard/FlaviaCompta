@@ -1,0 +1,150 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="container">
+{% set operations_filters_form = 'filters' %}
+{% set operations_fixed_params = {'for_vat_summary': '1'} %}
+
+<h1> Rapport de TVA</h1>
+
+<div class="card">
+  <div class="card-header">
+    <h4>Obtenir un rapport</h4>
+  </div>
+  <div class="card-body">
+    <form id="filters" class="row g-2 mb-3">
+      <div class="col-md-5">
+        <label class="form-label" for="date_apres">Pour la période du (inclus)</label>
+        <input type="date" id="date_apres" name="date_apres" class="form-control required"> 
+      </div>
+      <div class="col-md-5">
+        <label class="form-label" for="date_avant">jusqu'au (inclus)</label>
+        <input type="date" id="date_avant" name="date_avant" class="form-control required"> 
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button type="reset" class="btn btn-secondary w-100">Réinitialiser</button>
+      </div>
+    </form>
+
+    <div class="d-flex justify-content-center align-items-start gap-3 flex-wrap my-5">
+
+      <div class="text-center">
+        <label class="form-label" for="vat-collected">TVA collectée sur les recettes</label>
+        <div id="vat-collected" class="form-control text-end fw-bold bg-light" style="min-width:220px">0,00 €</div>
+      </div>
+
+      <div class="fs-4 pt-1">−</div>
+
+      <div class="text-center">
+        <label class="form-label" for="vat-recoverable">TVA récupérable sur les dépenses</label>
+        <div id="vat-recoverable" class="form-control text-end fw-bold bg-light" style="min-width:220px">0,00 €</div>
+      </div>
+
+      <div class="fs-4 pt-1">=</div>
+
+      <div class="text-center">
+        <strong><label id="vat-balance-label" class="form-label" for="vat-balance">Montant différentiel</label></strong>
+        <div id="vat-balance" class="form-control text-end fw-bold" style="min-width:250px">0,00 €</div>
+      </div>
+
+    </div>
+
+    <a class="btn btn-success btn-right" id="download-pdf" href="{{ url_for('vat.vatReportPdf') }}">
+      <i class="fa fa-download"></i> Exporter le rapport PDF
+    </a>
+  </div>
+</div>
+
+
+
+<div class="card">
+  <div class="card-header">
+    <h4>Détail des opérations</h4>
+  </div>
+  <div class="card-body">
+    {% include 'shared/operations_table.html' %}
+  </div>
+</div>
+
+</div>
+
+<script>
+(function () {
+  const euro = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
+  const collectedBox   = document.getElementById('vat-collected');
+  const recoverableBox = document.getElementById('vat-recoverable');
+  const balanceBox     = document.getElementById('vat-balance');
+  const balanceLabel   = document.getElementById('vat-balance-label');
+  const filtersForm = document.getElementById('filters');
+  const pdfLink     = document.getElementById('download-pdf');
+  const pdfBaseUrl  = pdfLink.getAttribute('href');   // "/vat/pdf" généré par url_for
+  const pdfLinkHtml = pdfLink.innerHTML;              // contenu d'origine du bouton
+
+  pdfLink.addEventListener('click', async function (e) {
+    e.preventDefault();
+    if (pdfLink.classList.contains('disabled')) return;   // évite le double clic
+
+    const params = new URLSearchParams(new FormData(filtersForm));
+    params.set('for_vat_summary', '1');
+    const dMin = params.get('date_apres');
+    const dMax = params.get('date_avant');
+
+    if (!dMin || !dMax) {
+      alert('Choisissez une date de début et une date de fin avant d\'exporter.');
+      return;
+    }
+
+    // Spinner pendant la génération
+    pdfLink.classList.add('disabled');
+    pdfLink.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Génération en cours…';
+
+    try {
+      const resp = await fetch(pdfBaseUrl + '?' + params.toString(), { credentials: 'same-origin' });
+      const type = resp.headers.get('Content-Type') || '';
+      if (!resp.ok || !type.includes('application/pdf')) throw new Error('Réponse inattendue');
+
+      // Téléchargement du PDF reçu
+      const blobUrl = URL.createObjectURL(await resp.blob());
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `bilan_tva_du_${dMin}_au_${dMax}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    } catch (err) {
+      alert('La génération du rapport a échoué.');
+    } finally {
+      pdfLink.innerHTML = pdfLinkHtml;
+      pdfLink.classList.remove('disabled');
+    }
+  });
+
+  function showSummary(s) {
+    // Pas de résumé (période incomplète) : tout retombe à 0
+    const collected   = s ? Number(s.collected)   : 0;
+    const recoverable = s ? Number(s.recoverable) : 0;
+    const balance     = s ? Number(s.balance)     : 0;
+
+    collectedBox.textContent   = euro.format(collected);
+    recoverableBox.textContent = euro.format(recoverable);
+    balanceBox.textContent     = euro.format(Math.abs(balance));
+
+    balanceBox.classList.toggle('bg-light', balance === 0);
+    balanceBox.classList.toggle('border-danger', balance > 0);
+    balanceBox.classList.toggle('border-success', balance < 0);
+    balanceLabel.textContent = balance < 0
+      ? 'Crédit de TVA (à reporter ou à rembourser)'
+      : 'Montant différentiel';
+  }
+
+  $(document).on('xhr.dt', function (e, settings, json) {
+    if (settings.nTable.id !== 'operationsTable' || !json) return;
+    console.log('vat_summary reçu :', json.vat_summary);     // à retirer une fois que ça marche
+    showSummary(json.vat_summary);
+  });
+
+  showSummary(null);      // état initial
+})();
+</script>
+{% endblock %}

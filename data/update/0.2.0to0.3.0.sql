@@ -20,28 +20,27 @@ ALTER TABLE comptasso.t_budgets
 ADD CONSTRAINT fk_t_budgets_id_activity FOREIGN KEY (id_activity) 
 REFERENCES comptasso.t_activities(id_activity) ON UPDATE CASCADE;
 
-CREATE VIEW comptasso.v_synthese_activities AS (
-SELECT 
-	a.id_activity,
-	a.label,
-	a.description,
-	a.active,
-	sum(COALESCE(b.budget_amount, 0::numeric)::numeric(8,2) - comptasso.get_sum_movement(b.id_budget, 'Recette'::text)) AS to_receive, -- to receive amount
-	sum(COALESCE(b.budget_amount, 0::numeric)::numeric(8,2)) AS global_amount, -- total amounts
-	b1.count AS active_budgets,
-	b2.count AS inactive_budgets,
-FROM comptasso.t_activities a
-LEFT JOIN comptasso.t_budgets b ON b.id_activity=a.id_activity
-LEFT JOIN LATERAL ( SELECT count(*)
-            FROM comptasso.t_budgets
-            WHERE active
-            GROUP BY id_activity) b1 ON b1.id_activity=a.id_activity
-LEFT JOIN LATERAL ( SELECT count(*)
-            FROM comptasso.t_budgets
-            WHERE NOT active
-            GROUP BY id_activity) b2 ON b1.id_activity=a.id_activity
-GROUP BY a.id_activity, a.label, a.description, a.active
-);
+CREATE OR REPLACE VIEW comptasso.v_synthese_activities
+AS SELECT a.id_activity,
+    a.label,
+    a.description,
+    a.active,
+    sum(COALESCE(b.budget_amount, 0::numeric)::numeric(8,2) - comptasso.get_sum_movement(b.id_budget, 'Recette'::text)) AS to_receive,
+    sum(COALESCE(b.budget_amount, 0::numeric)::numeric(8,2)) AS global_amount,
+    b1.count AS active_budgets,
+    b2.count AS inactive_budgets
+   FROM comptasso.t_activities a
+     LEFT JOIN comptasso.t_budgets b ON b.id_activity = a.id_activity
+     LEFT JOIN LATERAL ( SELECT count(*) AS count
+           FROM comptasso.t_budgets
+          WHERE t_budgets.active AND t_budgets.id_activity = a.id_activity
+          GROUP BY t_budgets.id_activity) b1 ON true
+     LEFT JOIN LATERAL ( SELECT count(*) AS count
+           FROM comptasso.t_budgets
+          WHERE NOT t_budgets.active AND t_budgets.id_activity = a.id_activity
+          GROUP BY t_budgets.id_activity) b2 ON true
+  GROUP BY a.id_activity, a.label, a.description, a.active, b1.count, b2.count;
+
 
 DROP VIEW comptasso.v_budgets;
 
@@ -83,13 +82,10 @@ AS SELECT b.id_budget,
 
 
 
-# Work valuation and volunteering
-DROP TABLE comptasso.cor_member_payroll;
-DROP TABLE comptasso.cor_payroll_budget;
-DROP TRIGGER tri_meta_dates_change_cor_member_payroll ON comptasso.cor_member_payroll ;
-DROP TRIGGER tri_meta_dates_change_cor_payroll_budget ON comptasso.cor_payroll_budget;
-DROP VIEW v_payroll_details;
-DROP VIEW v_payrolls;
+-- Work valuation and volunteering
+DROP TABLE comptasso.cor_member_payroll CASCADE;
+DROP TABLE comptasso.cor_payroll_budget CASCADE;
+
 
 CREATE TABLE comptasso.t_payrolls (
   id_payroll serial PRIMARY KEY,

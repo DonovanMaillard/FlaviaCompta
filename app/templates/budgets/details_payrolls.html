@@ -12,7 +12,6 @@
                <th>Temps de travail</th>
                <th>Rémunération brute</th>
                <th>Charges salariales</th>
-               <th>Coût forfaitaire</th>
                <th>Masse salariale justifiée</th>
             </tr>
       </thead>
@@ -35,7 +34,6 @@
             <em>Total période : {{ Payroll.total_employer_charges or '-' }}€</em><br>
             <strong>projet : {{ Payroll.justified_charges or '-' }}€ </strong> 
           </td>
-          <td>{{ Payroll.fixed_cost or '-' }}€</td>
           <td>{{ Payroll.justified_payroll }}€</td>
         </tr>
         {% endfor %}

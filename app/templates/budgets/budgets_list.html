@@ -26,73 +26,106 @@
   
   <hr style="margin-bottom:50px">
 
-  <div id="budgets-detail">
-	<h1> Liste des lignes budgétaires </h1>
-
-  <a class="btn btn-success btn-right " href="{{ url_for('addBudget') }}"><i class="fa fa-plus"></i> Ajouter un nouveau budget</a>
-  <br><br>
-
-      <table class="table table-striped" id="budgets">
-         <thead>
-            <tr>
-               <th>Statut</th>
-               <th>Nom</th>
-               <th>Dépenses jusqu'au</th>
-               <th>Montant global</th>
-               <th>Coûts justifiés</th>
-               <th>Engagements</th>
-               <th>Sommes perçues</th>
-               <th>Action</th>
-            </tr>
-         </thead>
-         
-         <tbody>
-            {% for Budget in Budgets %}
-               <tr>
-                  <td>
-                    {% if Budget.active %} <span class="badge table-badge alert-success">Actif</span>
-                    {% else %} <span class="badge table-badge alert-dark">Inactif</span>
-                    {% endif %}
-                  </td>
-                  <td>{{ Budget.name }}</td>
-                  <td>{{ Budget.date_max_expenditure|format_datetime or '' }}</td>
-                  <td>{{ Budget.budget_amount }}€ </td>
-                  <td>--TODO--</td>
-                  <td>{{ Budget.committed_amount }}€</td>
-                  <td>{{ Budget.received_amount }}€</td>
-                  <td>
-                    <div>
-                        <div class="btn btn-group">
-                           <a class="btn btn-info" href="{{ url_for('detailBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-eye"></i> </a>
-                           <a class="btn btn-warning" href="{{ url_for('updateBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-edit"></i> </a>
-                           <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{Budget.id_budget}}"> <i class="fa fa-trash"></i> </a>
-                        </div>
-                    </div>
-               </tr>
-
-               <!-- Delete Modal -->
-                <div class="modal fade" id="deleteModal{{Budget.id_budget}}" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
-                  <div class="modal-dialog">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLabel">Supprimer la ligne budgétaire</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                      </div>
-                      <div class="modal-body">
-                          <p> Souhaitez-vous vraiment supprimer la ligne budgétaire <strong>"{{ Budget.name }}"</strong> ?</p>
-                      </div>
-                      <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <a class="btn btn-danger" href="{{ url_for('deleteBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-            <!-- end modal -->
-            {% endfor %}
-         </tbody>
-      </table>
+<div id="budgets-detail">
+  <h2>Liste des lignes budgétaires</h2>
+<div class="d-flex justify-content-end align-items-center mb-3">
+    <div class="btn-group">
+      <a class="btn btn-secondary" data-bs-toggle="collapse" href="#collapseFilters" role="button" aria-expanded="false" aria-controls="collapseFilters">
+        <i class="fa-solid fa-filter"></i> Filtrer
+      </a>
+      <a class="btn btn-success" href="{{ url_for('budgets.addBudget') }}">
+        <i class="fa fa-plus"></i> Ajouter un nouveau budget
+      </a>
+    </div>
   </div>
+<br>
+
+<div class="collapse" id="collapseFilters">
+  <div class="card mb-3">
+    <div class="card-body">
+      <form id="filters" class="row g-2">
+        <div class="col-md-5">
+          <label class="form-label" for="budget_name">Nom du budget</label>
+          <input type="text" id="budget_name" name="budget_name" class="form-control">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="reference">Référence</label>
+          <input type="text" id="reference" name="reference" class="form-control">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="montant">Montant global</label>
+          <input type="text" id="montant" name="montant" class="form-control">
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="for_profit" name="for_profit" value="1">
+            <label class="form-check-label" for="for_profit">Assujetti à la TVA</label>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="id_type_budget">Type de budget</label>
+          <select id="id_type_budget" name="id_type_budget" class="form-select">
+            <option value="">Tous les types</option>
+            {% for t in types %}
+              <option value="{{ t.id_type_budget }}">{{ t.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="id_funder">Financeur</label>
+          <select id="id_funder" name="id_funder" class="form-select">
+            <option value="">Tous les financeurs</option>
+            {% for f in funders %}
+              <option value="{{ f.id_funder }}">{{ f.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="id_activity">Activité</label>
+          <select id="id_activity" name="id_activity" class="form-select">
+            <option value="">Toutes les activités</option>
+            {% for a in activities %}
+              <option value="{{ a.id_activity }}">{{ a.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="closed" name="closed" value="1">
+            <label class="form-check-label" for="closed">Clôturé</label>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="demarre_apres">Démarré entre le</label>
+          <input type="date" id="demarre_apres" name="demarre_apres" class="form-control">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="demarre_avant">et le</label>
+          <input type="date" id="demarre_avant" name="demarre_avant" class="form-control">
+        </div>
+        <div class="col-md-1"></div>
+        <div class="col-md-2">
+          <label class="form-label" for="cloture_apres">Clotûré entre le</label>
+          <input type="date" id="cloture_apres" name="cloture_apres" class="form-control">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="cloture_avant">et le</label>
+          <input type="date" id="cloture_avant" name="cloture_avant" class="form-control">
+        </div>
+        <div class="col-md-1"></div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="reset" class="btn btn-secondary w-100">Réinitialiser</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+  {% set budgets_filters_form = 'filters' %}
+  {% include 'shared/budgets_table.html' %}
+  
+</div>
 </div>
 
 {% endblock %}

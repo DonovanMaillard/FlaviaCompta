@@ -33,15 +33,15 @@
               <br> 
               Charges indirectes max. : {{ Budget.indirect_charges_amount }}€ ({{ Budget.indirect_charges }}%)
             </p>
-            <strong>Dernière action : </strong>{{ Budget.last_action_date|format_datetime or '' }}
+            <strong>Dernière action : </strong>{{ Budget.last_action_date or '' }}
             <br>
           </div>
           <div class="col-md-4">
-            <p><strong>Date d'échéance du rendu : </strong>{{ Budget.date_return|format_datetime or '' }}
+            <p><strong>Date d'échéance du rendu : </strong>{{ Budget.date_return or '' }}
               <br>
-              Dépenses éligibles jusqu'au : {{ Budget.date_max_expenditure|format_datetime or '' }}
+              Dépenses éligibles jusqu'au : {{ Budget.date_max_expenditure or '' }}
             </p>
-            <strong>Dernière opération : </strong> {{ Budget.last_operation|format_datetime or '' }}
+            <strong>Dernière opération : </strong> {{ Budget.last_operation or '' }}
             <br>
           </div>
         </div>
@@ -73,8 +73,15 @@
         </div>
         <br><br>
         <div class="btn-group">
-          <a class="btn btn-warning" href="{{ url_for('updateBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-edit"></i> Modifier</a>
-          <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"> <i class="fa fa-trash"></i> Supprimer </a>        
+          {% if not Budget.date_closing %}
+            <a class="btn btn-warning" href="{{ url_for('budgets.updateBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-edit"></i> Modifier</a>
+            {% if Budget.nb_operations == 0 %}
+              <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"> <i class="fa fa-trash"></i> Supprimer </a>
+            {% endif %}
+            <a class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#closeModal"> <i class="fa fa-lock"></i> Clôturer </a>
+          {% else %}
+            <a class="btn btn-dark disabled"> <i class="fa fa-lock"></i> Clôturé le {{ Budget.date_closing }} </a>
+          {% endif %}
         </div>
     </div>
   </div>
@@ -93,21 +100,85 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-            <a class="btn btn-danger" href="{{ url_for('deleteBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
+            <a class="btn btn-danger" href="{{ url_for('budgets.deleteBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
           </div>
         </div>
       </div>
     </div>
     <!-- end modal -->
 
+    <!-- Close Modal -->
+                <div class="modal fade" id="closeModal" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
+                  <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="closeModalLabel">Clôturer la ligne budgétaire</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+
+                        <div class="alert alert-danger" role="alert">
+                          <h4 class="alert-heading">Attention !</h4>
+                          <p>Vous vous apprêtez à clôturer la ligne budgétaire <strong>"{{ Budget.name }}"</strong>.</p>
+                          <hr>
+                          <p class="mb-0"><strong>Cette action est irréversible.</strong></p>
+                        </div>
+
+                        <div class="alert alert-secondary" role="alert">
+                          <div class="row">
+                            <div class="col-md-6">
+                              <strong>Montant prévisionnel du budget : </strong>{{ Budget.budget_amount }}€
+                            </div>
+                            <div class="col-md-6">
+                              <strong>Montant perçu : </strong>{{ Budget.received_amount }}€
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Alerte sur le calcul de l'intéressement -->
+                          {% if Budget.profit_bonus %}
+                          <div class="card">
+                            <h5 class="card-header">Calcul de l'intéressement</h5>
+                            <div class="card-body">
+                              <p class="card-text">Ce budget entre dans le calcul de l'intéressement des salariés. En clôturant ce budget, les primes seront définitivement calculées sur la base de la répartition suivante :</p>
+                              {% include 'budgets/profit_bonus.html' %}
+                            </div>
+                          </div>
+                          {% endif %}
+
+                        <!-- Masses salariales justifiées sur subventions -->
+                          {% if Budget.type_budget =="Subvention" %}
+                          <div class="card">
+                            <h5 class="card-header">Masses salariales justifiées</h5>
+                            <div class="card-body">
+                              <p class="card-text">Les masses salariales justifiées sur ce projet sont les suivantes :</p>
+                              {% include 'budgets/details_payrolls.html' %}
+                            </div>
+                          </div>
+                          {% endif %}
+                          
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <a class="btn btn-dark" href="{{ url_for('budgets.closeBudget', id_budget=Budget.id_budget) }}"> <i class="fa fa-lock"></i> <strong>Clôturer le budget</strong></a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            <!-- end modal -->
+
 
 <nav>
   <div class="nav nav-tabs" id="nav-tab" role="tablist">
     <button class="nav-link active" id="nav-operations-tab" data-bs-toggle="tab" data-bs-target="#nav-operations" type="button" role="tab" aria-controls="nav-operations" aria-selected="false">Opérations rattachées</button>
     <button class="nav-link" id="nav-commitments-tab" data-bs-toggle="tab" data-bs-target="#nav-commitments" type="button" role="tab" aria-controls="nav-commitments" aria-selected="false">Engagements en cours</button>
-    <button class="nav-link" id="nav-payrolls-tab" data-bs-toggle="tab" data-bs-target="#nav-payrolls" type="button"role="tab" aria-controls="nav-payrolls" aria-selected="true">Masses salariales justifiées</button>
-    <button class="nav-link" id="nav-action-tab" data-bs-toggle="tab" data-bs-target="#nav-actions" type="button"role="tab" aria-controls="nav-actions" aria-selected="true">Historique des actions</button>
-    <!-- <button class="nav-link" id="nav-results-tab" data-bs-toggle="tab" data-bs-target="#nav-result" type="button" role="tab" aria-controls="nav-result" aria-selected="false">Bilan</button> -->
+    {% if Budget.type_budget =="Subvention" %}
+    <button class="nav-link" id="nav-payrolls-tab" data-bs-toggle="tab" data-bs-target="#nav-payrolls" type="button"role="tab" aria-controls="nav-payrolls" aria-selected="true">Temps de personnel justifié</button>
+    {% endif %}
+    {% if Budget.profit_bonus %}
+    <button class="nav-link" id="nav-cprofit-bonus-tab" data-bs-toggle="tab" data-bs-target="#nav-profitBonus" type="button"role="tab" aria-controls="nav-profitBonus" aria-selected="true">Calcul de l'intéressement</button>
+    {% endif %}
+    <button class="nav-link" id="nav-action-tab" data-bs-toggle="tab" data-bs-target="#nav-actions" type="button"role="tab" aria-controls="nav-actions" aria-selected="true">Suivi administratif</button>
   </div>
 </nav>
 
@@ -116,6 +187,7 @@
   <!-- Tab Opérations -->
   <div class="tab-pane fade show active" id="nav-operations" role="tabpanel" aria-labelledby="nav-profile-tab">
     <!-- Table des opérations -->
+    {% set operations_fixed_params = {'id_budget': Budget.id_budget} %}
     {% include 'shared/operations_table.html' %}
   </div>
   <!-- Fin de la tab opérations-->
@@ -132,17 +204,16 @@
   </div>
   <!-- Fin de la tab masses salariales-->
 
+  <!-- Tab profitBonus -->
+  <div class="tab-pane fade" id="nav-profitBonus" role="tabpanel" aria-labelledby="nav-profit-bonus-tab"> 
+    {% include 'budgets/profit_bonus.html' %}
+  </div>
+
   <!-- Tab actions -->
   <div class="tab-pane fade" id="nav-actions" role="tabpanel" aria-labelledby="nav-actions-tab"> 
     {% include 'budgets/details_actions.html' %}
   </div>
-    
-  <!-- Fin de la tab actions-->
-  <!-- Tab résultats 
-  <div class="tab-pane fade" id="nav-result" role="tabpanel" aria-labelledby="nav-result-tab">
-    <a class="btn btn-success" href="http://localhost:5050/results/pdf">Télécharger le bilan au format PDF</a>
-  </div>
-   Tab actions -->
+  
 
 </div>
    

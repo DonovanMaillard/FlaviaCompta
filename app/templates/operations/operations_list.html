@@ -1,25 +1,117 @@
 {% extends 'main.html' %}
 
-
 {% block content %}
 
 <div class="container">
-	<h1> Liste des opérations enregistrées </h1>
+  <h1>Liste des opérations enregistrées</h1>
 
-  <a class="btn btn-outline-danger btn-right" href="{{ url_for('addMovement', type_operation='Dépense') }}"> <i class="fa fa-plus"></i> Ajouter une dépense </a>
-  <a class="btn btn-outline-success btn-right" href="{{ url_for('addMovement', type_operation='Recette') }}"> <i class="fa fa-plus"></i> Ajouter une recette </a>
+  <div class="btn-group" role="group">
+    <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+      Saisir une opération
+    </button>
+    <ul class="dropdown-menu">
+      <li><a class="dropdown-item" href="{{ url_for('operations.addMovement', type_operation='Dépense') }}">Une dépense</a></li>
+      <li><a class="dropdown-item" href="{{ url_for('operations.addMovement', type_operation='Recette') }}">Une recette</a></li>
+      <li><a class="dropdown-item" href="{{ url_for('transfers.addTransfer', type_transfer='Internal') }}">Une régule entre comptes</a></li>
+      <li><a class="dropdown-item" href="{{ url_for('transfers.addTransfer', type_transfer='Refund') }}">Un remboursement de frais</a></li>
+    </ul>
+  </div>
 
-<br><br><br>
-  <!-- Table des opérations -->
+  <br><br><br>
+
+  <div class="card mb-3">
+    <div class="card-header"><h4>Recherche</h4></div>
+    <div class="card-body">
+      <form id="filters" class="row g-2">
+        <div class="col-md-6">
+          <label class="form-label" for="libelle">Libellé</label>
+          <input type="text" id="libelle" name="libelle" class="form-control">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="montant">Montant</label>
+          <input type="text" id="montant" name="montant" class="form-control">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="date_apres">Après le</label>
+          <input type="date" id="date_apres" name="date_apres" class="form-control">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="date_avant">Avant le</label>
+          <input type="date" id="date_avant" name="date_avant" class="form-control">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="id_type_operation">Type d'opération</label>
+          <select id="id_type_operation" name="id_type_operation" class="form-select">
+            <option value="">Tous les types d'opérations</option>
+            {% for t in types %}
+              <option value="{{ t.id_type_operation }}">{{ t.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="id_account">Compte</label>
+          <select id="id_account" name="id_account" class="form-select">
+            <option value="">Tous les comptes</option>
+            {% for a in accounts %}
+              <option value="{{ a.id_account }}">{{ a.account_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="id_budget">Budget</label>
+          <select id="id_budget" name="id_budget" class="form-select">
+            <option value="">Tous les budgets</option>
+            <option value="none">Aucun budget</option>
+            {% for b in budgets %}
+              <option value="{{ b.id_budget }}">{{ b.budget_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="category">Catégorie</label>
+          <select id="category" name="category" class="form-select">
+            <option value="">Toutes les catégories</option>
+            {% for c in categories %}
+              <option value="{{ c.category }}">{{ c.category }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="id_spending_allocation">Affectation</label>
+          <select id="id_spending_allocation" name="id_spending_allocation" class="form-select">
+            <option value="">Toutes les affectations</option>
+            {% for a in allocations %}
+              <option value="{{ a.id_spending_allocation }}">{{ a.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="invoice_reference">Référence facture</label>
+          <input type="text" id="invoice_reference" name="invoice_reference" class="form-control">
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="missing_file" name="missing_file" value="1">
+            <label class="form-check-label" for="missing_file">Justificatif manquant</label>
+          </div>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="with_depreciation" name="with_depreciation" value="1">
+            <label class="form-check-label" for="with_depreciation">Soumis à amortissement</label>
+          </div>
+        </div>
+        
+        <div class="col-md-2 ms-auto d-flex align-items-end">
+          <button type="reset" class="btn btn-secondary w-100">Réinitialiser</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% set operations_filters_form = 'filters' %}
   {% include 'shared/operations_table.html' %}
-
-<a class="btn btn-success btn-right" href="{{ url_for('operationsCSV') }}"> <i class="fa fa-download"></i> Exporter toutes les opérations en csv </a>
 
 </div>
 
-<script>
-$(document).ready(function(){
-  $('[data-toggle="tooltip"]').tooltip();
-});
-</script>
 {% endblock %}

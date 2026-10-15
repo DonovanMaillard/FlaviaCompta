@@ -55,34 +55,31 @@
                   <li><h6 class="dropdown-header"><i class="fa fa-eye"></i> Consulter et gérer</h6></li>
                   <li><hr class="dropdown-divider"></li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('operations')}}">Toutes les opérations</a>
+                    <a class="dropdown-item" href="{{url_for('operations.operations')}}">Toutes les opérations</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('commitments')}}">Tous les engagements</a>
+                    <a class="dropdown-item" href="{{url_for('commitments.commitments')}}">Tous les engagements</a>
                   </li>
                   <br/>
                   <li><h6 class="dropdown-header"><i class="fa fa-edit"></i>Saisir une opération</h6></li>
                   <li><hr class="dropdown-divider"></li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('addMovement', type_operation = 'Recette')}}">Une recette</a>
+                    <a class="dropdown-item" href="{{url_for('operations.addMovement', type_operation = 'Recette')}}">Une recette</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('addMovement', type_operation = 'Dépense')}}">Une dépense</a>
+                    <a class="dropdown-item" href="{{url_for('operations.addMovement', type_operation = 'Dépense')}}">Une dépense</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('addCommitment')}}">Un engagement</a>
+                    <a class="dropdown-item" href="{{url_for('commitments.addCommitment')}}">Un engagement</a>
                   </li>
-                  <li>
-                    <a class="dropdown-item disabled" href="{{url_for('volunteering')}}">Dons & mises à dispositions (à venir)</a>
-                  </li> 
                   <br/>
                   <li><h6 class="dropdown-header"><i class="fa fa-edit"></i>Saisir une régule</h6></li>
                   <li><hr class="dropdown-divider"></li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('addTransfer', type_transfer='Internal')}}">Régule entre comptes</a>
+                    <a class="dropdown-item" href="{{url_for('transfers.addTransfer', type_transfer='Internal')}}">Régule entre comptes</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('addTransfer', type_transfer='Refund')}}">Remboursement de frais</a>
+                    <a class="dropdown-item" href="{{url_for('transfers.addTransfer', type_transfer='Refund')}}">Remboursement de frais</a>
                   </li>
                 </ul>
               </li>
@@ -94,23 +91,24 @@
                   <li><h6 class="dropdown-header"><i class="fa fa-eye"></i> Consulter et gérer</h6></li>
                   <li><hr class="dropdown-divider"></li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('accounts')}}">Mes comptes bancaires</a>
+                    <a class="dropdown-item" href="{{url_for('accounts.accounts')}}">Mes comptes bancaires</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('budgets')}}">Mes lignes budgétaires</a>
+                    <a class="dropdown-item" href="{{url_for('budgets.budgets')}}">Mes lignes budgétaires</a>
                   </li>
                    <br/>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('accounts', type='personnal')}}">Notes de frais des personnels</a>
+                    <a class="dropdown-item" href="{{url_for('accounts.accounts', type='personnal')}}">Notes de frais des personnels</a>
                   </li>
-                  <!-- todo rapports financiers
                   <br/>
                   <li><h6 class="dropdown-header"><i class="fa fa-users"></i> Bilans financiers</h6></li>
                   <li><hr class="dropdown-divider"></li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('funders')}}">Rapports financiers annuels</a>
+                    <a class="dropdown-item" href="{{url_for('vat.vatReport')}}">Rapport de TVA</a>
                   </li>
-                -->
+                  <li>
+                    <a class="dropdown-item" href="{{url_for('results.results')}}">Rapports financiers annuels</a>
+                  </li>
                 </ul>
               </li>
 
@@ -121,17 +119,12 @@
                   <li><h6 class="dropdown-header"><i class="fa fa-user"></i> Salariés</h6></li>
                   <li><hr class="dropdown-divider"></li>
                   <li class="dropdown-item inline-item">
-                    <a class="dropdown-item" href="{{url_for('payrolls')}}">Masses salariales </a>
-                    <a class="dropdown-item" href="{{url_for('addPayroll')}}"><i class="fa-solid fa-square-plus"></i></a>
-                  </li>
-                  <br/>
-                  <li><h6 class="dropdown-header"><i class="fa fa-users"></i> Bénévoles</h6></li>
-                  <li><hr class="dropdown-divider"></li>
-                  <li class="dropdown-item inline-item">
-                    <a class="dropdown-item disabled" href="{{url_for('volunteering')}}">Bénévolat valorisé (à venir)</a>
-                    <a class="dropdown-item disabled" href="{{url_for('addVolunteering')}}"><i class="fa-solid fa-square-plus"></i></a>
-                  </li> 
-                                    
+                    <a class="dropdown-item" href="{{url_for('payrolls.payrolls')}}">Masses salariales </a>
+                    <a class="dropdown-item" href="{{url_for('payrolls.addPayroll')}}"><i class="fa-solid fa-square-plus"></i></a>
+                  </li>   
+                  <li>
+                    <a class="dropdown-item" href="{{url_for('profit_bonus.profitBonus')}}">Intéressement des salariés</a>
+                  </li>        
                 </ul>
               </li>
 
@@ -141,32 +134,25 @@
                 <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Admin</a>
                 <ul class="dropdown-menu">
                   <li>
-                    <a class="dropdown-item" href="{{ url_for('members') }}">Membres</a>
+                    <a class="dropdown-item" href="{{ url_for('admin.members') }}">Membres</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('funders')}}">Financeurs</a>
+                    <a class="dropdown-item" href="{{url_for('funders.funders')}}">Financeurs</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('activities')}}">Activités</a>
+                    <a class="dropdown-item" href="{{url_for('admin.activities')}}">Activités</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('categories')}}">Catégories fiscales</a>
+                    <a class="dropdown-item" href="{{url_for('admin.categories')}}">Catégories fiscales</a>
                   </li>
                   <li>
-                    <a class="dropdown-item disabled" href="{{url_for('categories')}}">Documents (à venir)</a>
-                  </li>
-                </ul>
-              </li>
-
-              <!-- Guides -->
-              <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Guide utilisateurs</a>
-                <ul class="dropdown-menu">
-                  <li>
-                    <a class="dropdown-item" href="{{url_for('tutorial')}}">Tutoriel</a>
+                    <a class="dropdown-item" href="{{url_for('documents.documents')}}">Documents</a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="{{url_for('features')}}">Suivi des développements</a>
+                    <a class="dropdown-item" href="{{url_for('admin.tutorial')}}">Tutoriel</a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="{{url_for('admin.features')}}">Suivi des développements</a>
                   </li>
                 </ul>
               </li>
@@ -174,7 +160,7 @@
           </div>
           <!-- Disconnect -->
           <div class="nav-item d-flex">
-            <a class="nav-link" href="{{ url_for('logout') }}" title="Se déconnecter"><i class='fa-solid fa-sign-out'></i>Se déconnecter</a>
+            <a class="nav-link" href="{{ url_for('auth.logout') }}" title="Se déconnecter"><i class='fa-solid fa-sign-out'></i>Se déconnecter</a>
           </div>
       </div>
 </header>
@@ -190,9 +176,9 @@
 <footer class="mt-auto">
   <div class="footer-content bg-dark">
     <span>
-      2022 - Version n° 0.2.0
+      2026 - Version n° 0.6.0
       <br>
-      Développé par <a href="www.flavia-ape.fr" target="_blank">Flavia APE</a>
+      Développé par <a href="www.flavia-ape.fr" target="_blank">Donovan Maillard - Flavia APE</a>
     </span>
   </div>
 </footer>
@@ -205,7 +191,8 @@
 <script>
 
  $(document).ready(function () {
-    $('.table').DataTable(
+    /* Pour les tables Datatable peu lourdes avec pagination et tri coté client*/
+    $('.small-datatable').DataTable(
       {
         /* No ordering applied by DataTables during initialisation */
         "order": [],

@@ -12,139 +12,428 @@
 
 
       <form method = "post" enctype="multipart/form-data" novalidate>
-        <div class="row">
-          <div class="form-group col-md-4">
-            <label for = "id_account"><strong>Compte bancaire associé *</strong></label><br>
-            {{ form.id_account(class="form-control") }}
-            {% for error in form.id_account.errors %} 
-                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-            {% endfor %}
-          </div>
 
-          <div class="form-group col-md-4">
-            <label for = "operation_date">Date de facturation (optionnelle)</label><br>
-            {{ form.operation_date(class="form-control") }}
-            {% for error in form.operation_date.errors %} 
-                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-            {% endfor %}
+        <div class="card">
+          <div class="card-header">
+            <span class="h5"><i class="fa-solid fa-credit-card"></i> Description</span>
           </div>
+          <div class="card-body">
+            <!-- First row -->
+            <div class="row">
+              <div class="form-group col-md-9">
+                <label for = "name">Libellé</label>
+                {{ form.name(class="form-control") }}
+                {% for error in form.name.errors %} 
+                  <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
 
-          <div class="form-group col-md-4">
-          <label for = "effective_date"><strong>Date d'effet *</strong></label><br>
-            {{ form.effective_date(class="form-control") }}
-            {% for error in form.effective_date.errors %} 
-                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-            {% endfor %}
+              <div class="form-group col-md-3">
+                <label for = "amount">Montant TTC (€)</label>
+                {{ form.amount(class="form-control") }}
+                {% for error in form.amount.errors %} 
+                     <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="row" style="margin-top:15px;">
+              <div class="form-group col-md-4">
+                <label for = "invoice_reference">Référence de la facture</label><br>
+                {{ form.invoice_reference(class="form-control") }}
+                {% for error in form.invoice_reference.errors %} 
+                    <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+
+              <div class="form-group col-md-4">
+                <label for = "operation_date">Date de facturation (optionnelle)</label><br>
+                {{ form.operation_date(class="form-control") }}
+                {% for error in form.operation_date.errors %} 
+                    <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+
+              <div class="form-group col-md-4">
+                <label for = "effective_date">Date d'effet</label><br>
+                {{ form.effective_date(class="form-control") }}
+                {% for error in form.effective_date.errors %} 
+                    <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+
+              <!-- Justificatif -->
+              <div class="form-group col-md-6">
+                {% if type_operation=='Dépense' %}
+                  <label for = "uploaded_file">Justificatif</label><br>
+                  {{ form.uploaded_file(class="form-control") }}
+                  <small class="text-muted">Obligatoire pour les dépenses</small>
+                {% else %}
+                  <label for = "uploaded_file">Justificatif</label><br>
+                  {{ form.uploaded_file(class="form-control") }}
+                {% endif %}
+
+                {% if Convert %}
+                  <small>Lorsque vous convertissez un engagement en dépense effective, <strong> vous devez remplacer le justificatif précédemment fourni (devis validé) par la facture.</strong></small>
+                {% endif %}
+
+                {% for error in form.uploaded_file.errors %} 
+                  <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+              <!-- Keep previous uploaded file checkbox -->
+              {% if Operation.uploaded_file and not Convert %}
+                <div class="form-group">
+                  <label for = "keep_file">Conserver le <a href="{{ url_for('static', filename=Operation.uploaded_file) }}"> justificatif fourni précédemment</a></label>
+                  {{ form.keep_file(class="form-check-input", checked=true) }}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Section TVA -->
+            <div class="card" style="margin-top:30px">
+          <div class="card-body bg-light">
+            <!-- First row -->
+            <span class="h6"><i class="fa-solid fa-user-tie"></i> Déclaration de la TVA</span>
+            <hr>
+            <div class="row">
+              {% if Operation == None  %}
+              <div class="form-group col-md-2">
+                  <label for = "vat_rate_autocompletion">Taux de TVA</label>
+                  {{ form.vat_rate_autocompletion(class="form-control") }}
+                  {% for error in form.vat_rate_autocompletion.errors %} 
+                     <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                  {% endfor %}
+              </div>
+              {% endif %}
+              <div class="form-group col-md-2">
+                <label for = "vat_amount">Montant de la TVA</label>
+                {{ form.vat_amount(class="form-control") }}
+                {% for error in form.vat_amount.errors %} 
+                     <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+              {% if type_operation=='Dépense' %}
+              <div class="form-group col-md-4">
+                <label for = "id_spending_allocation">Affectation</label>
+                {{ form.id_spending_allocation(class="form-control") }}
+                {% for error in form.id_spending_allocation.errors %} 
+                     <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+              <div class="form-group col-md-2">
+                <label for = "vat_ratio">Taux de récupération</label>
+                {{ form.vat_ratio(class="form-control") }}
+                {% for error in form.vat_ratio.errors %} 
+                     <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+              <div class="form-group col-md-2">
+                <label for = "recoverable_vat_amount">Montant récupérable</label>
+                {{ form.recoverable_vat_amount(class="form-control") }}
+                {% for error in form.recoverable_vat_amount.errors %} 
+                     <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div> 
           </div>
         </div>
-
-        <br><br>
-
-        <div>
-          <div class="row">
-            <div class="form-group col-md-8">
-              <label for = "name"><strong>Libellé *</strong></label>
-              {{ form.name(class="form-control") }}
-              {% for error in form.name.errors %} 
-                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-            {% endfor %}
-            </div>
-
-            <div class="form-group col-md-4">
-              <label for = "amount"><strong>Montant (€) *</strong></label>
-              {{ form.amount(class="form-control") }}
-              <small class="text-muted">Le séparateur de décimale doit être un point</small>
-              {% for error in form.amount.errors %} 
-                   <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-              {% endfor %}
-            </div>
-            <div class="form-group col-md-12">
-              <label for = "detail_operation">Détail de l'opération</label><br>
-              {{ form.detail_operation(class="form-control") }}
-              {% for error in form.detail_operation.errors %} 
-                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-              {% endfor %}
-            </div>
-          </div>
-        </div>
-
-        <br><br>
-
-        <div class="row">
-          <div class="form-group col-md-4">
-            <label for = "id_budget">Ligne budgétaire associée</label><br>
-            {{ form.id_budget(class="form-control") }}
-            <small class="text-muted">Obligatoire si action liée à une subvention</small>
-            {% for error in form.id_budget.errors %} 
-                <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-            {% endfor %}
           </div> 
-
-          <div class="form-group col-md-4">
-            <label for = "id_payment_method">Moyen de paiement</label><br>
-            {{ form.id_payment_method(class="form-control") }}
-            {% for error in form.id_payment_method.errors %} 
-                   <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-            {% endfor %}
-          </div>
-
-          <div class="form-group col-md-4">
-            <label for = "id_category">
-              <strong>Catégorie fiscale *</strong>
-              <a class="a-icon" href="{{ url_for('categories') }}" target="_blank" title="Explications sur les catégories fiscales (nouvel onglet)">
-              <i class="fa fa-info-circle"></i>
-              </a>
-            </label><br>
-            {{ form.id_category(class="form-control") }}
-            {% for error in form.id_category.errors %} 
-                   <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-            {% endfor %}
-            <br><br>
-          </div>
-
-          <!-- Line2 -->
-          <div class="form-group col-md-6">
-            {% if type_operation=='Dépense' %}
-              <label for = "uploaded_file"><strong>Justificatif *</strong></label><br>
-              {{ form.uploaded_file(class="form-control") }}
-              <small class="text-muted">Obligatoire pour les dépenses</small>
-            {% else %}
-              <label for = "uploaded_file">Justificatif</label><br>
-              {{ form.uploaded_file(class="form-control") }}
-            {% endif %}
-
-            {% if Convert %}
-              <small>Lorsque vous convertissez un engagement en dépense effective, <strong> vous devez remplacer le justificatif précédemment fourni (devis validé) par la facture.</strong></small>
-            {% endif %}
-
-            {% for error in form.uploaded_file.errors %} 
-              <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
-            {% endfor %}
-          </div>
-          <!-- Keep previous uploaded file checkbox -->
-          {% if Operation.uploaded_file and not Convert %}
-            <div class="form-group">
-              <label for = "keep_file">Conserver le <a href="{{ url_for('static', filename=Operation.uploaded_file) }}"> justificatif fourni précédemment</a></label>
-              {{ form.keep_file(class="form-check-input", checked=true) }}
-            </div>
-          {% endif %}
         </div>
 
-        <br><br>
+        <div class="card">
+          <div class="card-header">
+            <span class="h5"><i class="fa-solid fa-folder-tree"></i> Informations comptables</span>
+          </div>
+          <div class="card-body">
+            <!-- First row -->
+            <div class="row">
+              <div class="form-group col-md-4">
+                <label for = "id_account">Compte bancaire associé</label><br>
+                {{ form.id_account(class="form-control") }}
+                {% for error in form.id_account.errors %} 
+                  <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+
+              <div class="form-group col-md-4">
+                <label for = "id_budget">Ligne budgétaire associée</label><br>
+                {{ form.id_budget(class="form-control") }}
+                <small class="text-muted">Obligatoire si opération liée à une subvention</small>
+                {% for error in form.id_budget.errors %} 
+                    <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div> 
+
+              <div class="form-group col-md-4">
+                <label for = "id_category">
+                  Catégorie fiscale
+                  <a class="a-icon" href="{{ url_for('admin.categories') }}" target="_blank" title="Explications sur les catégories fiscales (nouvel onglet)">
+                  <i class="fa fa-info-circle"></i>
+                  </a>
+                </label><br>
+                {{ form.id_category(class="form-control") }}
+                <small id="cat-hint" class="d-none" style="color:green;">Catégorie suggérée d'après le libellé</small>
+                {% for error in form.id_category.errors %} 
+                       <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+                <br><br>
+              </div>
+
+              <div class="form-group col-md-4">
+                <label for = "id_payment_method">Moyen de paiement</label><br>
+                {{ form.id_payment_method(class="form-control") }}
+                {% for error in form.id_payment_method.errors %} 
+                   <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                {% endfor %}
+              </div>
+
+              {% if type_operation=='Dépense' %}
+              <div class="form-group col-md-6">
+                <label for = "with_depreciation">Soumis à amortissement</label>
+                {{ form.with_depreciation(class="form-check-input") }}
+              </div>
+              {% endif %}
+
+              <div id="vat-consistency-alert" class="alert alert-danger d-none" role="alert"></div>
+
+            </div> 
+          </div>
+        </div>
+
+
+        <div class="card">
+            <div class="card-header">
+                <span class="h5"><i class="fa-solid fa-comment-dots"></i> Détails de l'opération</span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="form-group col-md-12">
+                      {{ form.detail_operation(class="form-control") }}
+                      {% for error in form.detail_operation.errors %} 
+                        <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                      {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <input class="btn btn-primary float-right" type = "submit" value = "Enregistrer" />
       </form>
-
+    </div>
 </div>
 
-<!-- Make budget field searchable with select2-->
+
 <script>
-$(document).ready(function() {
-    $('#id_budget').select2({  // init Select2 on form's name field
-        placeholder: "Sélectionnez une ligne budgétaire",
-        allowClear: true
+(function () {
+  // ===== Champs =====
+  const labelInput   = document.getElementById('name');
+  const catSelect    = document.getElementById('id_category');
+  const catHint      = document.getElementById('cat-hint');           // facultatif
+  const amountInput  = document.getElementById('amount');
+  const rateSelect   = document.getElementById('vat_rate_autocompletion');
+  const vatInput     = document.getElementById('vat_amount');
+  const allocSelect  = document.getElementById('id_spending_allocation');
+  const ratioInput   = document.getElementById('vat_ratio');
+  const recoverInput = document.getElementById('recoverable_vat_amount');
+
+  // ===== Utilitaires de montants =====
+  function parse(v) {
+    return parseFloat(String(v).replace(/\s/g, '').replace(',', '.'));
+  }
+
+  function fmt(n) {
+    return (Math.round(n * 100) / 100).toFixed(2);
+  }
+
+  // ===== TVA =====
+
+  // TVA récupérable = TVA × ratio de l'affectation
+  function recompute() {
+    // Ces champs sont spécifiques aux dépenses
+    if (!vatInput || !ratioInput || !recoverInput) return;
+
+    const vat = parse(vatInput.value);
+    const ratio = parse(ratioInput.value);
+
+    recoverInput.value =
+      (isNaN(vat) || isNaN(ratio)) ? '' : fmt(vat * ratio);
+  }
+
+  // TVA = TTC - TTC / (1 + taux)
+  function autofillVat() {
+    if (!amountInput || !rateSelect || !vatInput) return;
+
+    const ttc = parse(amountInput.value);
+    const rate = parseFloat(rateSelect.value);
+
+    if (isNaN(ttc) || isNaN(rate)) return;
+
+    vatInput.value = fmt(ttc * rate / (1 + rate));
+    recompute();
+  }
+
+  // Gestion du calcul automatique de TVA
+  if (amountInput && rateSelect && vatInput) {
+    let manual = false;
+
+    vatInput.addEventListener('input', function () {
+      manual = true;
+      recompute();
     });
-});
+
+    rateSelect.addEventListener('change', function () {
+      manual = false;
+      autofillVat();
+    });
+
+    amountInput.addEventListener('input', function () {
+      if (!manual) autofillVat();
+    });
+
+    // Calcul initial : uniquement si la TVA est vide
+    if (!vatInput.value.trim()) autofillVat();
+  }
+
+  // ===== Affectation (spécifique aux dépenses) =====
+  if (allocSelect && ratioInput) {
+    allocSelect.addEventListener('change', function () {
+      const option = allocSelect.selectedOptions[0];
+
+      ratioInput.value = option
+        ? (option.dataset.ratio || '')
+        : '';
+
+      recompute();
+    });
+
+    // Initialisation du ratio
+    if (!ratioInput.value && allocSelect.value) {
+      const option = allocSelect.selectedOptions[0];
+      ratioInput.value = option
+        ? (option.dataset.ratio || '')
+        : '';
+    }
+  }
+
+  // ===== Catégorie fiscale suggérée d'après le libellé =====
+  if (labelInput && catSelect) {
+
+    // Minuscules, sans accents, mots découpés sur tout ce qui n'est pas lettre ou chiffre
+    function words(s) {
+      return (s || '')
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .split(/[^a-z0-9]+/)
+        .filter(Boolean);
+    }
+
+    // Singulier/pluriel : on retire un "s" ou un "x" final sur les mots de plus de 3 lettres
+    function stem(w) {
+      return (w.length > 3 && /[sx]$/.test(w)) ? w.slice(0, -1) : w;
+    }
+
+    // Phrase normalisée, entourée d'espaces pour ne chercher que des mots entiers
+    function phrase(s) {
+      return ' ' + words(s).map(stem).join(' ') + ' ';
+    }
+
+    // Index construit une seule fois : [{ value, keywords: [' essence ', ...] }, ...]
+    const index = Array.from(catSelect.options)
+      .filter(o => o.value && o.dataset.keywords)
+      .map(o => ({
+        value: o.value,
+        keywords: o.dataset.keywords.split(',').map(phrase).filter(k => k.trim() !== '')
+      }));
+
+    // Une catégorie déjà choisie (modification, page ré-affichée après erreur) compte comme saisie.
+    // Un changement fait par le script ne déclenche pas "change" : seul l'utilisateur le déclenche.
+    let touched = catSelect.value !== '';
+
+    catSelect.addEventListener('change', function () {
+      touched = true;
+      if (catHint) catHint.classList.add('d-none');
+    });
+
+    function suggestCategory() {
+      if (touched) return;
+      const text = phrase(labelInput.value);
+
+      // Catégories dont au moins un mot-clé apparaît dans le libellé
+      const matches = index.filter(cat => cat.keywords.some(k => text.includes(k)));
+
+      if (matches.length === 1) {
+        catSelect.value = matches[0].value;
+        if (catHint) catHint.classList.remove('d-none');
+      } else {
+        catSelect.value = '';               // aucune catégorie, ou plusieurs : on ne propose rien
+        if (catHint) catHint.classList.add('d-none');
+      }
+    }
+
+    let timer = null;
+    labelInput.addEventListener('input', function () {
+      clearTimeout(timer);
+      timer = setTimeout(suggestCategory, 200);
+    });
+  }
+
+  // ===== Cohérence budget / TVA / affectation =====
+  const typeOperation = {{ type_operation|tojson }};               // 'Recette' ou 'Dépense'
+  const budgetSelect  = document.getElementById('id_budget');
+  const alertBox      = document.getElementById('vat-consistency-alert');
+
+  function checkConsistency() {
+    if (!budgetSelect || !alertBox) return;
+
+    const messages = [];
+    const budgetOpt = budgetSelect.selectedOptions[0];
+
+    // Aucun budget choisi : pas de contrôle
+    if (budgetOpt && budgetOpt.value) {
+      const budgetHasVat = (parse(budgetOpt.dataset.vat || '0') || 0) > 0;
+
+      if (typeOperation === 'Dépense' && allocSelect) {
+        const allocOpt = allocSelect.selectedOptions[0];
+        const allocation = (allocOpt && allocOpt.value) ? allocOpt.text.trim() : null;
+
+        if (allocation) {
+          if (budgetHasVat && allocation !== 'Lucratif') {
+            messages.push("Le budget sélectionné est soumis à TVA : est-ce volontaire que l'affection ne soit pas « Lucratif » ? <br>Pour des dépenses mixtes, ne pas les rattacher à un budget en particulier.");
+          }
+          if (!budgetHasVat && allocation !== 'Non lucratif') {
+            messages.push("Le budget sélectionné n'est pas soumis à TVA : est-ce volontaire que l'affectation ne soit pas « Non lucratif » ? <br>Pour des dépenses mixtes, ne pas les rattacher à un budget en particulier.");
+          }
+        }
+      } else if (typeOperation === 'Recette') {
+        const vat = vatInput ? (parse(vatInput.value) || 0) : 0;
+
+        if (budgetHasVat && vat === 0) {
+          messages.push("Le budget sélectionné est soumis à TVA : cette recette devrait comporter un montant de TVA.");
+        }
+        if (!budgetHasVat && vat !== 0) {
+          messages.push("Le budget sélectionné n'est pas soumis à TVA : cette recette ne devrait pas comporter de TVA.");
+        }
+      }
+    }
+
+    alertBox.innerHTML = messages.map(m => `<div>${m}</div>`).join('');
+    alertBox.classList.toggle('d-none', messages.length === 0);
+  }
+
+  if (budgetSelect) budgetSelect.addEventListener('change', checkConsistency);
+  if (allocSelect)  allocSelect.addEventListener('change', checkConsistency);
+  if (vatInput)     vatInput.addEventListener('input', checkConsistency);
+  // La TVA peut aussi être remplie automatiquement par autofillVat() (sans événement "input") :
+  // ces écouteurs, ajoutés après ceux du calcul, s'exécutent une fois la TVA mise à jour.
+  if (amountInput)  amountInput.addEventListener('input', checkConsistency);
+  if (rateSelect)   rateSelect.addEventListener('change', checkConsistency);
+
+  // ===== Calcul final si les champs sont présents =====
+  recompute();
+  checkConsistency();   // contrôle initial (utile en édition)
+})();
 </script>
 
 {% endblock %}

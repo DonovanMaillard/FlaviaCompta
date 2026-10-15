@@ -1,7 +1,9 @@
 from flask_sqlalchemy import SQLAlchemy
-from wtforms import Form, validators, BooleanField, StringField, TextAreaField, IntegerField, SelectField, DecimalField, PasswordField
+from wtforms import Form, FieldList, validators, FormField, BooleanField, StringField, TextAreaField, IntegerField, SelectField, DecimalField, PasswordField, HiddenField
 from flask_wtf.file import FileField, FileAllowed
-from wtforms.fields.html5 import DateField
+from wtforms.widgets import HiddenInput
+#from wtforms.fields.html5 import DateField
+from wtforms.fields import DateField
 from werkzeug.utils import secure_filename
 
 from .init_db import db
@@ -30,19 +32,31 @@ class formFunder(Form):
     active = BooleanField('Actif')
 
 class formBudget(Form):
-    name = StringField('Référence du budget', [validators.Length(min=1, max=50, message='Doit faire entre 1 et 50 caractères'), validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], render_kw={"placeholder": "Référence du budget"})
-    reference = StringField('Description', [validators.Length(max=50, message='Ne doit pas dépasser 50 caractères')], render_kw={"placeholder": "Référence du budget"})
-    id_funder = SelectField('Funder', [validators.NoneOf([''], message='Vous devez sélectionner une valeur')])
-    id_type_budget = SelectField('TypeBudget', [validators.NoneOf([''], message='Vous devez sélectionner une valeur')])
-    id_activity = SelectField('Activity')
-    date_max_expenditure = DateField('Date de fin des dépenses')
-    date_return = DateField('Date bilan et rendus')
+    name = StringField('Référence du budget', [validators.Length(min=1, max=50, message='Doit faire entre 1 et 50 caractères'), validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], render_kw={"placeholder": "Nom du budget"})
+    reference = StringField('Description', [validators.Length(max=50, message='Ne doit pas dépasser 50 caractères'), validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], render_kw={"placeholder": "Référence du budget"})
+    id_funder = SelectField('Funder', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
+    id_type_budget = SelectField('TypeBudget', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
+    id_activity = SelectField('Activity', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
+    date_start = DateField('Date de démarrage', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
+    date_max_expenditure = DateField('Date de fin des dépenses', [validators.Optional()])
+    date_return = DateField('Date bilan et rendus', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
     budget_amount = DecimalField('Montant du budget', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')],places=2)
-    payroll_limit = DecimalField('Masse salariale éligible', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')],places=2)
-    indirect_charges = DecimalField('Taux de charges indirectes', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')],places=2)
+    vat_amount = DecimalField('Montant de la TVA', [validators.Optional()],places=2)
+    payroll_limit = DecimalField('Masse salariale éligible',[validators.Optional()],places=2)
+    indirect_charges = DecimalField('Taux de charges indirectes',[validators.Optional()],places=2)
+    profit_bonus = BooleanField('Éligible aux primes d\'intéressement')
     comment = TextAreaField('Remarque', [validators.Length(min=0, max=255)], render_kw={"placeholder": "Remarque"})
-    allowed_fixed_cost = BooleanField('allowed_fixed_cost')
-    active = BooleanField('Actif') 
+
+class formAllocatedBudgetRow(Form):
+    id_member = IntegerField('id_member', widget=HiddenInput())
+    allocated_amount = DecimalField(
+        'Montant alloué',
+        [validators.Optional(), validators.NumberRange(min=0, message='Le montant doit être positif')],
+        places=2,
+    )
+
+class formAllocatedBudget(Form):
+    rows = FieldList(FormField(formAllocatedBudgetRow))
 
 class formAccount(Form):
     name = StringField('Nom du compte', [validators.Length(min=1, max=50, message='Doit faire entre 1 et 50 caractères'), validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], render_kw={"placeholder": "Nom du compte"})
@@ -69,24 +83,32 @@ class formActivity(Form):
     description = StringField('Description', render_kw={"placeholder": "Description de l'activité"})
     active = BooleanField('Actif')
 
-class formMovement(Form):
+class formMovementBase(Form):
     name = StringField('Libellé de l\'opération', [validators.Length(min=1, max=50, message='Doit faire entre 1 et 50 caractères'), validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], render_kw={"placeholder": "Libellé de l'opération"})
     detail_operation = TextAreaField('Détail de l\'opération', render_kw={"placeholder": "Précisions sur l'opération"})
     operation_date = DateField('operation_date', [validators.Optional()])
     effective_date = DateField('effective_date', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
     amount = DecimalField('amount', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner'), validators.NoneOf([0, 0.00], message='Le montant ne peut pas être de 0€')], places=2)
+    vat_rate_autocompletion = SelectField('vat_rate_autocompletion', choices=[], validate_choice=False, validators=[validators.Optional()])
+    vat_amount = DecimalField('vat_amount', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], places=2)
     id_payment_method = SelectField('id_payment_method', [validators.Optional()], default=None)
     id_account = SelectField('id_account', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner'),validators.NoneOf([''], message='Vous devez sélectionner une valeur')])
     id_budget = SelectField('id_budget')
     id_category = SelectField('id_category', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner'),validators.NoneOf([''], message='Vous devez sélectionner une valeur')])
+    invoice_reference = StringField('invoice_reference', [validators.Length(max=50, message='Doit faire moins de 50 caractères'), validators.Optional()], render_kw={"placeholder": "Référence de la facture"})
     uploaded_file = FileField('uploaded_file')
     keep_file = BooleanField('keep_file', default=True)
-    pointed = BooleanField('pointed')
+
+class formMovementExtended(formMovementBase):
+    id_spending_allocation = SelectField('id_spending_allocation', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
+    vat_ratio = DecimalField('vat_ratio', [validators.Optional()], render_kw={"readonly": True}, places=2)
+    recoverable_vat_amount = DecimalField('recoverable_vat_amount', [validators.Optional()], render_kw={"readonly": True}, places=2)
+    with_depreciation = BooleanField('with_depreciation', default=False)
 
 class formCommitment(Form):
     name = StringField('Libellé de l\'opération', [validators.Length(min=1, max=50, message='Doit faire entre 1 et 50 caractères'), validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], render_kw={"placeholder": "Libellé de l'opération"})
     detail_operation = TextAreaField('Détail de l\'opération', render_kw={"placeholder": "Précisions sur l'opération"})
-    operation_date = DateField('operation_date', [validators.Optional()])
+    operation_date = DateField('operation_date', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')])
     amount = DecimalField('amount', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner'), validators.NoneOf([0, 0.00], message='Le montant ne peut pas être de 0€')], places=2)
     id_account = SelectField('id_account', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner'),validators.NoneOf([''], message='Vous devez sélectionner une valeur')])
     id_budget = SelectField('id_budget')
@@ -111,6 +133,8 @@ class formPayroll(Form):
     gross_premium = DecimalField('gross_premium', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], default=0, places=2)
     employer_charge_amount = DecimalField('employer_charge_amount', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], default=0, places=2)
     worked_days = DecimalField('worked_days', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], places=2)
+    uploaded_file = FileField('uploaded_file')
+    keep_file = BooleanField('keep_file', default=True)
 
 class formVolunteering(Form):
     id_member = SelectField('id_member', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner'),validators.NoneOf([''], message='Vous devez sélectionner une valeur')])
@@ -119,11 +143,20 @@ class formVolunteering(Form):
     daily_valuation = DecimalField('gross_remuneration', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], default=0, places=2)
     worked_days = DecimalField('worked_days', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], places=2)
 
-# Todo
+class formDocument(Form):
+    title = StringField('Titre du document', [validators.Length(min=1, max=50, message='Doit faire entre 1 et 50 caractères'), validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], render_kw={"placeholder": "Titre du document"})
+    description= TextAreaField('Description du document', render_kw={"placeholder": "Description du document"})
+    id_type = SelectField('id_type', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner'),validators.NoneOf([''], message='Vous devez sélectionner une valeur')])
+    uploaded_file = FileField('uploaded_file')
+    keep_file = BooleanField('keep_file', default=True)
+
 class formPayrollBudget(Form):
     id_budget = SelectField('id_budget')
     nb_days_allocated = DecimalField('nb_days_allocated', places=2)
-    fixed_cost = DecimalField('fixed_cost', validators=[validators.Optional()], places=2, render_kw={"placeholder": "Laisser vide pour un décompte au réel"})
+
+class formBudgetMember(Form):
+    id_member = SelectField('id_member',[validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner'),validators.NoneOf([''], message='Vous devez sélectionner un salarié')])
+    amount = DecimalField('amount', [validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], places=2)
 
 class formMember(Form):
     member_name = StringField('Nom du membre', [validators.Length(min=1, max=50, message='Doit faire entre 1 et 50 caractères'), validators.InputRequired(message='Cette information est obligatoire, veuillez la renseigner')], render_kw={"placeholder": "Nom du membre"})

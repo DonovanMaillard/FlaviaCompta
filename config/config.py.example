@@ -12,6 +12,10 @@ DEBUG=True
 # uploads parameters
 #UPLOAD_FOLDER = '/Users/poleinvertebres/Desktop/ComptAsso/app/static/uploads'
 BASE_DIR = "/path/to/app/"
+BASE_URL = "http://"
+
+# Taux de calcul de l'intéressement : 0.08 pour 8% par exemple
+profit_bonus_ratio=0.08
 
 
 #Todo = ALLOWED_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'zip', 'rar']

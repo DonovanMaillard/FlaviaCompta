@@ -42,6 +42,14 @@
             <br>
             <small class="text-muted">Catégorie fiscale 645 - Charges de sécurité sociale et prévoyance</small> 
           </div>
+          <div class="col-md-4"> 
+            {% if payroll.uploaded_file %}
+              <strong>Justificatif :</strong> <a href="{{ url_for('static', filename=payroll.uploaded_file) }}">télécharger le bulletin de paie</a> 
+            {% else %}
+               <em>aucun bulletin de paie fourni</em>
+            {% endif %}
+            <br>
+          </div>
         </div>
         <br><br>
 
@@ -60,6 +68,7 @@
               </div>
               <div class="modal-body">
                   <p> Souhaitez-vous vraiment supprimer cette masse salariale de {{payroll.member_name}} pour la période du {{payroll.date_min_period|format_datetime}} au {{payroll.date_max_period|format_datetime}} ?</p>
+                  <p><i class="fa fa-triangle-exclamation" style="color:red"></i> <strong style="color:red">En supprimant la masse salariale, vous supprimerez également toutes ses correspondances avec les budgets auxquels du temps était attribué.</strong> </p>
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
@@ -80,11 +89,6 @@
       </div>
 
       <div class="card-body">
-        <div class="btn-group" >
-          <a class="btn btn-success" href="{{ url_for('addCorPayrollBudget', id_payroll=payroll.id_payroll) }}"> <i class="fa fa-plus"></i> Attribuer du temps à une ligne budgétaire </a>
-        </div>
-        <br><br><br>
-
         <div class="row">
           <div>
               <table class="table table-striped">
@@ -92,7 +96,6 @@
                   <tr>
                     <th>Budget</th>
                     <th>Temps alloué</th>
-                    <th>Coût appliqué</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -101,7 +104,6 @@
                   <tr>
                      <td> {{ cor.budget_name or 'Gestion associative & Autres activités' }} </td>
                      <td> {{ cor.nb_days_allocated }} j </td>
-                     <td> {% if not cor.fixed_cost %} <em>décompté au réel</em> {% else %} {{ cor.fixed_cost }}€ {% endif %} </td>
                      <td>
                         <div class="btn-group">
                           <a class="btn btn-warning" href="{{ url_for('updateCorPayrollBudget', id_payroll=payroll.id_payroll, id_payroll_budget=cor.id_payroll_budget) }}"> <i class="fa fa-edit"></i></a>
@@ -109,7 +111,7 @@
                         </div>
                      </td>
                   </tr>
-
+      
                   <!-- Delete Modal for CorPayrollBudget -->
                   <div class="modal fade" id="deleteCorModal{{cor.id_payroll_budget}}" tabindex="0" aria-labelledby="deleteCorModalLabel" aria-hidden="true">
                     <div class="modal-dialog">
@@ -129,15 +131,39 @@
                     </div>
                   </div>
                   <!-- end modal -->
-
                   {% endfor %}
+
+                  <!-- Additional row for adding data-->
+                  <tr>
+                    <form method = "post" enctype="multipart/form-data" novalidate>
+                    <td>
+                      <div class="form-group">
+                        {{ form.id_budget(class="form-control required") }}
+                        {% for error in form.id_budget.errors %} 
+                        <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                        {% endfor %}
+                      </div> 
+                    </td>
+                    <td>
+                      <div class="form-group">
+                        {{ form.nb_days_allocated(class="form-control required") }}
+                        <small class="text-muted">Le séparateur de décimale doit être un point</small>
+                        {% for error in form.nb_days_allocated.errors %} 
+                          <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>
+                        {% endfor %}
+                      </div>
+                    </td>
+                    <td>
+                      <div class="form-group" style="margin:auto;">
+                        <input class="btn btn-success float-right"type = "submit" value = "+" />
+                      </div>
+                    </td>
+                    </form>
+                  </tr>
                 </tbody>
               </table>
             </div> 
         </div>
-
-
-      </div> <!-- end card body -->
     </div>
 
 

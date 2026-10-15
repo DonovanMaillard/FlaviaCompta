@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from .init_db import db
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 
 #############################
 ## TABLES DE DICTIONNAIRES ##
@@ -56,7 +56,28 @@ class dictCategories(db.Model):
     cd_broader = db.Column(db.Integer, nullable=True)
     id_type_operation = db.Column(db.Integer, nullable=True)
     seizable = db.Column(db.Boolean, nullable=False)
+    keywords = db.Column(db.Unicode, nullable=True)
 
+
+class dictDocumentType(db.Model):
+
+    __tablename__ = "dict_document_type"
+    __table_args__ = {"schema": "comptasso"}
+    id_type = db.Column(db.Integer, primary_key=True)
+    label = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.Unicode, nullable=True)
+    
+    def __init__(self, label, description):
+        self.label = label
+        self.description = description 
+
+class dictVatRatio(db.Model):
+
+    __tablename__ = "dict_vat_ratio"
+    __table_args__ = {"schema": "comptasso"}
+    id_spending_allocation = db.Column(db.Integer, primary_key=True)
+    label = db.Column(db.Unicode, nullable=False)
+    ratio = db.Column(db.Numeric(5,2), nullable=False)
 
 #######################
 ## TABLES DE DONNEES ##
@@ -101,16 +122,19 @@ class tBudgets(db.Model):
     id_activity = db.Column(db.Integer(), nullable=True)
     date_max_expenditure = db.Column(db.Date(), nullable=True)
     date_return = db.Column(db.Date(), nullable=True)
-    budget_amount = db.Column(db.Numeric(8,2), nullable=True)
+    budget_amount = db.Column(db.Numeric(8,2), nullable=False)
+    vat_amount = db.Column(db.Numeric(8,2), nullable=False)
     payroll_limit = db.Column(db.Numeric(8,2), nullable=True)
     indirect_charges = db.Column(db.Numeric(8,2), nullable=True)
     comment = db.Column(db.Unicode, nullable=True)
-    allowed_fixed_cost = db.Column(db.Boolean, nullable=True)
-    active = db.Column(db.Boolean, nullable=True)
+    profit_bonus = db.Column(db.Boolean, nullable=False)
+    draft_allocations = db.Column(JSONB, nullable=True)
+    date_start = db.Column(db.Date(), nullable=True)
+    date_closing = db.Column(db.Date(), nullable=True)
     meta_create_date = db.Column(db.DateTime(), nullable=True)
     meta_update_date = db.Column(db.DateTime(), nullable=True)
 
-    def __init__(self, name, reference, id_funder, id_type_budget, id_activity, date_max_expenditure, date_return, budget_amount, payroll_limit, indirect_charges, comment, allowed_fixed_cost, active):
+    def __init__(self, name, reference, id_funder, id_type_budget, id_activity, date_max_expenditure, date_return, budget_amount, vat_amount, payroll_limit, indirect_charges, comment, profit_bonus, date_start):
         self.name = name
         self.reference = reference
         self.id_funder = id_funder
@@ -119,11 +143,32 @@ class tBudgets(db.Model):
         self.date_max_expenditure = date_max_expenditure
         self.date_return = date_return
         self.budget_amount = budget_amount
+        self.vat_amount = vat_amount
         self.payroll_limit = payroll_limit
         self.indirect_charges = indirect_charges
         self.comment = comment
-        self.allowed_fixed_cost = allowed_fixed_cost
-        self.active = active
+        self.profit_bonus = profit_bonus
+        self.date_start = date_start
+
+class tProfitBonus(db.Model):
+
+    __tablename__ = "t_profit_bonus"
+    __table_args__ = {"schema": "comptasso"}
+    id_pb = db.Column(db.Integer, primary_key=True)
+    id_budget = db.Column(db.Integer, nullable=False)
+    id_member = db.Column(db.Integer, nullable=False)
+    allocated_amount = db.Column(db.Numeric(12,2), nullable=False)
+    profit_percent = db.Column(db.Numeric(5,2), nullable=False)
+    profit_bonus_amount = db.Column(db.Numeric(12,2), nullable=False)
+    meta_create_date = db.Column(db.DateTime(), nullable=True)
+    meta_update_date = db.Column(db.DateTime(), nullable=True)
+
+    def __init__(self,id_budget,id_member,allocated_amount,profit_percent,profit_bonus_amount):
+        self.id_budget = id_budget
+        self.id_member = id_member
+        self.allocated_amount = allocated_amount
+        self.profit_percent = profit_percent
+        self.profit_bonus_amount = profit_bonus_amount
 
 
 class tAccounts(db.Model):
@@ -165,17 +210,22 @@ class tOperations(db.Model):
     operation_date = db.Column(db.Date(), nullable=True)
     effective_date = db.Column(db.Date(), nullable=True)
     amount = db.Column(db.Numeric(8,2), nullable=False)
+    vat_amount = db.Column(db.Numeric(12,2), nullable=True)
+    id_spending_allocation = db.Column(db.Integer, nullable=True)
+    vat_ratio = db.Column(db.Numeric(5,2), nullable=True)
+    recoverable_vat_amount = db.Column(db.Numeric(12,2), nullable=True)
+    with_depreciation = db.Column(db.Boolean, nullable=False)
     id_payment_method = db.Column(db.Integer(), nullable=True)
     id_account = db.Column(db.Integer(), nullable=False)
     id_budget = db.Column(db.Integer(), nullable=False)
     id_category = db.Column(db.Integer(), nullable=True)
+    invoice_reference =  db.Column(db.String(50), nullable=True)
     uploaded_file = db.Column(db.String(255), nullable=False)
-    pointed = db.Column(db.Boolean, nullable=True)
     meta_id_digitiser = db.Column(db.Integer(), nullable=True)
     meta_create_date = db.Column(db.DateTime(), nullable=True)
     meta_update_date = db.Column(db.DateTime(), nullable=True)
 
-    def __init__(self, id_grp_operation, name, detail_operation, id_type_operation, operation_date, effective_date, amount, id_payment_method, id_account, id_budget, id_category, uploaded_file, pointed, meta_id_digitiser):
+    def __init__(self, id_grp_operation, name, detail_operation, id_type_operation, operation_date, effective_date, amount, vat_amount, id_spending_allocation, vat_ratio, recoverable_vat_amount, with_depreciation, id_payment_method, id_account, id_budget, id_category, invoice_reference, uploaded_file, meta_id_digitiser):
         self.id_grp_operation = id_grp_operation
         self.name = name
         self.detail_operation = detail_operation
@@ -183,12 +233,17 @@ class tOperations(db.Model):
         self.operation_date = operation_date
         self.effective_date = effective_date
         self.amount = amount
+        self.vat_amount = vat_amount
+        self.id_spending_allocation = id_spending_allocation
+        self.vat_ratio = vat_ratio
+        self.recoverable_vat_amount = recoverable_vat_amount
+        self.with_depreciation = with_depreciation
         self.id_payment_method = id_payment_method
         self.id_account = id_account
         self.id_budget = id_budget
         self.id_category = id_category
+        self.invoice_reference = invoice_reference
         self.uploaded_file = uploaded_file
-        self.pointed = pointed
         self.meta_id_digitiser = meta_id_digitiser
 
 
@@ -223,10 +278,11 @@ class tPayrolls(db.Model):
     gross_premium = db.Column(db.Numeric(8,2), nullable=False)
     employer_charge_amount = db.Column(db.Numeric(8,2), nullable=False)
     worked_days = db.Column(db.Numeric(8,2), nullable=False)
+    uploaded_file = db.Column(db.String(255), nullable=True)
     meta_create_date = db.Column(db.DateTime(), nullable=True)
     meta_update_date = db.Column(db.DateTime(), nullable=True)
 
-    def __init__ (self, id_member, date_min_period, date_max_period, gross_remuneration, gross_premium, employer_charge_amount, worked_days):
+    def __init__ (self, id_member, date_min_period, date_max_period, gross_remuneration, gross_premium, employer_charge_amount, worked_days, uploaded_file):
         self.id_member = id_member
         self.date_min_period = date_min_period
         self.date_max_period = date_max_period
@@ -234,6 +290,7 @@ class tPayrolls(db.Model):
         self.gross_premium = gross_premium
         self.employer_charge_amount = employer_charge_amount
         self.worked_days = worked_days
+        self.uploaded_file = uploaded_file
 
 
 class tUsers(UserMixin, db.Model):
@@ -246,16 +303,18 @@ class tUsers(UserMixin, db.Model):
     email = db.Column(db.String(100), nullable=True)
     login = db.Column(db.String(50), nullable=False)
     password = db.Column(db.String(255), nullable=False)
+    id_default_account = db.Column(db.Integer, nullable=True)
     is_active = db.Column(db.Boolean, nullable=False)
     meta_create_date = db.Column(db.DateTime(), nullable=True)
     meta_update_date = db.Column(db.DateTime(), nullable=True)
 
-    def __init__(self, name, firstname, email, login, password, is_active):
+    def __init__(self, name, firstname, email, login, password, id_default_account, is_active):
         self.name = name
         self.firstname = firstname
         self.email = email 
         self.login = login
         self.password = password
+        self.id_default_account = id_default_account
         self.is_active = is_active
 
     def get_id(self):
@@ -288,6 +347,27 @@ class tActivities(db.Model):
         self.label = label
         self.description = description 
         self.active = active
+
+
+class tDocuments(db.Model):
+
+    __tablename__ = "t_documents"
+    __table_args__ = {"schema": "comptasso"}
+    id_document = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.Unicode, nullable=True)
+    id_type = db.Column(db.Integer, nullable=False)
+    uploaded_file = db.Column(db.String(255), nullable=True)
+    meta_id_digitiser = db.Column(db.Integer, nullable=False)
+    meta_create_date = db.Column(db.DateTime(), nullable=True)
+    meta_update_date = db.Column(db.DateTime(), nullable=True)
+    
+    def __init__(self, title, description, id_type, uploaded_file, meta_id_digitiser):
+        self.title = title
+        self.description = description 
+        self.id_type = id_type
+        self.uploaded_file = uploaded_file
+        self.meta_id_digitiser = meta_id_digitiser
 
         
 ###############################
@@ -323,15 +403,13 @@ class corPayrollBudget(db.Model):
     id_payroll = db.Column(db.Integer, nullable=False)
     id_budget = db.Column(db.Integer, nullable=False)
     nb_days_allocated = db.Column(db.Numeric(8,2), nullable=True)
-    fixed_cost = db.Column(db.Numeric(8,2), nullable=True)
     meta_create_date = db.Column(db.DateTime(), nullable=True)
     meta_update_date = db.Column(db.DateTime(), nullable=True)
 
-    def __init__ (self, id_payroll, id_budget, nb_days_allocated, fixed_cost):
+    def __init__ (self, id_payroll, id_budget, nb_days_allocated):
         self.id_payroll = id_payroll
         self.id_budget = id_budget
         self.nb_days_allocated = nb_days_allocated
-        self.fixed_cost = fixed_cost
 
 
 ##########
@@ -360,16 +438,18 @@ class vBudgets(db.Model):
     reference = db.Column(db.String(255), nullable=True)
     id_funder = db.Column(db.Integer, nullable=True)
     funder = db.Column(db.String(50), nullable=True)
+    id_type_budget = db.Column(db.Integer, nullable=True)
     type_budget = db.Column(db.String(50), nullable=True)
+    id_activity = db.Column(db.Integer, nullable=True)
     activity = db.Column(db.String(255), nullable=True)
     date_max_expenditure = db.Column(db.Date(), nullable=True)
     date_return = db.Column(db.Date(), nullable=True)
     budget_amount = db.Column(db.Numeric(8,2), nullable=True)
+    vat_amount = db.Column(db.Numeric(8,2), nullable=True)
     payroll_limit = db.Column(db.Numeric(8,2), nullable=True)
     indirect_charges = db.Column(db.Numeric(8,2), nullable=True)
     indirect_charges_amount = db.Column(db.Numeric(8,2), nullable=True)
     comment = db.Column(db.Unicode, nullable=True)
-    active = db.Column(db.Boolean, nullable=True)
     received_amount = db.Column(db.Numeric(8,2), nullable=True)
     percent_received = db.Column(db.Numeric(8,2), nullable=True)
     spent_amount = db.Column(db.Numeric(8,2), nullable=True)
@@ -378,7 +458,13 @@ class vBudgets(db.Model):
     percent_committed = db.Column(db.Numeric(8,2), nullable=True)
     last_operation = db.Column(db.Date(), nullable=True)
     last_action_date = db.Column(db.Date(), nullable=True)
-
+    nb_operations = db.Column(db.Integer, nullable=False)
+    draft_allocations = db.Column(JSONB, nullable=True)
+    profit_bonus = db.Column(db.Boolean, nullable=True)
+    date_start = db.Column(db.Date(), nullable=True)
+    date_closing = db.Column(db.Date(), nullable=True)
+    meta_create_date = db.Column(db.DateTime(), nullable=True)
+    meta_update_date = db.Column(db.DateTime(), nullable=True)
 
 class vAccounts(db.Model):
 
@@ -398,6 +484,7 @@ class vAccounts(db.Model):
     account_balance = db.Column(db.Numeric(8,2), nullable=True)
     account_commitments = db.Column(db.Numeric(8,2), nullable=True)
     last_operation = db.Column(db.Date(), nullable=True)
+    nb_operations = db.Column(db.Integer, nullable=False)
 
 
 class vActions(db.Model):
@@ -418,13 +505,20 @@ class vOperations(db.Model):
     __table_args__ = {"schema": "comptasso"}
     id_operation = db.Column(db.Integer, primary_key=True)
     id_grp_operation = db.Column(UUID(as_uuid=True), nullable=False)
-    name_operation = db.Column(db.String(50), nullable=False)
+    name_operation = db.Column(db.String(255), nullable=False)
     detail_operation = db.Column(db.Unicode, nullable=True)
     id_type_operation = db.Column(db.Integer, nullable=False)
     type_operation = db.Column(db.String(50), nullable=False)
     operation_date = db.Column(db.Date, nullable=True)
     effective_date = db.Column(db.Date, nullable=False)
+    year = db.Column(db.Integer, nullable=True)
     amount = db.Column(db.Numeric(8,2), nullable=False)
+    vat_amount = db.Column(db.Numeric(12,2), nullable=True)
+    id_spending_allocation = db.Column(db.Integer, nullable=True)
+    affectation = db.Column(db.String(255), nullable=True)
+    vat_ratio = db.Column(db.Numeric(5,2), nullable=True)
+    recoverable_vat_amount = db.Column(db.Numeric(12,2), nullable=True)
+    with_depreciation = db.Column(db.Boolean, nullable=False)
     payment_method = db.Column(db.String(50), nullable=False)
     id_account = db.Column(db.Integer, nullable=False)
     account_name = db.Column(db.String(50), nullable=False)
@@ -433,9 +527,10 @@ class vOperations(db.Model):
     budget_name = db.Column(db.String(50), nullable=False)
     category = db.Column(db.String(50), nullable=False)
     parent_category = db.Column(db.String(50), nullable=False)
+    invoice_reference = db.Column(db.String(50), nullable=True)
     uploaded_file = db.Column(db.String(255), nullable=True)
-    pointed = db.Column(db.Boolean, nullable=True)
-    meta_crate_date = db.Column(db.DateTime(), nullable=True)
+    locked = db.Column(db.Boolean, nullable=False)
+    meta_create_date = db.Column(db.DateTime(), nullable=True)
     meta_update_date = db.Column(db.DateTime(), nullable=True)
 
 
@@ -454,6 +549,7 @@ class vPayrolls(db.Model):
     employer_charge_amount = db.Column(db.Numeric(8,2), nullable=False)
     total_amount = db.Column(db.Numeric(8,2), nullable=False)
     worked_days = db.Column(db.Numeric(8,2), nullable=False)
+    uploaded_file = db.Column(db.String(255), nullable=True)
 
 
 class vDecodeCorPayrollBudget(db.Model):
@@ -466,8 +562,6 @@ class vDecodeCorPayrollBudget(db.Model):
     id_budget =  db.Column(db.Integer, nullable=True)
     budget_name = db.Column(db.String(255), nullable=True)
     nb_days_allocated = db.Column(db.Numeric(8,2), nullable=False)
-    fixed_cost = db.Column(db.Numeric(8,2), nullable=True)
-
 
 class vSynthesePayrollBudget(db.Model):
 
@@ -478,7 +572,6 @@ class vSynthesePayrollBudget(db.Model):
     member_name = db.Column(db.String(255), nullable=False)
     id_budget = db.Column(db.Integer, nullable=False, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
-    fixed_cost = db.Column(db.Numeric(8,2), nullable=True, primary_key=True)
     date_min_period = db.Column(db.Date, nullable=False)
     date_max_period = db.Column(db.Date, nullable=False)
     total_gross_remuneration = db.Column(db.Numeric(8,2), nullable=True)
@@ -487,5 +580,53 @@ class vSynthesePayrollBudget(db.Model):
     allocated_days = db.Column(db.Numeric(8,2), nullable=True)
     justified_remuneration = db.Column(db.Numeric(8,2), nullable=True)
     justified_charges = db.Column(db.Numeric(8,2), nullable=True)
-    justified_fixed_cost = db.Column(db.Numeric(8,2), nullable=True)
     justified_payroll = db.Column(db.Numeric(8,2), nullable=False)
+
+
+class vResultByYear(db.Model):
+
+    __tablename__ = "v_result_by_year"
+    __table_args__ = {"schema": "comptasso"}
+
+    year = db.Column(db.Integer,primary_key=True)
+    type_category = db.Column(db.String(255))
+    cd_category = db.Column(db.String(255),primary_key=True)
+    label = db.Column(db.String(255))
+    json = db.Column(db.Unicode)
+    amount = db.Column(db.Numeric(8,2))
+
+
+class vDocuments(db.Model):
+
+    __tablename__ = "v_documents"
+    __table_args__ = {"schema": "comptasso"}
+    id_document = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.Unicode, nullable=True)
+    type = db.Column(db.String(50), nullable=False)
+    uploaded_file = db.Column(db.String(255), nullable=True)
+    digitiser = db.Column(db.Unicode, nullable=True)
+    meta_create_date = db.Column(db.DateTime(), nullable=True)
+    meta_update_date = db.Column(db.DateTime(), nullable=True)
+
+
+class vProfitBonus(db.Model):
+
+    __tablename__ = "v_profit_bonus"
+    __table_args__ = {"schema": "comptasso"}
+
+    id_pb = db.Column(db.Integer,primary_key=True)
+    id_budget = db.Column(db.Integer)
+    name = db.Column(db.String(255), nullable=False)
+    budget_amount = db.Column(db.Numeric(12,2))
+    received_amount = db.Column(db.Numeric(12,2))
+    date_closing = db.Column(db.Date(), nullable=True)
+    id_member = db.Column(db.Integer)
+    member_name = db.Column(db.String(255), nullable=False)
+    allocated_amount = db.Column(db.Numeric(12,2))
+    profit_percent = db.Column(db.Numeric(12,2))
+    profit_bonus_amount = db.Column(db.Numeric(12,2))
+    meta_create_date = db.Column(db.DateTime(), nullable=True)
+    meta_update_date = db.Column(db.DateTime(), nullable=True)
+
+    

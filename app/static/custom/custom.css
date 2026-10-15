@@ -171,3 +171,16 @@ h1 {
 .footer-content a {
 	color:lightgrey;
 }
+
+/* Coloration des champs obligatoires dans les formulaires */
+/* Champs obligatoires : fine barre rouge à gauche */
+.form-control:required,
+.form-select:required {
+    border-left: 4px solid #dc3545;
+}
+
+/* Facultatif : la barre devient discrète une fois le champ rempli */
+.form-control:required:valid,
+.form-select:required:valid {
+    border-left-color: green;
+}
