@@ -14,8 +14,6 @@
               </div>
               <div class="card-body">
                 {{ Activity.active_budgets or '0' }} ligne(s) budgétaire(s) active(s)
-                <br>
-                <small style="color:grey">{{ Activity.inactive_budgets or '0' }} inactive(s)</small>
                 <hr>
                 <strong>Montant à percevoir : {{ Activity.to_receive or '0' }} € </strong>
               </div>
