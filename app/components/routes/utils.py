@@ -1,4 +1,4 @@
-from flask import Flask, Blueprint, render_template, request, flash, get_flashed_messages, redirect, url_for, make_response, stream_with_context, jsonify
+from flask import Flask, Blueprint, render_template, request, flash, get_flashed_messages, redirect, url_for, make_response, stream_with_context, jsonify, current_app
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.wrappers import Response
@@ -56,7 +56,7 @@ def getFileUrl(input):
     f = request.files.get(input)
     if f :
         filename = uuid.uuid4().hex[:10]+'_'+secure_filename(f.filename)
-        f.save(app.config['BASE_DIR']+'app/static/uploads/'+filename)
+        f.save(current_app.config['BASE_DIR']+'app/static/uploads/'+filename)
         file_url='uploads/'+filename
     else :
         file_url=None
