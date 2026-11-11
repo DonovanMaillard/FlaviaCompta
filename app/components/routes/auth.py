@@ -32,7 +32,7 @@ def login():
             flash('Mot de passe incorrect ou compte inactif. Si le problème persiste, veuillez contacter l\'administrateur')
             return redirect(url_for('auth.login')) # if the user doesn't exist or password is wrong, reload the page
         # if the above check passes, then we know the user has the right credentials
-        login_user(user, remember=True, duration=timedelta(minutes=1))
+        login_user(user, remember=True)
         track_login=loginHistory(
             user.id_user,
             datetime.now()

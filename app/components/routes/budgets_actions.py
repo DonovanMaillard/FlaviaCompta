@@ -16,7 +16,7 @@ budgets_actions_bp = Blueprint("budgets_actions",__name__,url_prefix="/budgets")
 @login_required
 def addAction(id_budget):
     form = formAction(request.form)
-    Budget = tBudgets.query.get(id_budget)
+    Budget = db.get_or_404(tBudgets, id_budget)
     # Type Action
     TypesAction = dictBudgetActionTypes.query.all()
     form.id_budget_action_types.choices = [(TypeAction.id_budget_action_types, TypeAction.label) for TypeAction in TypesAction]
@@ -40,14 +40,14 @@ def addAction(id_budget):
 @login_required
 def updateAction(id_budget, id_action_budget):
     # pre-loaded form
-    Action = db.session.get(corActionBudget, id_action_budget) #corActionBudget.query.get(id_action_budget)
+    Action = db.get_or_404(corActionBudget, id_action_budget)
     form = formAction(request.form, obj=Action)
     # Type Action
     TypesAction = dictBudgetActionTypes.query.all()
     form.id_budget_action_types.choices = [(TypeAction.id_budget_action_types, TypeAction.label) for TypeAction in TypesAction]
     form.id_budget_action_types.default = Action.id_budget_action_types
     # Budget
-    Budget = db.session.get(tBudgets, id_budget) #tBudgets.query.get(id_budget)
+    Budget = db.get_or_404(tBudgets, id_budget)
     # Charger le formulaire
     if request.method == 'POST' and form.validate():
         Action.id_budget_action_types = getChoiceOrNone(request.form['id_budget_action_types'])
@@ -62,10 +62,10 @@ def updateAction(id_budget, id_action_budget):
 
 
 # Delete action
-@budgets_actions_bp.route('/budgets/detail/<id_budget>/deleteAction/<id_action_budget>', methods=['GET', 'POST'])
+@budgets_actions_bp.route('/budgets/detail/<id_budget>/deleteAction/<id_action_budget>', methods=['POST'])
 @login_required
 def deleteAction(id_budget, id_action_budget):
-    current_action=db.session.get(corActionBudget, id_action_budget) #corActionBudget.query.get(id_action_budget)
+    current_action=db.get_or_404(corActionBudget, id_action_budget)
     db.session.delete(current_action)
     db.session.commit()
     return redirect(url_for('budgets.detailBudget', id_budget=id_budget))

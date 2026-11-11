@@ -61,6 +61,8 @@
 (function () {
   const editUrlTemplate   = "{{ url_for('operations.updateMovement', id_operation='__ID__') }}";
   const deleteUrlTemplate = "{{ url_for('operations.deleteMovement', id_operation='__ID__') }}";
+  const editTransferUrlTemplate   = "{{ url_for('transfers.updateTransfer', id_grp_operation='__ID__') }}";
+  const deleteTransferUrlTemplate = "{{ url_for('transfers.deleteTransfer', id_grp_operation='__ID__') }}";
   const fixedParams = {{ (operations_fixed_params or {})|tojson }};
   const filtersForm = {% if operations_filters_form %}document.getElementById({{ operations_filters_form|tojson }}){% else %}null{% endif %};
 
@@ -159,14 +161,17 @@
         data: null,
         orderable: false,
         render: function (data, type, row) {
-          const editUrl = editUrlTemplate.replace('__ID__', row.id_operation);
-
-          console.log(row.id_operation, row.locked, row);
+          const isTransfer = !!row.id_grp_operation;
+          const editUrl = isTransfer
+            ? editTransferUrlTemplate.replace('__ID__', row.id_grp_operation)
+            : editUrlTemplate.replace('__ID__', row.id_operation);
 
           const editButtons = row.locked ? '' : `
             <a class="btn btn-warning" href="${editUrl}"><i class="fa fa-edit"></i></a>
             <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"
-                    data-id="${row.id_operation}" data-name="${esc(row.name_operation)}"><i class="fa fa-trash"></i></button>`;
+              data-id="${isTransfer ? row.id_grp_operation : row.id_operation}"
+              data-transfer="${isTransfer}"
+              data-name="${esc(row.name_operation)}"><i class="fa fa-trash"></i></button>`;
 
           return `
             <div class="btn-group">
@@ -204,8 +209,11 @@
   $('#operationsTable').on('click', '.btn-danger[data-bs-target="#deleteModal"]', function () {
     const id = $(this).data('id');
     const name = $(this).data('name');
-    $('#deleteModalText').text(`Souhaitez-vous vraiment supprimer l'opération : "${name}" ?`);
-    $('#deleteForm').attr('action', deleteUrlTemplate.replace('__ID__', id));
+    const isTransfer = $(this).data('transfer') === true;
+    $('#deleteModalText').text(isTransfer
+      ? `Souhaitez-vous vraiment supprimer le transfert "${name}" ? Les deux lignes (débit et crédit) seront supprimées.`
+      : `Souhaitez-vous vraiment supprimer l'opération : "${name}" ?`);
+    $('#deleteForm').attr('action', (isTransfer ? deleteTransferUrlTemplate : deleteUrlTemplate).replace('__ID__', id));
   });
 
   // --- Modale de détail ---

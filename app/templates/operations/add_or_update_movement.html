@@ -66,11 +66,11 @@
               <div class="form-group col-md-6">
                 {% if type_operation=='Dépense' %}
                   <label for = "uploaded_file">Justificatif</label><br>
-                  {{ form.uploaded_file(class="form-control") }}
+                  {{ form.uploaded_file(class="form-control", accept=upload_accept) }}
                   <small class="text-muted">Obligatoire pour les dépenses</small>
                 {% else %}
                   <label for = "uploaded_file">Justificatif</label><br>
-                  {{ form.uploaded_file(class="form-control") }}
+                  {{ form.uploaded_file(class="form-control", accept=upload_accept) }}
                 {% endif %}
 
                 {% if Convert %}

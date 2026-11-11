@@ -39,7 +39,7 @@
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-              <a class="btn btn-danger" href="{{ url_for('budgets_actions.deleteAction', id_budget=Budget.id_budget, id_action_budget=Action.id_action_budget) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
+              <form method="post" action="{{ url_for('budgets_actions.deleteAction', id_budget=Budget.id_budget, id_action_budget=Action.id_action_budget) }}" class="d-inline"><button type="submit" class="btn btn-danger"> <i class="fa fa-trash"></i> Confirmer la suppression </button></form>
             </div>
           </div>
         </div>

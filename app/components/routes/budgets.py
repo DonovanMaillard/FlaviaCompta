@@ -272,7 +272,7 @@ def budgets():
 @budgets_bp.route('/detail/<id_budget>', methods=['GET', 'POST'])
 @login_required
 def detailBudget(id_budget):
-    Budget = db.session.get(vBudgets, id_budget) 
+    Budget = db.get_or_404(vBudgets, id_budget)
     Actions = vActions.query.filter_by(id_budget=id_budget)
     Operations = vOperations.query.filter(vOperations.id_budget==id_budget, vOperations.type_operation != 'Engagement').order_by(vOperations.effective_date.desc()).all()
     Commitments = vOperations.query.filter(vOperations.id_budget==id_budget, vOperations.type_operation == 'Engagement').order_by(vOperations.effective_date.desc()).all()
@@ -292,7 +292,7 @@ def detailBudget(id_budget):
             })
     # POST : annule et remplace le contenu du jsonb
     if request.method == 'POST' and form.validate():
-        tBudget = db.session.get(tBudgets, id_budget)
+        tBudget = db.get_or_404(tBudgets, id_budget)
         tBudget.draft_allocations = {
             str(l["id_member"]): str(l["allocated_amount"])
             for l in form.rows.data
@@ -373,7 +373,7 @@ def updateBudget(id_budget):
 @login_required
 def closeBudget(id_budget):
     # Add closing date to budget
-    Budget=db.session.get(tBudgets, id_budget)
+    Budget=db.get_or_404(tBudgets, id_budget)
     Budget.date_closing = func.current_date()
     if Budget.profit_bonus :
         # Add profit_bonus to tProfitBonus
@@ -394,10 +394,10 @@ def closeBudget(id_budget):
 
 
 # Delete budget
-@budgets_bp.route('/delete/<id_budget>', methods=['GET', 'POST'])
+@budgets_bp.route('/delete/<id_budget>', methods=['POST'])
 @login_required
 def deleteBudget(id_budget):
-    current_budget=db.session.get(tBudgets, id_budget) #tBudgets.query.get(id_budget)
+    current_budget=db.get_or_404(tBudgets, id_budget)
     db.session.delete(current_budget)
     db.session.commit()
     return redirect('/budgets')

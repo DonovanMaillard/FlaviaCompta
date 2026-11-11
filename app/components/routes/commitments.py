@@ -82,7 +82,7 @@ def addCommitment():
 @login_required
 def updateCommitment(id_operation):
     # pre-loaded form
-    Operation = db.session.get(tOperations, id_operation) #tOperations.query.get(id_operation)
+    Operation = db.get_or_404(tOperations, id_operation)
     #Get choices and form
     form = formCommitment(request.form, obj=Operation)
     # Form Choices
@@ -122,7 +122,7 @@ def updateCommitment(id_operation):
 @login_required
 def convertCommitment(id_operation):
     # pre-loaded form
-    Operation = db.session.get(tOperations, id_operation) #tOperations.query.get(id_operation)
+    Operation = db.get_or_404(tOperations, id_operation)
     #Get choices and form
     id_type_operation = dictOperationTypes.query.filter_by(label = 'Dépense').one().id_type_operation
     form = formMovementExtended(request.form, obj=Operation)
@@ -178,10 +178,10 @@ def convertCommitment(id_operation):
 
 
 # Suppression
-@commitments_bp.route('/<id_operation>/delete', methods=['GET', 'POST'])
+@commitments_bp.route('/<id_operation>/delete', methods=['POST'])
 @login_required
 def deleteCommitment(id_operation): 
-    operation= db.session.get(tOperations, id_operation) #tOperations.query.get(id_operation)
+    operation= db.get_or_404(tOperations, id_operation)
     db.session.delete(operation)
     db.session.commit()
     return redirect(url_for('commitments.commitments'))

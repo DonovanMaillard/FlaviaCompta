@@ -44,7 +44,7 @@ def addDocument():
 @login_required
 def updateDocument(id_document):
   # pre-loaded form
-    Document = db.session.get(tDocuments, id_document) #tDocuments.query.get(id_document)
+    Document = db.get_or_404(tDocuments, id_document)
     form = formDocument(request.form, obj=Document)
     # types
     DocumentTypes = dictDocumentType.query.all()
@@ -61,10 +61,10 @@ def updateDocument(id_document):
     return render_template('admin/documents/add_or_update_document.html', form=form, document=Document)
 
 # Delete document
-@documents_bp.route('/delete/<id_document>', methods=['GET', 'POST'])
+@documents_bp.route('/delete/<id_document>', methods=['POST'])
 @login_required
 def deleteDocument(id_document):
-    current_document= db.session.get(tDocuments, id_document) #tDocuments.query.get(id_document)
+    current_document= db.get_or_404(tDocuments, id_document)
     db.session.delete(current_document)
     db.session.commit()
     return redirect('/documents')

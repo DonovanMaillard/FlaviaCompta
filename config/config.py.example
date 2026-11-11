@@ -1,4 +1,10 @@
 #import os
+from datetime import timedelta
+REMEMBER_COOKIE_DURATION = timedelta(days=7)   # se reconnecter une fois par semaine
+SESSION_COOKIE_SAMESITE = 'Lax'
+REMEMBER_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SECURE = True
+REMEMBER_COOKIE_SECURE = True
 
 # Connexion à la BDD
 SECRET_KEY = 'myamazingsecretkey'
@@ -8,20 +14,24 @@ APP_PORT=5050
 
 DEBUG=True
 
-
 # uploads parameters
 #UPLOAD_FOLDER = '/Users/poleinvertebres/Desktop/ComptAsso/app/static/uploads'
 BASE_DIR = "/path/to/app/"
 BASE_URL = "http://"
 
+# Langue utilisée pour l'affichage des dates (ex : 'fr_FR', 'en_GB')
+LOCALE = 'fr_FR'
+
 # Taux de calcul de l'intéressement : 0.08 pour 8% par exemple
-profit_bonus_ratio=0.08
+VAT_RATES_AUTOCOMPLETE = [
+    ('0.20', '20 %'),
+    ('0.10', '10 %'),
+    ('0.055', '5,5 %'),
+    ('0.00', 'Sans TVA')
+]
+VAT_DEFAULT_RATE = '0.20'
 
+PROFIT_BONUS_RATIO=0.08
 
-#Todo = ALLOWED_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'zip', 'rar']
-
-# Pagination des résultats
-ROWS_PER_PAGE = 10
-
-# by default SMIC
-#HOUR_VOLUNTEERING_VALUATION = 10.48 
+# Extensions autorisées pour les justificatifs (par défaut si absent : pdf, png, jpg, jpeg, webp, zip, rar)
+ALLOWED_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'zip', 'rar']

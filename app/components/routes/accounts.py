@@ -26,7 +26,7 @@ def accounts(type):
 @accounts_bp.route('/detail/<id_account>', methods=['GET', 'POST'])
 @login_required
 def detailAccount(id_account):
-    Account = db.session.get(vAccounts, id_account) #vAccounts.query.get(id_account)
+    Account = db.get_or_404(vAccounts, id_account)
     Operations = vOperations.query.filter(vOperations.id_account==id_account, vOperations.type_operation != 'Engagement').order_by(vOperations.effective_date.desc()).all()
     Commitments = vOperations.query.filter(vOperations.id_account==id_account, vOperations.type_operation == 'Engagement').order_by(vOperations.effective_date.desc()).all()
     return render_template('accounts/details_account.html', Account = Account, Operations = Operations, Commitments = Commitments )
@@ -63,7 +63,7 @@ def addAccount(type):
 @login_required
 def updateAccount(id_account):
   # pre-loaded form
-    Account = db.session.get(tAccounts, id_account)
+    Account = db.get_or_404(tAccounts, id_account)
     if Account.is_personnal:
         type = 'personnal'
     else :
@@ -80,13 +80,13 @@ def updateAccount(id_account):
         Account.active = bool(request.form.get('active'))
         db.session.commit()
         return redirect(url_for('accounts.accounts', type=type))
-    return render_template('accounts/add_or_update_account.html', form=form, Account=Account)
+    return render_template('accounts/add_or_update_account.html', form=form, Account=Account, type=type)
 
 # Delete account
-@accounts_bp.route('/delete/<id_account>', methods=['GET','POST'])
+@accounts_bp.route('/delete/<id_account>', methods=['POST'])
 @login_required
 def deleteAccount(id_account):
-    current_account=db.session.get(tAccounts, id_account)
+    current_account=db.get_or_404(tAccounts, id_account)
     db.session.delete(current_account)
     db.session.commit()
     return redirect(url_for('accounts.accounts'))

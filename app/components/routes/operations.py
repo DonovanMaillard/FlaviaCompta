@@ -172,6 +172,7 @@ def get_api_operations():
 
     data = [{
         "id_operation": op.id_operation,
+        "id_grp_operation": str(op.id_grp_operation) if op.id_grp_operation else None,
         "effective_date": op.effective_date.strftime('%Y-%m-%d') if op.effective_date else "",
         "operation_date": op.operation_date.strftime('%Y-%m-%d') if op.operation_date else "",
         "name_operation": op.name_operation,
@@ -225,6 +226,7 @@ def download_operations():
 
     writer.writerow([
         "id_operation",
+        "id_grp_operation",
         "date_effet",
         "date_operation",
         "libelle",
@@ -251,6 +253,7 @@ def download_operations():
     for op in results:
         writer.writerow([
             op.id_operation,
+            op.id_grp_operation,
             op.effective_date.strftime('%Y-%m-%d') if op.effective_date else "",
             op.operation_date.strftime('%Y-%m-%d') if op.operation_date else "",
             op.name_operation,
@@ -353,15 +356,15 @@ def operations():
     return render_template('operations/operations_list.html', budgets=budgets, accounts=accounts, categories=categories, allocations=allocations, types=types)
 
 # Suppression d'une opération ou de plusieurs opérations appariées
-@operations_bp.route('/<id_operation>/delete', methods=['GET', 'POST'])
+@operations_bp.route('/<id_operation>/delete', methods=['POST'])
 @login_required
 def deleteMovement(id_operation): 
-    operation=db.session.get(tOperations, id_operation) 
+    operation=db.get_or_404(tOperations, id_operation)
+    if operation.id_grp_operation:
+        return redirect(url_for('transfers.deleteTransfer', id_grp_operation=operation.id_grp_operation), code=307) # 307 : le navigateur rejoue le POST
     db.session.delete(operation)
     db.session.commit()
     return redirect(url_for('operations.operations'))
-
-
 
 #######################
 # Dépenses & Recettes #
@@ -462,8 +465,12 @@ def addMovement(type_operation): #movement = Dépense + Recette
 def updateMovement(id_operation): #movement = Dépense + Recette
     # Pre-load form data
     # pre-loaded form
-    Operation = db.session.get(tOperations, id_operation) #tOperations.query.get(id_operation)
+    Operation = db.get_or_404(tOperations, id_operation)
     type_operation = dictOperationTypes.query.filter_by(id_type_operation = Operation.id_type_operation).one().label
+    # Rediriger sur le bon formulaire s'il s'agit d'un transfert
+    if Operation.id_grp_operation:
+        return redirect(url_for('transfers.updateTransfer', id_grp_operation=Operation.id_grp_operation))
+   # Modification d'une opération hors transfert
     #Get choices and form
     if type_operation=='Recette': 
         # Charger le formulaire de base
@@ -539,4 +546,3 @@ def updateMovement(id_operation): #movement = Dépense + Recette
         return redirect(url_for('operations.operations'))
     # Return form
     return render_template('operations/add_or_update_movement.html', form=form, Operation=Operation, type_operation=type_operation)
-

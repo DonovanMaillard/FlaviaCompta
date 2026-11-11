@@ -83,7 +83,7 @@
 
         <div class="form-group col-md-6">
           <label for = "uploaded_file"><strong>Bulletin de paie *</strong></label><br>
-            {{ form.uploaded_file(class="form-control") }}
+            {{ form.uploaded_file(class="form-control", accept=upload_accept) }}
 
             {% for error in form.uploaded_file.errors %} 
               <small class="form-invalid-message"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</small>

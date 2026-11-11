@@ -99,7 +99,7 @@
                       </div>
                       <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <a class="btn btn-danger" href="{{ url_for('documents.deleteDocument', id_document=document.id_document) }}"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></a>
+                        <form method="post" action="{{ url_for('documents.deleteDocument', id_document=document.id_document) }}" class="d-inline"><button type="submit" class="btn btn-danger"> <i class="fa fa-trash"></i> <strong>Confirmer la suppression </strong></button></form>
                       </div>
                     </div>
                   </div>

@@ -61,7 +61,7 @@ def addPayroll():
 @payrolls_bp.route('/edit/<id_payroll>', methods=['GET', 'POST'])
 @login_required
 def updatePayroll(id_payroll):
-    payroll = db.session.get(tPayrolls, id_payroll) #tPayrolls.query.get(id_payroll)
+    payroll = db.get_or_404(tPayrolls, id_payroll)
     form = formPayroll(request.form, obj=payroll)
     # Get employees
     Members = tMembers.query.filter_by(is_employed=True)
@@ -89,7 +89,7 @@ def updatePayroll(id_payroll):
 @payrolls_bp.route('/detail/<id_payroll>', methods=['GET', 'POST'])
 @login_required
 def detailPayroll(id_payroll):
-    payroll = db.session.get(vPayrolls, id_payroll) #vPayrolls.query.get(id_payroll)
+    payroll = db.get_or_404(vPayrolls, id_payroll)
     corsPayrollBudget = vDecodeCorPayrollBudget.query.filter_by(id_payroll=id_payroll).order_by(vDecodeCorPayrollBudget.budget_name.desc()).all()
     form = formPayrollBudget(request.form)
     # Get budgets
@@ -108,10 +108,10 @@ def detailPayroll(id_payroll):
     return render_template('payrolls/detail_payroll.html', payroll=payroll, corsPayrollBudget=corsPayrollBudget, form=form, payrollBudget=None, Budgets=Budgets)
 
 # Delete payroll
-@payrolls_bp.route('/delete/<id_payroll>', methods=['GET', 'POST'])
+@payrolls_bp.route('/delete/<id_payroll>', methods=['POST'])
 @login_required
 def deletePayroll(id_payroll):
-    current_payroll=db.session.get(tPayrolls, id_payroll) #tPayrolls.query.get(id_payroll)
+    current_payroll=db.get_or_404(tPayrolls, id_payroll)
     db.session.delete(current_payroll)
     db.session.commit()
     return redirect(url_for('payrolls.payrolls'))
@@ -143,7 +143,7 @@ def addCorPayrollBudget(id_payroll):
 @payrolls_bp.route('/<id_payroll>/cor_budget/<id_payroll_budget>/edit', methods=['GET', 'POST'])
 @login_required
 def updateCorPayrollBudget(id_payroll, id_payroll_budget):
-    cor = db.session.get(corPayrollBudget, id_payroll_budget) #corPayrollBudget.query.get(id_payroll_budget)
+    cor = db.get_or_404(corPayrollBudget, id_payroll_budget)
     form = formPayrollBudget(request.form, obj=cor)
     # Get budgets
     Budgets = tBudgets.query.filter_by(date_closing=None)
@@ -157,10 +157,10 @@ def updateCorPayrollBudget(id_payroll, id_payroll_budget):
 
 
 # Delete doc payroll budget
-@payrolls_bp.route('/<id_payroll>/cor_budget/<id_payroll_budget>/delete', methods=['GET', 'POST'])
+@payrolls_bp.route('/<id_payroll>/cor_budget/<id_payroll_budget>/delete', methods=['POST'])
 @login_required
 def deleteCorPayrollBudget(id_payroll, id_payroll_budget):
-    cor = db.session.get(corPayrollBudget, id_payroll_budget) #corPayrollBudget.query.get(id_payroll_budget)
+    cor = db.get_or_404(corPayrollBudget, id_payroll_budget)
     db.session.delete(cor)
     db.session.commit()
     return redirect(url_for('payrolls.detailPayroll', id_payroll=id_payroll))

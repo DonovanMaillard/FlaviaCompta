@@ -36,7 +36,7 @@ def addMember():
 @admin_bp.route('/member/edit/<id_member>', methods=['GET','POST'])
 @login_required
 def updateMember(id_member):
-    member = db.session.get(tMembers, id_member) #tMembers.query.get(id_member)
+    member = db.get_or_404(tMembers, id_member)
     form = formMember(request.form, obj=member)
     if request.method == 'POST' and form.validate():
         member.member_name = request.form['member_name']
