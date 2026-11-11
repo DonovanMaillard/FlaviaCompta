@@ -93,7 +93,7 @@
     				<tbody>
         				<tr style="background-color:lightgrey; font-size:12px !important;">
             				<td><strong>Total des charges</strong></td>
-            				<td><strong> {{ depenses | sum(attribute='amount') }} € </strong></td>
+            				<td><strong> {{ total_depenses }} € </strong></td>
         				</tr>
       					<tr style="font-size:12px !important;">
         					<td>Excédent (bénéfice)</td>
@@ -109,7 +109,7 @@
     				<tbody>
         				<tr style="background-color:lightgrey; font-size:12px !important;">
             				<td><strong>Total des recettes</strong></td>
-            				<td><strong> {{ recettes | sum(attribute='amount') }} € </strong></td>
+            				<td><strong> {{ total_recettes }} € </strong></td>
         				</tr>
       					<tr style="font-size:12px !important;">
         					<td>Insuffisance (déficit)</td>
