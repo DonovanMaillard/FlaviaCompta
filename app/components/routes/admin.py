@@ -1,24 +1,8 @@
-from flask import Flask, Blueprint, render_template, request, flash, get_flashed_messages, redirect, url_for, make_response, stream_with_context, jsonify
-from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.wrappers import Response
-from io import StringIO, BytesIO
-from datetime import datetime, timedelta, date
-from flask_login import login_required, current_user, login_user, logout_user, LoginManager
-from calendar import monthrange
-from sqlalchemy import func, or_, and_
-from zipfile import ZipFile, ZipInfo
-from decimal import Decimal
-
-import os
-import pdfkit
-import csv
-import uuid
-import babel
-
+from flask import Blueprint, render_template, request, redirect, url_for
+from flask_login import login_required
 from ..init_db import db
-from ..models import *
-from ..forms import *
+from ..models import dictCategories, dictOperationTypes, tActivities, tMembers
+from ..forms import formMember
 
 admin_bp = Blueprint("admin",__name__,url_prefix="/admin")
 
@@ -52,7 +36,7 @@ def addMember():
 @admin_bp.route('/member/edit/<id_member>', methods=['GET','POST'])
 @login_required
 def updateMember(id_member):
-    member = db.session.get(tMembers, id_member) #tMembers.query.get(id_member)
+    member = db.get_or_404(tMembers, id_member)
     form = formMember(request.form, obj=member)
     if request.method == 'POST' and form.validate():
         member.member_name = request.form['member_name']

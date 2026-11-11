@@ -51,7 +51,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            <a class="btn btn-danger" href="{{ url_for('funders.deleteFunder', id_funder=Funder.id_funder) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
+            <form method="post" action="{{ url_for('funders.deleteFunder', id_funder=Funder.id_funder) }}" class="d-inline"><button type="submit" class="btn btn-danger"> <i class="fa fa-trash"></i> Confirmer la suppression </button></form>
           </div>
         </div>
       </div>

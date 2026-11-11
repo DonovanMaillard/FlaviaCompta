@@ -93,7 +93,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-            <a class="btn btn-danger" href="{{ url_for('accounts.deleteAccount', id_account=Account.id_account) }}"> <i class="fa fa-trash"></i> Confirmer la suppression </a>
+            <form method="post" action="{{ url_for('accounts.deleteAccount', id_account=Account.id_account) }}" class="d-inline"><button type="submit" class="btn btn-danger"> <i class="fa fa-trash"></i> Confirmer la suppression </button></form>
           </div>
         </div>
       </div>

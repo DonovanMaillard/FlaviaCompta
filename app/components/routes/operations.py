@@ -1,25 +1,27 @@
-from flask import Flask, Blueprint, render_template, request, flash, get_flashed_messages, redirect, url_for, make_response, stream_with_context, jsonify, current_app
-from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, current_app, send_file, abort
 from werkzeug.wrappers import Response
-from io import StringIO, BytesIO
-from datetime import datetime, timedelta, date
-from flask_login import login_required, current_user, login_user, logout_user, LoginManager
-from calendar import monthrange
+from io import StringIO
+from datetime import datetime, date
+from flask_login import login_required, current_user
 from sqlalchemy import func, or_, and_
-from zipfile import ZipFile, ZipInfo
-from decimal import Decimal, InvalidOperation
-
+from decimal import Decimal
 import os
-import pdfkit
 import csv
-import uuid
-import babel
-
+import zipfile
+import tempfile
 from ..init_db import db
-from ..models import *
-from ..forms import *
-from .utils import *
+from ..models import (
+    dictCategories,
+    dictOperationTypes,
+    dictPaymentMethods,
+    dictVatRatio,
+    tAccounts,
+    tBudgets,
+    tOperations,
+    vOperations,
+)
+from ..forms import formMovementBase, formMovementExtended
+from .utils import abs_decimal, getChoiceOrNone, getFileUrl
 
 operations_bp = Blueprint("operations",__name__,url_prefix="/operations")
 
@@ -84,7 +86,7 @@ def search_operations():
         )
 
     if with_depreciation :
-        query = query.filter(vOperations.with_depreciation.is_not(None))
+        query = query.filter(vOperations.with_depreciation==True)
 
     if montant:
         try:
@@ -170,6 +172,7 @@ def get_api_operations():
 
     data = [{
         "id_operation": op.id_operation,
+        "id_grp_operation": str(op.id_grp_operation) if op.id_grp_operation else None,
         "effective_date": op.effective_date.strftime('%Y-%m-%d') if op.effective_date else "",
         "operation_date": op.operation_date.strftime('%Y-%m-%d') if op.operation_date else "",
         "name_operation": op.name_operation,
@@ -223,6 +226,7 @@ def download_operations():
 
     writer.writerow([
         "id_operation",
+        "id_grp_operation",
         "date_effet",
         "date_operation",
         "libelle",
@@ -249,6 +253,7 @@ def download_operations():
     for op in results:
         writer.writerow([
             op.id_operation,
+            op.id_grp_operation,
             op.effective_date.strftime('%Y-%m-%d') if op.effective_date else "",
             op.operation_date.strftime('%Y-%m-%d') if op.operation_date else "",
             op.name_operation,
@@ -265,6 +270,7 @@ def download_operations():
             op.affectation,
             op.vat_ratio,
             op.recoverable_vat_amount,
+            op.with_depreciation,
             url_for('static', filename=op.uploaded_file) if op.uploaded_file else "",
             op.locked,
             op.meta_create_date,
@@ -282,6 +288,57 @@ def download_operations():
         }
     )
 
+@operations_bp.route("/download_files", methods=["GET"])
+@login_required
+def download_operation_files():
+    query = search_operations().filter(
+        vOperations.uploaded_file.isnot(None),
+        vOperations.uploaded_file != ""
+    )
+    results = query.order_by(
+        vOperations.effective_date, vOperations.id_operation
+    ).all()
+
+    if not results:
+        abort(404, description="Aucun justificatif pour cette recherche.")
+
+    static_root = os.path.realpath(current_app.static_folder)
+    missing = []
+
+    # En mémoire jusqu'à 50 Mo, puis bascule automatiquement sur disque
+    archive = tempfile.SpooledTemporaryFile(max_size=50 * 1024 * 1024)
+
+    with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as zf:
+        for op in results:
+            file_path = os.path.realpath(os.path.join(static_root, op.uploaded_file))
+
+            # Sécurité : interdit de sortir du dossier static (../../etc/passwd...)
+            if not file_path.startswith(static_root + os.sep):
+                missing.append(f"{op.id_operation} ; chemin refusé ; {op.uploaded_file}")
+                continue
+
+            if not os.path.isfile(file_path):
+                missing.append(f"{op.id_operation} ; fichier introuvable ; {op.uploaded_file}")
+                continue
+
+            date_str = op.effective_date.strftime("%Y-%m-%d") if op.effective_date else "sans-date"
+            arcname = f"{date_str}_op{op.id_operation}_{os.path.basename(op.uploaded_file)}"
+            zf.write(file_path, arcname=arcname)
+
+        if missing:
+            zf.writestr(
+                "_fichiers_manquants.txt",
+                "id_operation ; probleme ; chemin\n" + "\n".join(missing)
+            )
+
+    archive.seek(0)
+
+    return send_file(
+        archive,
+        mimetype="application/zip",
+        as_attachment=True,
+        download_name=f"archive_justificatifs_{date.today():%Y-%m-%d}.zip",
+    )
 
 #####################
 # Toutes opérations #
@@ -299,15 +356,15 @@ def operations():
     return render_template('operations/operations_list.html', budgets=budgets, accounts=accounts, categories=categories, allocations=allocations, types=types)
 
 # Suppression d'une opération ou de plusieurs opérations appariées
-@operations_bp.route('/<id_operation>/delete', methods=['GET', 'POST'])
+@operations_bp.route('/<id_operation>/delete', methods=['POST'])
 @login_required
 def deleteMovement(id_operation): 
-    operation=db.session.get(tOperations, id_operation) 
+    operation=db.get_or_404(tOperations, id_operation)
+    if operation.id_grp_operation:
+        return redirect(url_for('transfers.deleteTransfer', id_grp_operation=operation.id_grp_operation), code=307) # 307 : le navigateur rejoue le POST
     db.session.delete(operation)
     db.session.commit()
     return redirect(url_for('operations.operations'))
-
-
 
 #######################
 # Dépenses & Recettes #
@@ -335,7 +392,7 @@ def addMovement(type_operation): #movement = Dépense + Recette
     if request.method == 'GET':
         form.id_account.data = str(current_user.id_default_account)
     # Budget
-    activeBudgets = tBudgets.query.filter_by(date_closing=None)
+    activeBudgets = tBudgets.query.filter_by(date_closing=None).order_by(tBudgets.name)
     form.id_budget.choices = [('', '-- Sélectionnez un budget --')] + [(activeBudget.id_budget, activeBudget.name, {'data-vat': str(activeBudget.vat_amount) if activeBudget.vat_amount is not None else 0}) for activeBudget in activeBudgets]
     # Category
     Categories = dictCategories.query.filter(dictCategories.id_type_operation == id_type_operation, dictCategories.seizable == True).order_by(dictCategories.cd_category).all()
@@ -408,8 +465,12 @@ def addMovement(type_operation): #movement = Dépense + Recette
 def updateMovement(id_operation): #movement = Dépense + Recette
     # Pre-load form data
     # pre-loaded form
-    Operation = db.session.get(tOperations, id_operation) #tOperations.query.get(id_operation)
+    Operation = db.get_or_404(tOperations, id_operation)
     type_operation = dictOperationTypes.query.filter_by(id_type_operation = Operation.id_type_operation).one().label
+    # Rediriger sur le bon formulaire s'il s'agit d'un transfert
+    if Operation.id_grp_operation:
+        return redirect(url_for('transfers.updateTransfer', id_grp_operation=Operation.id_grp_operation))
+   # Modification d'une opération hors transfert
     #Get choices and form
     if type_operation=='Recette': 
         # Charger le formulaire de base
@@ -426,7 +487,7 @@ def updateMovement(id_operation): #movement = Dépense + Recette
     # accounts
     form.id_account.choices = [('', '-- Sélectionnez un compte --')] + [(Account.id_account, Account.name) for Account in Accounts]
     # Budget
-    activeBudgets = tBudgets.query.filter_by(date_closing=None)
+    activeBudgets = tBudgets.query.filter_by(date_closing=None).order_by(tBudgets.name)
     form.id_budget.choices = [('', '-- Sélectionnez un budget --')] + [(activeBudget.id_budget, activeBudget.name, {'data-vat': str(activeBudget.vat_amount) if activeBudget.vat_amount is not None else 0}) for activeBudget in activeBudgets]
     # Category
     Categories = dictCategories.query.filter(dictCategories.id_type_operation == Operation.id_type_operation, dictCategories.seizable == True).order_by(dictCategories.cd_category).all()
@@ -485,4 +546,3 @@ def updateMovement(id_operation): #movement = Dépense + Recette
         return redirect(url_for('operations.operations'))
     # Return form
     return render_template('operations/add_or_update_movement.html', form=form, Operation=Operation, type_operation=type_operation)
-

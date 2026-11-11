@@ -1,25 +1,27 @@
-from flask import Flask, Blueprint, render_template, request, flash, get_flashed_messages, redirect, url_for, make_response, stream_with_context, jsonify, current_app
-from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, current_app
 from werkzeug.wrappers import Response
-from io import StringIO, BytesIO
-from datetime import datetime, timedelta, date
-from flask_login import login_required, current_user, login_user, logout_user, LoginManager
-from calendar import monthrange
-from sqlalchemy import func, or_, and_
-from zipfile import ZipFile, ZipInfo
-from decimal import Decimal, InvalidOperation
-
-import os
-import pdfkit
+from io import StringIO
+from datetime import datetime, date
+from flask_login import login_required
+from sqlalchemy import func
+from decimal import Decimal
 import csv
-import uuid
-import babel
-
 from ..init_db import db
-from ..models import *
-from ..forms import *
-from .utils import *
+from ..models import (
+    dictBudgetTypes,
+    tActivities,
+    tBudgets,
+    tFunders,
+    tMembers,
+    tProfitBonus,
+    vActions,
+    vBudgets,
+    vOperations,
+    vSyntheseActivities,
+    vSynthesePayrollBudget,
+)
+from ..forms import formAllocatedBudget, formBudget
+from .utils import abs_decimal, getChoiceOrNone
 
 budgets_bp = Blueprint("budgets",__name__,url_prefix="/budgets")
 
@@ -100,7 +102,7 @@ def search_budgets():
     if cloture_avant:
         try:
             cloture_avant_parsed = datetime.strptime(cloture_avant, "%Y-%m-%d").date()
-            query = query.filter(vBudgets.date_closing >= cloture_avant_parsed)
+            query = query.filter(vBudgets.date_closing <= cloture_avant_parsed)
         except ValueError:
             pass
 
@@ -270,7 +272,7 @@ def budgets():
 @budgets_bp.route('/detail/<id_budget>', methods=['GET', 'POST'])
 @login_required
 def detailBudget(id_budget):
-    Budget = db.session.get(vBudgets, id_budget) 
+    Budget = db.get_or_404(vBudgets, id_budget)
     Actions = vActions.query.filter_by(id_budget=id_budget)
     Operations = vOperations.query.filter(vOperations.id_budget==id_budget, vOperations.type_operation != 'Engagement').order_by(vOperations.effective_date.desc()).all()
     Commitments = vOperations.query.filter(vOperations.id_budget==id_budget, vOperations.type_operation == 'Engagement').order_by(vOperations.effective_date.desc()).all()
@@ -290,7 +292,7 @@ def detailBudget(id_budget):
             })
     # POST : annule et remplace le contenu du jsonb
     if request.method == 'POST' and form.validate():
-        tBudget = db.session.get(tBudgets, id_budget)
+        tBudget = db.get_or_404(tBudgets, id_budget)
         tBudget.draft_allocations = {
             str(l["id_member"]): str(l["allocated_amount"])
             for l in form.rows.data
@@ -371,12 +373,11 @@ def updateBudget(id_budget):
 @login_required
 def closeBudget(id_budget):
     # Add closing date to budget
-    Budget=db.session.get(tBudgets, id_budget)
+    Budget=db.get_or_404(tBudgets, id_budget)
     Budget.date_closing = func.current_date()
     if Budget.profit_bonus :
         # Add profit_bonus to tProfitBonus
-        profit_bonus_ratio=Decimal(str(app.config['PROFIT_BONUS_RATIO']))
-        print(profit_bonus_ratio)
+        profit_bonus_ratio=Decimal(str(current_app.config['PROFIT_BONUS_RATIO']))
         for id_member, allocated_amount in (Budget.draft_allocations or {}).items():
                 allocated_amount = Decimal(allocated_amount)
                 if allocated_amount == 0:
@@ -393,10 +394,10 @@ def closeBudget(id_budget):
 
 
 # Delete budget
-@budgets_bp.route('/delete/<id_budget>', methods=['GET', 'POST'])
+@budgets_bp.route('/delete/<id_budget>', methods=['POST'])
 @login_required
 def deleteBudget(id_budget):
-    current_budget=db.session.get(tBudgets, id_budget) #tBudgets.query.get(id_budget)
+    current_budget=db.get_or_404(tBudgets, id_budget)
     db.session.delete(current_budget)
     db.session.commit()
     return redirect('/budgets')

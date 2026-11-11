@@ -1,24 +1,10 @@
-from flask import Flask, Blueprint, render_template, request, flash, get_flashed_messages, redirect, url_for, make_response, stream_with_context, jsonify
+from flask import Blueprint, request, current_app, flash, redirect
 from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.wrappers import Response
-from io import StringIO, BytesIO
-from datetime import datetime, timedelta, date
-from flask_login import login_required, current_user, login_user, logout_user, LoginManager
-from calendar import monthrange
-from sqlalchemy import func, or_, and_
-from zipfile import ZipFile, ZipInfo
+from datetime import datetime
+from flask_login import LoginManager
 from decimal import Decimal, InvalidOperation
-
-import os
-import pdfkit
-import csv
 import uuid
-import babel
-
-from ..init_db import db
-from ..models import *
-from ..forms import *
+import babel.dates
 
 utils_bp = Blueprint("utils",__name__)
 
@@ -29,8 +15,27 @@ utils_bp = Blueprint("utils",__name__)
 # Init login manager
 login_manager = LoginManager()
 
-#def allowed_file(filename):
-#    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+# Extensions utilisées si ALLOWED_EXTENSIONS n'est pas défini dans config.py
+DEFAULT_ALLOWED_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'zip', 'rar']
+
+def allowed_extensions():
+    return [ext.lower().lstrip('.') for ext in current_app.config.get('ALLOWED_EXTENSIONS', DEFAULT_ALLOWED_EXTENSIONS)]
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions()
+
+# Refuse toute requête contenant un fichier non autorisé, avant que la route ne l'enregistre
+@utils_bp.before_app_request
+def check_uploaded_files():
+    for _, f in request.files.items(multi=True):
+        if f.filename and not allowed_file(f.filename):
+            flash(f"Le fichier « {f.filename} » n'est pas autorisé. Extensions acceptées : {', '.join(allowed_extensions())}.", category="danger")
+            return redirect(request.url)
+
+# Liste des extensions pour l'attribut accept des champs fichier : {{ form.uploaded_file(accept=upload_accept) }}
+@utils_bp.app_context_processor
+def inject_upload_accept():
+    return {'upload_accept': ','.join('.' + ext for ext in allowed_extensions())}
 
 def abs_decimal(value):
     #Renvoie None si la valeur est vide, lève ValueError si elle est invalide.""", 
@@ -54,9 +59,9 @@ def getChoiceOrNone(input):
 
 def getFileUrl(input):
     f = request.files.get(input)
-    if f :
+    if f and allowed_file(f.filename):
         filename = uuid.uuid4().hex[:10]+'_'+secure_filename(f.filename)
-        f.save(app.config['BASE_DIR']+'app/static/uploads/'+filename)
+        f.save(current_app.config['BASE_DIR']+'app/static/uploads/'+filename)
         file_url='uploads/'+filename
     else :
         file_url=None
@@ -72,4 +77,4 @@ def parse_date(value):
 
 def format_datetime(value):
     format="dd-MM-y"
-    return babel.dates.format_datetime(value, format)
+    return babel.dates.format_datetime(value, format, locale=current_app.config.get('LOCALE', 'fr_FR'))

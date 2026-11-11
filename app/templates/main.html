@@ -168,6 +168,15 @@
 <!-- Dynamic content -->
 <body class="d-flex flex-column min-vh-100">
   <div class="dynamic-content">
+    <!-- Messages flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'info' if category == 'message' else category }} alert-dismissible fade show m-3" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+        </div>
+      {% endfor %}
+    {% endwith %}
     {% block content %}{% endblock %}
   </div>
 </body>

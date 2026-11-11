@@ -1,25 +1,19 @@
-from flask import Flask, Blueprint, render_template, request, flash, get_flashed_messages, redirect, url_for, make_response, stream_with_context, jsonify
-from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.wrappers import Response
-from io import StringIO, BytesIO
-from datetime import datetime, timedelta, date
-from flask_login import login_required, current_user, login_user, logout_user, LoginManager
-from calendar import monthrange
-from sqlalchemy import func, or_, and_
-from zipfile import ZipFile, ZipInfo
-from decimal import Decimal, InvalidOperation
-
-import os
-import pdfkit
-import csv
-import uuid
-import babel
-
+from flask import Blueprint, render_template, request, redirect, url_for
+from flask_login import login_required, current_user
+from decimal import Decimal
 from ..init_db import db
-from ..models import *
-from ..forms import *
-from .utils import *
+from ..models import (
+    dictCategories,
+    dictOperationTypes,
+    dictPaymentMethods,
+    dictVatRatio,
+    tAccounts,
+    tBudgets,
+    tOperations,
+    vOperations,
+)
+from ..forms import formCommitment, formMovementExtended
+from .utils import abs_decimal, getChoiceOrNone, getFileUrl
 
 commitments_bp = Blueprint("commitments",__name__,url_prefix="/commitments")
 
@@ -88,9 +82,8 @@ def addCommitment():
 @login_required
 def updateCommitment(id_operation):
     # pre-loaded form
-    Operation = db.session.get(tOperations, id_operation) #tOperations.query.get(id_operation)
+    Operation = db.get_or_404(tOperations, id_operation)
     #Get choices and form
-    id_type_operation = dictOperationTypes.query.filter_by(label = 'Engagement').one().id_type_operation
     form = formCommitment(request.form, obj=Operation)
     # Form Choices
     # accounts
@@ -129,7 +122,7 @@ def updateCommitment(id_operation):
 @login_required
 def convertCommitment(id_operation):
     # pre-loaded form
-    Operation = db.session.get(tOperations, id_operation) #tOperations.query.get(id_operation)
+    Operation = db.get_or_404(tOperations, id_operation)
     #Get choices and form
     id_type_operation = dictOperationTypes.query.filter_by(label = 'Dépense').one().id_type_operation
     form = formMovementExtended(request.form, obj=Operation)
@@ -158,7 +151,6 @@ def convertCommitment(id_operation):
         vat_amount = abs_decimal(form.vat_amount.data)
         allocation = db.session.get(dictVatRatio, form.id_spending_allocation.data)
         vat_ratio = allocation.ratio if allocation and allocation.ratio is not None else None
-        recoverable_vat_amount = (vat_amount * vat_ratio).quantize(Decimal('0.01')) if (vat_amount is not None and vat_ratio is not None) else None 
         # Let None as id_grp_operation
         Operation.name = request.form['name']
         Operation.detail_operation = request.form['detail_operation']
@@ -168,8 +160,6 @@ def convertCommitment(id_operation):
         Operation.amount = -abs_decimal(request.form.get('amount'))
         Operation.vat_amount = vat_amount
         # Calcul de la TVA récupérable à partir du montant de TVA, et de l'affectation
-        allocation = db.session.get(dictVatRatio, form.id_spending_allocation.data)
-        vat_ratio = allocation.ratio if allocation and allocation.ratio is not None else None
         recoverable_vat_amount = (vat_amount * vat_ratio).quantize(Decimal('0.01')) if (vat_amount is not None and vat_ratio is not None) else None
         Operation.id_spending_allocation = request.form['id_spending_allocation']
         Operation.vat_ratio = vat_ratio
@@ -188,10 +178,10 @@ def convertCommitment(id_operation):
 
 
 # Suppression
-@commitments_bp.route('/<id_operation>/delete', methods=['GET', 'POST'])
+@commitments_bp.route('/<id_operation>/delete', methods=['POST'])
 @login_required
 def deleteCommitment(id_operation): 
-    operation= db.session.get(tOperations, id_operation) #tOperations.query.get(id_operation)
+    operation= db.get_or_404(tOperations, id_operation)
     db.session.delete(operation)
     db.session.commit()
     return redirect(url_for('commitments.commitments'))
