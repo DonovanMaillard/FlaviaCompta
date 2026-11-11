@@ -1,25 +1,11 @@
-from flask import Flask, Blueprint, render_template, request, flash, get_flashed_messages, redirect, url_for, make_response, stream_with_context, jsonify
-from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.wrappers import Response
-from io import StringIO, BytesIO
-from datetime import datetime, timedelta, date
-from flask_login import login_required, current_user, login_user, logout_user, LoginManager
+from flask import Blueprint, render_template, request, redirect, url_for
+from datetime import datetime, date
+from flask_login import login_required
 from calendar import monthrange
-from sqlalchemy import func, or_, and_
-from zipfile import ZipFile, ZipInfo
-from decimal import Decimal, InvalidOperation
-
-import os
-import pdfkit
-import csv
-import uuid
-import babel
-
 from ..init_db import db
-from ..models import *
-from ..forms import *
-from .utils import *
+from ..models import corPayrollBudget, tBudgets, tMembers, tPayrolls, vDecodeCorPayrollBudget, vPayrolls
+from ..forms import formPayroll, formPayrollBudget
+from .utils import abs_decimal, getChoiceOrNone, getFileUrl
 
 payrolls_bp = Blueprint("payrolls",__name__,url_prefix="/payrolls")
 
@@ -86,12 +72,12 @@ def updatePayroll(id_payroll):
     form.period_month.data = str(payroll.date_min_period.month)
     form.period_year.data = payroll.date_min_period.year
     if request.method == 'POST' and form.validate():
-        payroll.id_member = request.form['id_member'], 
-        payroll.date_min_period = datetime(int(request.form['period_year']), int(request.form['period_month']), 1), 
-        payroll.date_max_period = datetime(int(request.form['period_year']), int(request.form['period_month']), monthrange(int(request.form['period_year']), int(request.form['period_month']))[1]), 
-        payroll.gross_remuneration = abs_decimal(request.form['gross_remuneration']), 
-        payroll.gross_premium = abs_decimal(request.form['gross_premium']), 
-        payroll.employer_charge_amount = abs_decimal(request.form['employer_charge_amount']), 
+        payroll.id_member = request.form['id_member'] 
+        payroll.date_min_period = datetime(int(request.form['period_year']), int(request.form['period_month']), 1)
+        payroll.date_max_period = datetime(int(request.form['period_year']), int(request.form['period_month']), monthrange(int(request.form['period_year']), int(request.form['period_month']))[1])
+        payroll.gross_remuneration = abs_decimal(request.form['gross_remuneration'])
+        payroll.gross_premium = abs_decimal(request.form['gross_premium'])
+        payroll.employer_charge_amount = abs_decimal(request.form['employer_charge_amount']) 
         payroll.worked_days = abs_decimal(request.form['worked_days'])
         if not request.form.get('keep_file'):
             payroll.uploaded_file = getFileUrl('uploaded_file')

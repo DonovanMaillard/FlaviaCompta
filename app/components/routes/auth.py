@@ -1,24 +1,10 @@
-from flask import Flask, Blueprint, render_template, request, flash, get_flashed_messages, redirect, url_for, make_response, stream_with_context, jsonify
-from werkzeug.utils import secure_filename
+from flask import Blueprint, render_template, request, flash, redirect, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.wrappers import Response
-from io import StringIO, BytesIO
-from datetime import datetime, timedelta, date
-from flask_login import login_required, current_user, login_user, logout_user, LoginManager
-from calendar import monthrange
-from sqlalchemy import func, or_, and_
-from zipfile import ZipFile, ZipInfo
-from decimal import Decimal
-
-import os
-import pdfkit
-import csv
-import uuid
-import babel
-
+from datetime import datetime, timedelta
+from flask_login import login_required, login_user, logout_user
 from ..init_db import db
-from ..models import *
-from ..forms import *
+from ..models import loginHistory, tUsers
+from ..forms import formLogin, formSignUp
 from .utils import login_manager
 
 auth_bp = Blueprint("auth",__name__)
@@ -44,7 +30,7 @@ def login():
         # take the user-supplied password, hash it, and compare it to the hashed password in the database
         if not user or not check_password_hash(user.password, password) or not user.is_active:
             flash('Mot de passe incorrect ou compte inactif. Si le problème persiste, veuillez contacter l\'administrateur')
-            return redirect(url_for('login')) # if the user doesn't exist or password is wrong, reload the page
+            return redirect(url_for('auth.login')) # if the user doesn't exist or password is wrong, reload the page
         # if the above check passes, then we know the user has the right credentials
         login_user(user, remember=True, duration=timedelta(minutes=1))
         track_login=loginHistory(

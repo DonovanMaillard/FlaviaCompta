@@ -1,24 +1,9 @@
-from flask import Flask, Blueprint, render_template, request, flash, get_flashed_messages, redirect, url_for, make_response, stream_with_context, jsonify
-from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.wrappers import Response
-from io import StringIO, BytesIO
-from datetime import datetime, timedelta, date
-from flask_login import login_required, current_user, login_user, logout_user, LoginManager
-from calendar import monthrange
-from sqlalchemy import func, or_, and_
-from zipfile import ZipFile, ZipInfo
-from decimal import Decimal
-
-import os
+from flask import Blueprint, render_template, make_response, current_app
+from datetime import date
+from flask_login import login_required
 import pdfkit
-import csv
-import uuid
-import babel
-
 from ..init_db import db
-from ..models import *
-from ..forms import *
+from ..models import vResultByYear
 
 results_bp = Blueprint("results",__name__,url_prefix="/results")
 
@@ -49,7 +34,7 @@ def resultsPDF(year):
     current_date=date.today()
     result=sum([r.amount for r in recettes])+sum([d.amount for d in depenses])
     filename='export_bilan_'+year
-    header_url=app.config['BASE_URL']+'/static/img/bandeau_pdf.png'
+    header_url=current_app.config['BASE_URL']+'/static/img/bandeau_pdf.png'
     html = render_template('results/results_pdf.html',depenses=depenses, recettes=recettes, year=year, current_date=current_date, result=result, header_url=header_url)
     options = {"enable-local-file-access": None}
     pdf = pdfkit.from_string(html, False, options=options)

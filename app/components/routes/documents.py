@@ -1,24 +1,9 @@
-from flask import Flask, Blueprint, render_template, request, flash, get_flashed_messages, redirect, url_for, make_response, stream_with_context, jsonify
-from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.wrappers import Response
-from io import StringIO, BytesIO
-from datetime import datetime, timedelta, date
-from flask_login import login_required, current_user, login_user, logout_user, LoginManager
-from calendar import monthrange
-from sqlalchemy import func, or_, and_
-from zipfile import ZipFile, ZipInfo
-from decimal import Decimal
-
-import os
-import pdfkit
-import csv
-import uuid
-import babel
-
+from flask import Blueprint, render_template, request, redirect, url_for
+from flask_login import login_required, current_user
 from ..init_db import db
-from ..models import *
-from ..forms import *
+from ..models import dictDocumentType, tDocuments, vDocuments
+from ..forms import formDocument
+from .utils import getFileUrl
 
 documents_bp = Blueprint("documents",__name__,url_prefix="/documents")
 
@@ -67,12 +52,12 @@ def updateDocument(id_document):
     form.id_type.default=Document.id_type
     #Formulaire
     if request.method == 'POST' and form.validate():
-        Document.title = request.form['title'], 
-        Document.description = request.form['description'],
+        Document.title = request.form['title'] 
+        Document.description = request.form['description']
         if not request.form.get('keep_file'):
             Document.uploaded_file = getFileUrl('uploaded_file')
         db.session.commit()
-        return redirect(url_for('documents'))
+        return redirect(url_for('documents.documents'))
     return render_template('admin/documents/add_or_update_document.html', form=form, document=Document)
 
 # Delete document

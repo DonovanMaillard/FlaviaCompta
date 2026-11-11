@@ -1,25 +1,10 @@
-from flask import Flask, Blueprint, render_template, request, flash, get_flashed_messages, redirect, url_for, make_response, stream_with_context, jsonify
-from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.wrappers import Response
-from io import StringIO, BytesIO
-from datetime import datetime, timedelta, date
-from flask_login import login_required, current_user, login_user, logout_user, LoginManager
-from calendar import monthrange
-from sqlalchemy import func, or_, and_
-from zipfile import ZipFile, ZipInfo
-from decimal import Decimal, InvalidOperation
-
-import os
-import pdfkit
-import csv
+from flask import Blueprint, render_template, request, redirect, url_for
+from flask_login import login_required, current_user
 import uuid
-import babel
-
 from ..init_db import db
-from ..models import *
-from ..forms import *
-from .utils import *
+from ..models import dictCategories, dictOperationTypes, dictPaymentMethods, tAccounts, tOperations
+from ..forms import formTransfer
+from .utils import abs_decimal, getChoiceOrNone
 
 transfers_bp = Blueprint("transfers",__name__,url_prefix="/operations/transfer")
 
